@@ -6,6 +6,7 @@ pub mod domain;
 pub mod score;
 pub mod solver;
 pub mod incremental_score;
+pub mod topology;
 
 #[rustler::nif]
 #[allow(clippy::needless_pass_by_value)]
