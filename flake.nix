@@ -40,7 +40,7 @@
             
             if ! pg_isready -q; then
               echo "Starting local PostgreSQL server..."
-              pg_ctl start -l $PGDATA/pg.log -o "-p 5432 -c unix_socket_directories=$PWD/.pgdata" >/dev/null
+              pg_ctl start -l $PGDATA/pg.log -o "-p 15432 -c unix_socket_directories=$PWD/.pgdata" >/dev/null
             fi
             
             # Ensure proper stop on exit
