@@ -17,8 +17,14 @@ defmodule Mix.Tasks.Data.Download do
   def run(_) do
     Application.ensure_all_started(:req)
     
-    data_dir = Path.join(:code.priv_dir(:hexaplanner), "data/raw")
+    # We use the version date as the folder name
+    version_str = "20260318"
+    year_str = String.slice(version_str, 0, 4)
+    data_dir = Path.join([:code.priv_dir(:hexaplanner), "data/raw", year_str, version_str])
+    
     File.mkdir_p!(data_dir)
+
+    Logger.info("Saving datasets to #{data_dir}")
 
     Logger.info("Starting download of SBB Physical Topology (Liniennetz)...")
     download_and_save(@topology_url, Path.join(data_dir, "topology.geojson"))
