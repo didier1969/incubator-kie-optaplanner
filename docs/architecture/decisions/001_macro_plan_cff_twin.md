@@ -17,7 +17,7 @@ Nous établissons un macro-plan orienté données (Open Data GTFS & topologie ph
 ### Époque 2 : Ingestion de la Réalité Physique (Topologie & GTFS)
 Le réseau complet ne tolère aucune approximation.
 - **Phase 8 (Pipeline Open Data) :** Intégration des flux GTFS CFF (Horaires, Lignes, Arrêts) via un worker Oban quotidien. Insertion dans PostgreSQL/PostGIS.
-- **Phase 9 (Graphe Topologique Exact) :** Modélisation des contraintes d'infrastructure dans Rust. Création du graphe de voies (cantons, aiguillages, capacités des gares, signalisation de sécurité) pour empêcher deux trains de se superposer. Chargement de ce graphe énorme via Zero-Copy (FlatBuffers) en RAM.
+- **Phase 9 (Graphe Topologique Exact) :** Scripting du téléchargement automatique des vraies données Open Data (GeoJSON "Schienennetz" de l'OFT et données d'infrastructure CFF) via Elixir. Parsing et fusion de ces couches spatiales pour en déduire les contraintes d'infrastructure réelles (capacités des gares, tunnels, voies uniques). Envoi de ces tronçons vers Rust pour peupler le graphe de voies `petgraph`, garantissant zéro simplification du réseau.
 
 ### Époque 3 : Jumeau Numérique Temporel & Visuel
 - **Phase 10 (Tick Engine Distribué) :** Implémentation d'une "Horloge Monde" en Elixir (`GenServer`). Chaque train devient un processus ou une entité mémoire qui interpole sa position physique selon l'heure simulée.
