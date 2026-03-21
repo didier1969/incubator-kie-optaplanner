@@ -1,1 +1,2 @@
 .pgdata
+hexaplanner/priv/data/raw/*.geojson
