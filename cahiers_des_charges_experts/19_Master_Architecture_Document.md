@@ -1,7 +1,7 @@
 # Master Architecture Document: HexaPlanner
 
 ## 1. Executive Summary & Vision
-HexaPlanner is an advanced, ultra-performant Digital Twin for industrial scheduling (Job Shop) and railway optimization. This document consolidates all functional, technical, and operational requirements. The system relies on a state-of-the-art hybrid architecture that combines the resilience and orchestration capabilities of Elixir/OTP, the raw computational speed of Rust (SIMD), the incremental score evaluation of Java (GraalVM), and the intelligence of Neuro-Symbolic AI.
+HexaPlanner is an advanced, ultra-performant Digital Twin. Its ultimate "North Star" goal is to model, simulate, and optimize the entirety of the Swiss Federal Railways (CFF/SBB) network in real-time, without any simplifications. This document consolidates all functional, technical, and operational requirements. The system relies on a state-of-the-art hybrid architecture that combines the resilience and orchestration capabilities of Elixir/OTP, the raw computational speed of Rust (SIMD, Incremental computation via salsa), and the intelligence of Neuro-Symbolic AI.
 
 ---
 
