@@ -4,6 +4,7 @@
 
 pub mod domain;
 pub mod score;
+pub mod solver;
 
 #[rustler::nif]
 #[allow(clippy::needless_pass_by_value)]
@@ -14,6 +15,12 @@ fn evaluate_problem(problem: domain::Problem) -> i64 {
 #[rustler::nif]
 fn add(a: i64, b: i64) -> i64 {
     a + b
+}
+
+#[rustler::nif]
+#[allow(clippy::needless_pass_by_value)]
+fn optimize_problem(problem: domain::Problem, iterations: i32) -> domain::Problem {
+    solver::optimize(problem, iterations)
 }
 
 rustler::init!("Elixir.HexaPlanner.SolverNif");
