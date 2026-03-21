@@ -9,9 +9,9 @@ defmodule HexaPlanner.Application do
   def start(_type, _args) do
     children = [
       HexaPlanner.Repo,
+      {Oban, Application.fetch_env!(:hexaplanner, Oban)},
       {Horde.Registry, [name: HexaPlanner.HordeRegistry, keys: :unique]},
       {Horde.DynamicSupervisor, [name: HexaPlanner.HordeSupervisor, strategy: :one_for_one]}
-      # Oban will be added to the children here in the DB setup phase.
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
