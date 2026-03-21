@@ -4,8 +4,8 @@ defmodule HexaPlanner.GTFS.Stop do
 
   @primary_key {:stop_id, :string, autogenerate: false}
   schema "gtfs_stops" do
-    field :stop_name, :string
-    field :location, Geo.PostGIS.Geometry
+    field(:stop_name, :string)
+    field(:location, Geo.PostGIS.Geometry)
   end
 
   def changeset(stop, attrs) do

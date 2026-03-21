@@ -1,6 +1,10 @@
 defmodule HexaPlanner.GTFS.Importer do
-  alias HexaPlanner.Repo
+  @moduledoc """
+  Handles the streaming and bulk ingestion of GTFS static files
+  into the PostgreSQL database.
+  """
   alias HexaPlanner.GTFS.Stop
+  alias HexaPlanner.Repo
 
   NimbleCSV.define(GTFSParser, separator: ",", escape: "\"")
 
