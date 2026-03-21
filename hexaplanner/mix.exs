@@ -24,7 +24,8 @@ defmodule HexaPlanner.MixProject do
     [
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
-      test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"]
+      test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
+      "phx.routes": "phx.routes HexaPlannerWeb.Router"
     ]
   end
 
@@ -37,7 +38,12 @@ defmodule HexaPlanner.MixProject do
       {:ecto_sql, "== 3.11.1"},
       {:postgrex, "== 0.17.5"},
       {:credo, "== 1.7.5", only: [:dev, :test], runtime: false},
-      {:dialyxir, "== 1.4.3", only: [:dev, :test], runtime: false}
+      {:dialyxir, "== 1.4.3", only: [:dev, :test], runtime: false},
+      {:phoenix, "== 1.7.11"},
+      {:phoenix_html, "== 4.1.1"},
+      {:phoenix_live_view, "== 0.20.14"},
+      {:jason, "== 1.4.1"},
+      {:bandit, "== 1.4.2"}
       # {:dep_from_hexpm, "~> 0.3.0"},
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
     ]
