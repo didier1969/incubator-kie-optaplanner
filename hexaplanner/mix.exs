@@ -42,6 +42,7 @@ defmodule HexaPlanner.MixProject do
       {:phoenix, "== 1.7.11"},
       {:phoenix_html, "== 4.1.1"},
       {:phoenix_live_view, "== 0.20.14"},
+      {:floki, ">= 0.30.0", only: :test},
       {:jason, "== 1.4.1"},
       {:bandit, "== 1.4.2"}
       # {:dep_from_hexpm, "~> 0.3.0"},

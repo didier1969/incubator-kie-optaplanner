@@ -9,3 +9,8 @@ config :hexaplanner, HexaPlanner.Repo,
   pool_size: 10
 
 config :hexaplanner, Oban, testing: :manual
+
+config :hexaplanner, HexaPlannerWeb.Endpoint,
+  http: [ip: {127, 0, 0, 1}, port: 4002],
+  secret_key_base: "TEST_SECRET_KEY_BASE_HEXAPLANNER_VERY_LONG",
+  server: false
