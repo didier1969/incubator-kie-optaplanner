@@ -2,10 +2,10 @@
 
 **Auteur :** Architecte Principal(e) Elixir & Systèmes Distribués
 **Date :** 21 Mars 2026
-**Cible Technologique :** Elixir 1.18+, OTP 28, Rustler 0.35+
+**Cible Technologique :** Elixir 1.19.5, OTP 28, Rustler 0.35+
 
 ## 1. Vision et Principes Fondamentaux
-En 2026, la plateforme HexaPlanner exploite pleinement les avancées d'Elixir 1.18 et OTP 28, notamment le système de typage graduel fort intégré au compilateur, l'optimisation extrême du JIT pour les messages inter-processus et les capacités natives de tracing distribué. Le système est modélisé comme un essaim d'acteurs indépendants, offrant une résilience absolue ("Let it crash") et une réactivité temps-réel exceptionnelle via Phoenix LiveView.
+En 2026, la plateforme HexaPlanner exploite pleinement les avancées d'Elixir 1.19.5 et OTP 28, notamment le système de typage graduel fort intégré au compilateur, l'optimisation extrême du JIT pour les messages inter-processus et les capacités natives de tracing distribué. Le système est modélisé comme un essaim d'acteurs indépendants, offrant une résilience absolue ("Let it crash") et une réactivité temps-réel exceptionnelle via Phoenix LiveView.
 
 ## 2. Architecture Multi-Processus et Arbre de Supervision (Actor Model)
 
@@ -54,7 +54,7 @@ L'interfaçage avec les moteurs de calcul Rust doit garantir que les calculs mas
 
 ## 5. Clustering, Haute Disponibilité et Mitigation de Charge
 
-Avec Elixir 1.18, le déploiement sur une architecture Cloud-Native distribuée est fluide.
+Avec Elixir 1.19.5, le déploiement sur une architecture Cloud-Native distribuée est fluide.
 
 **Distribution Horizontale (100+ Simulations) :**
 Lors du lancement massif de scénarios :

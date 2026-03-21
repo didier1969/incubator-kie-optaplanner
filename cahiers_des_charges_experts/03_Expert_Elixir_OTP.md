@@ -2,7 +2,7 @@
 
 **À l'attention de :** Architecte Principal(e) Elixir, Erlang/OTP et Systèmes Distribués  
 **Date :** 21 Mars 2026  
-**Référentiel Technologique :** État de l'art Février 2026 (Elixir 1.18+, OTP 28, Actor Model, Event Sourcing)  
+**Référentiel Technologique :** État de l'art Février 2026 (Elixir 1.19.5, OTP 28, Actor Model, Event Sourcing)  
 **Projet :** HexaPlanner - Jumeau Numérique pour Job Shop Scheduling et Optimisation Ferroviaire
 
 ## Contexte et Vision Stratégique

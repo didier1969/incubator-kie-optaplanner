@@ -9,7 +9,7 @@ HexaPlanner is an advanced, ultra-performant Digital Twin for industrial schedul
 
 ### 2.1. Control Plane & Orchestration (Elixir / Erlang OTP)
 The control plane is the central nervous system handling orchestration, resilience, and user interaction.
-*   **Actor Model & Fault Isolation:** Built on Elixir 1.18+ and OTP 28. Every scenario runs in an isolated `GenServer` actor. If a Rust native solver crashes, only the Elixir proxy actor dies ("Let it crash"), keeping the global system intact [Source: 03_Response_Elixir_OTP.md].
+*   **Actor Model & Fault Isolation:** Built on Elixir 1.19.5 and OTP 28. Every scenario runs in an isolated `GenServer` actor. If a Rust native solver crashes, only the Elixir proxy actor dies ("Let it crash"), keeping the global system intact [Source: 03_Response_Elixir_OTP.md].
 *   **Event Sourcing & Lazy Forking:** Planning states are reconstructed via an immutable event log. "What-If" scenarios utilize lazy state cloning in memory, allowing massive, non-destructive scenario forking [Source: 03_Response_Elixir_OTP.md].
 *   **Distributed Clustering:** Uses native Erlang distribution, with Broadway/GenStage for demand-driven backpressure and circuit breakers to dynamically route to available computing nodes [Source: 03_Response_Elixir_OTP.md].
 

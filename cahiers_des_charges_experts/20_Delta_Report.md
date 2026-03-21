@@ -23,7 +23,7 @@ The following legacy components are dead-ends, incompatible with the new hybrid 
 To achieve the HexaPlanner vision, the following subsystems must be built from the ground up:
 
 *   **Hybrid Search Engine (Rust SIMD & CP-SAT)**: A high-performance brain written in Rust (2024 edition) utilizing Data-Oriented Design (SoA, Arena allocation). It will implement Adaptive Large Neighborhood Search (ALNS) accelerated by explicit SIMD (AVX-512) and use C++ FFI (`cxx`) to interact with Google OR-Tools (CP-SAT) for exact sub-problem recreation.
-*   **Control Plane and Orchestration (Elixir/OTP)**: A distributed orchestration layer built on Elixir 1.18. It will use the Actor Model (`GenServer`) to handle multi-tenant simulation sessions, state forking ("What-If" scenarios), and fault isolation ("Let it crash" philosophy). Phoenix LiveView will serve real-time updates.
+*   **Control Plane and Orchestration (Elixir/OTP)**: A distributed orchestration layer built on Elixir 1.19.5. It will use the Actor Model (`GenServer`) to handle multi-tenant simulation sessions, state forking ("What-If" scenarios), and fault isolation ("Let it crash" philosophy). Phoenix LiveView will serve real-time updates.
 *   **Zero-Copy FFI Interoperability Bridges**:
     *   **Java-Rust (Project Panama)**: A shared off-heap memory bridge allowing the Rust solver to mutate state and the Java Bavet engine to compute scores via `java.lang.foreign` and GraalVM `@CEntryPoint`, avoiding serialization overhead.
     *   **Elixir-Rust (Rustler NIFs)**: Integration of Rust compute bounds into the BEAM VM via Dirty NIFs and Erlang Ports/C-Nodes to ensure heavy solving never starves the Elixir schedulers.
