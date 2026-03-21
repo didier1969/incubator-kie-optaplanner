@@ -1,0 +1,16 @@
+[package]
+name = "hexa_solver"
+version = "0.1.0"
+authors = []
+edition = "2021"
+
+[lib]
+name = "hexa_solver"
+path = "src/lib.rs"
+crate-type = ["cdylib"]
+
+[dependencies]
+rustler = "=0.35.0"
+rayon = "=1.11.0"
+localsearch = "=0.24.0" # State-of-the-art for parallel Tabu Search & Simulated Annealing
+metaheuristics-nature = "=0.16.0" # For Genetic Algorithms & Swarm
