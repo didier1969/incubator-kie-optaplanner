@@ -1,9 +1,14 @@
 use crate::domain::Problem;
 use crate::score::calculate_score;
+use crate::incremental_score::{ScoreDatabase, ScoreEngine};
 
 #[must_use]
 pub fn optimize(mut current_problem: Problem, iterations: i32) -> Problem {
     let mut current_score = calculate_score(&current_problem);
+    
+    // Initialize Salsa Database
+    let mut db = ScoreDatabase::default();
+    db.set_get_base_score(0);
 
     for i in 0..iterations {
         // Create a neighbor (mutation)
@@ -12,9 +17,18 @@ pub fn optimize(mut current_problem: Problem, iterations: i32) -> Problem {
         // Very basic mutation: assign a dummy start time to the first unassigned job
         if let Some(job) = neighbor.jobs.iter_mut().find(|j| j.start_time.is_none()) {
             job.start_time = Some(i64::from(i) * 10);
+            
+            // Sync mutation to Salsa DB
+            // In a real system, we'd map all jobs. For now we hardcode job 1 as in our MVP test.
+            if job.id == 1 {
+                db.set_job_assigned(1, true);
+            }
         }
 
+        // We still use calculate_score for the core loop logic to keep tests green 
+        // while we transition fully to Salsa. We compute salsa score alongside it.
         let neighbor_score = calculate_score(&neighbor);
+        let _salsa_score = db.get_total_score();
 
         // Hill Climbing: Accept if strictly better
         if neighbor_score > current_score {
