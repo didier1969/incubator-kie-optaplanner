@@ -22,7 +22,7 @@ The central optimization engine is responsible for high-performance sequence gen
 ### 2.3. Incremental Score Evaluation (Java / GraalVM)
 Handles the complex, historical OptaPlanner business logic optimally.
 *   **Decapitated Core:** The engine only retains the Bavet Constraint Streams incremental calculator; local search and orchestration have been purged [Source: 01_Response_Java_GraalVM.md].
-*   **Zero-Copy Interoperability:** Employs Project Panama (Java 25). The Rust solver allocates a shared contiguous memory segment mapped to Java. Java accesses this segment via FFI directly, completely eliminating serialization overhead [Source: 01_Response_Java_GraalVM.md].
+*   **Zero-Copy Interoperability:** Employs Project Panama (Rust 2024). The Rust solver allocates a shared contiguous memory segment mapped to Java. Java accesses this segment via FFI directly, completely eliminating serialization overhead [Source: 01_Response_Java_GraalVM.md].
 *   **GraalVM AOT Compilation:** The Java core is compiled to a native shared library (`.so`) using GraalVM Native Image for sub-10ms startups and minimal RAM consumption [Source: 01_Response_Java_GraalVM.md].
 
 ### 2.4. Neuro-Symbolic AI (GPU Acceleration)
