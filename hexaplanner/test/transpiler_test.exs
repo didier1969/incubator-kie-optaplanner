@@ -14,7 +14,7 @@ defmodule HexaPlanner.TranspilerTest do
     }
 
     rust_code = RustGenerator.generate([rule])
-    
+
     assert rust_code =~ "pub fn calculate_generated_score"
     assert rust_code =~ "for job in &problem.jobs {"
     assert rust_code =~ "if job.start_time.is_none() {"

@@ -14,7 +14,7 @@ defmodule HexaPlanner.DSLTest do
     rules = MyRules.__rules__()
     assert length(rules) == 1
     rule = hd(rules)
-    
+
     assert rule.name == "unassigned_job"
     assert rule.entity == :job
     assert rule.field == :start_time

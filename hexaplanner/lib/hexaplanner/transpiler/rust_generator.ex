@@ -23,7 +23,12 @@ defmodule HexaPlanner.Transpiler.RustGenerator do
     """
   end
 
-  defp generate_rule(%Rule{entity: :job, field: :start_time, condition: :is_nil, penalty_score: score}) do
+  defp generate_rule(%Rule{
+         entity: :job,
+         field: :start_time,
+         condition: :is_nil,
+         penalty_score: score
+       }) do
     """
         for job in &problem.jobs {
             if job.start_time.is_none() {
@@ -32,7 +37,7 @@ defmodule HexaPlanner.Transpiler.RustGenerator do
         }
     """
   end
-  
+
   # Fallback for unsupported rules in MVP
   defp generate_rule(_), do: ""
 end

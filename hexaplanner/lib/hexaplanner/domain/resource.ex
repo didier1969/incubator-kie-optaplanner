@@ -12,8 +12,8 @@ defmodule HexaPlanner.Domain.Resource do
 
   @primary_key {:id, :id, autogenerate: true}
   schema "resources" do
-    field :name, :string
-    field :capacity, :integer, default: 1
+    field(:name, :string)
+    field(:capacity, :integer, default: 1)
     # future: location/topology links
     timestamps()
   end

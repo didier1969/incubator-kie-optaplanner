@@ -3,8 +3,8 @@ defmodule HexaPlanner.Domain.Problem do
   defstruct [:id, resources: [], jobs: []]
 
   @type t :: %__MODULE__{
-    id: String.t() | nil,
-    resources: list(HexaPlanner.Domain.Resource.t()),
-    jobs: list(HexaPlanner.Domain.Job.t())
-  }
+          id: String.t() | nil,
+          resources: list(HexaPlanner.Domain.Resource.t()),
+          jobs: list(HexaPlanner.Domain.Job.t())
+        }
 end

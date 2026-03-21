@@ -12,6 +12,7 @@ defmodule HexaPlanner.DSL do
 
   defmacro __before_compile__(env) do
     rules = Module.get_attribute(env.module, :rules) |> Enum.reverse()
+
     quote do
       def __rules__, do: unquote(Macro.escape(rules))
     end

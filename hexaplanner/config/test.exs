@@ -1,4 +1,5 @@
 import Config
+
 config :hexaplanner, HexaPlanner.Repo,
   username: "postgres",
   password: "postgres_password",

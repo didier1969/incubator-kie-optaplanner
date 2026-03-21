@@ -13,10 +13,12 @@ defmodule HexaPlanner.Domain.Job do
 
   @primary_key {:id, :id, autogenerate: true}
   schema "jobs" do
-    field :duration, :integer # in minutes/ticks
-    field :required_resources, {:array, :integer} # IDs of needed resources
+    # in minutes/ticks
+    field(:duration, :integer)
+    # IDs of needed resources
+    field(:required_resources, {:array, :integer})
     # Planning Variables (to be filled by Rust)
-    field :start_time, :integer
+    field(:start_time, :integer)
     timestamps()
   end
 end
