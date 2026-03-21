@@ -37,7 +37,7 @@ defmodule HexaPlanner.MixProject do
       {:horde, "== 0.9.0"},
       {:ecto_sql, "== 3.11.1"},
       {:postgrex, "== 0.17.5"},
-      {:credo, "== 1.7.5", only: [:dev, :test], runtime: false},
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "== 1.4.3", only: [:dev, :test], runtime: false},
       {:phoenix, "== 1.7.11"},
       {:phoenix_html, "== 4.1.1"},

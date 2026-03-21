@@ -14,8 +14,8 @@
       {
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
-            erlang_26
-            elixir_1_16
+            erlang_27
+            elixir_1_19
             cargo
             rustc
             rustfmt
