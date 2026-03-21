@@ -16,4 +16,22 @@ defmodule HexaPlanner.SolverIntegrationTest do
     # Should be -100 because 1 job is unassigned
     assert SolverNif.evaluate_problem(problem) == -100
   end
+
+  test "rust nif optimizes the problem and returns mutated state" do
+    problem = %Problem{
+      id: "sim_2",
+      resources: [],
+      jobs: [
+        %Job{id: 1, duration: 10, required_resources: [], start_time: nil}
+      ]
+    }
+
+    assert SolverNif.evaluate_problem(problem) == -100
+
+    optimized_problem = SolverNif.optimize_problem(problem, 10)
+
+    assert SolverNif.evaluate_problem(optimized_problem) == 0
+    # Ensure the Rust engine actually mutated the struct and sent it back
+    assert hd(optimized_problem.jobs).start_time != nil
+  end
 end
