@@ -16,10 +16,10 @@ fn get_total_score(db: &dyn ScoreEngine) -> i32 {
 }
 
 fn unassigned_penalty(db: &dyn ScoreEngine, job_id: u32) -> i32 {
-    if !db.job_assigned(job_id) {
-        -100
-    } else {
+    if db.job_assigned(job_id) {
         0
+    } else {
+        -100
     }
 }
 
