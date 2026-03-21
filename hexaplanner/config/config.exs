@@ -1,6 +1,8 @@
 import Config
 config :hexaplanner, ecto_repos: [HexaPlanner.Repo]
 
+config :hexaplanner, HexaPlanner.Repo, types: HexaPlanner.PostgresTypes
+
 config :hexaplanner, Oban,
   name: Oban,
   repo: HexaPlanner.Repo,

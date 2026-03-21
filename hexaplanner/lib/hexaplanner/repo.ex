@@ -1,3 +1,5 @@
+Postgrex.Types.define(HexaPlanner.PostgresTypes, [Geo.PostGIS.Extension] ++ Ecto.Adapters.Postgres.extensions(), [])
+
 defmodule HexaPlanner.Repo do
   @moduledoc "Main Ecto Repo for HexaPlanner"
   use Ecto.Repo,
