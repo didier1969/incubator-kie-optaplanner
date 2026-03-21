@@ -10,15 +10,15 @@ Dans le cadre de HexaPlanner, la fiabilité mathématique, la performance d'exé
 
 **La règle d'or :** Aucun code ne rejoint la branche principale (`main`) s'il contrevient à ces principes, s'il déclenche le moindre avertissement lors de l'analyse statique, ou s'il introduit une régression dans la couverture de tests.
 
-Nous appliquons les principes de la **Clean Architecture**. L'infrastructure dépend du domaine (moteur de calcul), et non l'inverse. Les frontières entre Rust, Java et Elixir doivent être explicites et interagir via des contrats stricts.
+Nous appliquons les principes de la **Clean Architecture**. L'infrastructure dépend du domaine (moteur de calcul), et non l'inverse. Les frontières entre Rust,  et Elixir doivent être explicites et interagir via des contrats stricts.
 
 ---
 
 ## 2. Standards Spécifiques par Langage
 
-### 2.1. Java 25 (Orchestration & Domaine Historique)
+### 2.1.  25 (Orchestration & Domaine Historique)
 
-Le code Java doit être idiomatique, moderne et robuste. Les pratiques héritées des vieilles versions d'OptaPlanner sont interdites.
+Le code  doit être idiomatique, moderne et robuste. Les pratiques héritées des vieilles versions d'OptaPlanner sont interdites.
 
 *   **Immutabilité par Défaut :** Toutes les classes représentant des données, des configurations ou des messages doivent être des `record`. L'usage des POJOs mutables avec des setters est **strictement interdit** dans les nouveaux développements.
 *   **Variables Locales :** Utilisez `var` lorsque le type est évident. Toute variable locale doit être implicitement finale (ne réassignez jamais une variable locale).
@@ -33,7 +33,7 @@ Le code Java doit être idiomatique, moderne et robuste. Les pratiques héritée
 Rust est notre garantie de performance (SIMD) et de sécurité mémoire. 
 
 *   **Gestion des Erreurs (Result/Option) :** `panic!`, `unwrap()` et `expect()` sont **formellement interdits** dans le code métier (tolérés uniquement dans les tests s'ils sont justifiés). Utilisez systématiquement `Result<T, E>` ou `Option<T>` et propagez les erreurs via l'opérateur `?`. Créez des types d'erreurs spécifiques au domaine (utilisez `thiserror`).
-*   **Sécurité et `unsafe` :** L'usage de blocs `unsafe` est **strictement proscrit** de la logique métier. La seule exception concerne les ponts FFI isolés (avec Java/Elixir). Ces blocs doivent être encapsulés dans des modules spécifiques, commentés avec précision sur les invariants garantis, et exposer une interface 100% *Safe Rust*.
+*   **Sécurité et `unsafe` :** L'usage de blocs `unsafe` est **strictement proscrit** de la logique métier. La seule exception concerne les ponts FFI isolés (avec /Elixir). Ces blocs doivent être encapsulés dans des modules spécifiques, commentés avec précision sur les invariants garantis, et exposer une interface 100% *Safe Rust*.
 *   **Gestion de la Mémoire (Sans GC) :** Privilégiez l'allocation sur la pile. Évitez le clonage défensif (`.clone()`) ; utilisez le système de *borrowing* (`&T` et `&mut T`) avec des lifetimes explicites. L'usage de `Rc` ou `Arc` doit être justifié par un besoin légitime de *shared ownership*.
 *   **Concurrence :** Priorisez le passage de messages (channels) via `tokio` ou `crossbeam` plutôt que le partage de mémoire mutable (Mutex/RwLock).
 
@@ -58,7 +58,7 @@ La Continuous Integration (CI) est le gardien impartial du projet. Aucune Pull R
 *   **Elixir (Credo, Dialyzer & mix format) :**
     *   Exécution : `mix format --check-formatted`, `mix credo --strict`, et `mix dialyzer`.
     *   Règle : `mix format` est obligatoire. Credo en mode strict ne doit remonter aucun avertissement de style ou de refactoring. Dialyzer doit valider tous les *typespecs* (`@spec` et `@type`) sans exception ; ceux-ci sont d'ailleurs obligatoires pour toute fonction ou module public.
-*   **Java (SonarQube, ErrorProne & Spotless) :**
+*   ** (SonarQube, ErrorProne & Spotless) :**
     *   Exécution : Maven avec le plugin Spotless pour le formatage, ErrorProne branché sur le compilateur, et analyse SonarQube avec le profil "HexaPlanner Strict".
     *   Règle : Le pipeline échoue au moindre *warning* de compilation (ErrorProne). La Quality Gate SonarQube bloque la PR au premier *Code Smell*, Bug, ou Vulnérabilité.
 
@@ -69,8 +69,8 @@ La Continuous Integration (CI) est le gardien impartial du projet. Aucune Pull R
 Le processus de revue de code (Pull Request) vise à garantir l'alignement architectural, l'idiomatisme et la clarté. La performance ne doit pas primer sur la lisibilité, sauf preuve chiffrée.
 
 ### Critères d'Acceptation (Definition of Done) des PRs :
-1.  **Lisibilité et Idiomatisme :** Le code est expressif et respecte les conventions du langage cible. Pas de code Java écrit avec des paradigmes C, pas de code Rust écrit comme du Java orienté objet. Le code se lit comme une documentation exécutable.
+1.  **Lisibilité et Idiomatisme :** Le code est expressif et respecte les conventions du langage cible. Pas de code  écrit avec des paradigmes C, pas de code Rust écrit comme du  orienté objet. Le code se lit comme une documentation exécutable.
 2.  **Couplage Faible (Clean Architecture) :** Les changements respectent les frontières architecturales. Le domaine ne dépend pas de l'infrastructure. Aucune dépendance cyclique n'est introduite.
 3.  **Tests & Couverture :** La PR inclut des tests unitaires (et d'intégration si nécessaire). La couverture de code de la portion ajoutée/modifiée doit être supérieure à 90%. Les tests doivent prouver le comportement, pas tester l'implémentation interne.
-4.  **Micro-Optimisations Justifiées :** Toute optimisation rendant le code moins lisible (ex: contournement du *borrow checker* en Rust, *loop unrolling* manuel en Java) doit être justifiée par des benchmarks chiffrés joints à la PR (Criterion pour Rust, JMH pour Java).
-5.  **Documentation & ADR :** Tout changement architectural structurant doit être acté par un *Architecture Decision Record* (ADR). Les modules publics et les frontières FFI doivent être rigoureusement documentés (Javadoc, `///`, `@moduledoc`).
+4.  **Micro-Optimisations Justifiées :** Toute optimisation rendant le code moins lisible (ex: contournement du *borrow checker* en Rust, *loop unrolling* manuel en ) doit être justifiée par des benchmarks chiffrés joints à la PR (Criterion pour Rust, JMH pour ).
+5.  **Documentation & ADR :** Tout changement architectural structurant doit être acté par un *Architecture Decision Record* (ADR). Les modules publics et les frontières FFI doivent être rigoureusement documentés (doc, `///`, `@moduledoc`).

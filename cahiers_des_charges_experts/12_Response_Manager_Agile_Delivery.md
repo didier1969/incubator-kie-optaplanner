@@ -4,7 +4,7 @@
 **Date :** 21 Mars 2026
 **Projet :** HexaPlanner - Jumeau Numérique Industriel
 
-Ce manuel opératoire définit le framework de livraison à l'échelle pour le projet HexaPlanner. Il adresse spécifiquement la complexité liée à la diversité des cycles d'ingénierie (IA, Rust, Java, Elixir) en s'appuyant sur des principes pragmatiques de flux de valeur, de gestion des dépendances par contrats, et de pilotage par la donnée.
+Ce manuel opératoire définit le framework de livraison à l'échelle pour le projet HexaPlanner. Il adresse spécifiquement la complexité liée à la diversité des cycles d'ingénierie (IA, Rust, , Elixir) en s'appuyant sur des principes pragmatiques de flux de valeur, de gestion des dépendances par contrats, et de pilotage par la donnée.
 
 ---
 
@@ -16,7 +16,7 @@ Faire cohabiter la recherche IA (cycles longs, forte incertitude) et le dévelop
 Nous appliquons un modèle où les flux de découverte/recherche et de livraison/intégration sont désynchronisés mais alignés sur des objectifs communs (PI Planning ou OKRs trimestriels).
 
 *   **Track IA/Recherche (Spikes & Modèles) :** Fonctionne en Kanban ou en sprints à durée variable. L'objectif n'est pas de livrer une feature "Done" toutes les deux semaines, mais de valider des hypothèses, d'entraîner des modèles et de fournir des artefacts versionnés (modèles RL, heuristiques).
-*   **Track Ingénierie/Produit (Rust, Java, Elixir) :** Fonctionne en Scrum ou Kanban avec une cadence stricte (ex: sprints de 2 semaines) axée sur l'intégration continue et la livraison de valeur métier aux utilisateurs.
+*   **Track Ingénierie/Produit (Rust, , Elixir) :** Fonctionne en Scrum ou Kanban avec une cadence stricte (ex: sprints de 2 semaines) axée sur l'intégration continue et la livraison de valeur métier aux utilisateurs.
 
 ### 1.2. Mécanisme de découplage : L'approche "Shadowing" et Versioning
 *   L'équipe Produit n'attend jamais l'équipe IA. Elle intègre systématiquement la **dernière version stable et packagée** d'un modèle IA.
@@ -25,29 +25,29 @@ Nous appliquons un modèle où les flux de découverte/recherche et de livraison
 
 ### 1.3. Rituel d'alignement inter-domaines : Le "Sync & Demo"
 *   **Cadence :** Hebdomadaire (max 45 min).
-*   **Participants :** Tech Leads (IA, Rust, Java, Elixir), Product Manager, Delivery Manager.
+*   **Participants :** Tech Leads (IA, Rust, , Elixir), Product Manager, Delivery Manager.
 *   **Objectif :** Non pas faire un daily de l'avancement détaillé, mais démontrer la valeur (même partielle), partager les découvertes IA de la semaine, et ajuster les priorités d'intégration de la semaine suivante.
 
 ---
 
 ## 2. Gestion des Dépendances Inter-équipes (Contract-Driven Development)
 
-La chaîne de dépendance stricte (Elixir -> Rust -> Java) est le pire ennemi de l'agilité. Elle crée des goulots d'étranglement ("bottlenecks"). La stratégie repose sur l'**API-First** et le **Contract-Driven Development (CDD)**.
+La chaîne de dépendance stricte (Elixir -> Rust -> ) est le pire ennemi de l'agilité. Elle crée des goulots d'étranglement ("bottlenecks"). La stratégie repose sur l'**API-First** et le **Contract-Driven Development (CDD)**.
 
 ### 2.1. Définition et gel des contrats (Interfaces)
 Avant même d'écrire la moindre ligne de code métier ou d'algorithme, les équipes doivent se mettre d'accord sur les contrats d'interface.
 *   **Interface Elixir <-> Rust :** Définie via des schémas stricts (ex: Protobuf, GraphQL ou OpenAPI si HTTP, FFI/NIF si intégré).
-*   **Interface Rust <-> Java (Score) :** Contrat défini via des schémas d'échange de données (mémoire partagée, JNI/FFI, ou IPC via gRPC/Arrow).
+*   **Interface Rust <->  (Score) :** Contrat défini via des schémas d'échange de données (mémoire partagée, /FFI, ou IPC via gRPC/Arrow).
 
 ### 2.2. Bouchonnage systématique (Stubs & Mocks intelligibles)
 Dès que le contrat est validé, chaque équipe reçoit (ou génère) un **Stub** (bouchon) de la dépendance.
 *   **Pour l'équipe Elixir :** Un service Mock du moteur Rust qui renvoie des réponses statiques ou générées aléatoirement (mais valides selon le contrat) en quelques millisecondes. Cela permet de développer toute l'UI et les tests end-to-end sans le vrai moteur.
-*   **Pour l'équipe Rust :** Un Mock du moteur de calcul de score Java, capable de renvoyer des scores déterministes basés sur des inputs prédéfinis, permettant à Rust de valider son arbre de recherche indépendamment.
+*   **Pour l'équipe Rust :** Un Mock du moteur de calcul de score , capable de renvoyer des scores déterministes basés sur des inputs prédéfinis, permettant à Rust de valider son arbre de recherche indépendamment.
 
 ### 2.3. Consumer-Driven Contracts (CDC)
 Pour garantir que les contrats évoluent de manière sécurisée sans casser la chaîne :
-*   Les équipes consommatrices (Elixir, Rust) écrivent des tests d'intégration automatisés définissant leurs attentes vis-à-vis des fournisseurs (Rust, Java).
-*   Ces tests (ex: via *Pact*) sont exécutés dans la CI/CD des équipes fournisseuses. Si l'équipe Java modifie son moteur de score et casse le test fourni par l'équipe Rust, le build Java échoue immédiatement (Shift-Left testing).
+*   Les équipes consommatrices (Elixir, Rust) écrivent des tests d'intégration automatisés définissant leurs attentes vis-à-vis des fournisseurs (Rust, ).
+*   Ces tests (ex: via *Pact*) sont exécutés dans la CI/CD des équipes fournisseuses. Si l'équipe  modifie son moteur de score et casse le test fourni par l'équipe Rust, le build  échoue immédiatement (Shift-Left testing).
 
 ---
 
@@ -58,7 +58,7 @@ Pour éviter que le projet ne s'enlise dans la "tour d'ivoire" technique (sur-op
 ### 3.1. DORA Metrics (L'excellence opérationnelle)
 Ces métriques standards de l'industrie mesurent la capacité de l'ingénierie à livrer vite et de manière fiable :
 1.  **Deployment Frequency (Fréquence de déploiement) :** Combien de fois le code est-il déployé en production (ou dans un environnement de staging intégré) ? *Cible : Plusieurs fois par jour/semaine.* Cela force des petits lots de travail (Small Batches) transversaux.
-2.  **Lead Time for Changes (Délai de mise en œuvre) :** Temps entre le commit d'une ligne de code (Rust, Java, Elixir) et son déploiement effectif. *Cible : < 24 heures.* Cela mesure l'efficacité de la CI/CD et des tests automatisés.
+2.  **Lead Time for Changes (Délai de mise en œuvre) :** Temps entre le commit d'une ligne de code (Rust, , Elixir) et son déploiement effectif. *Cible : < 24 heures.* Cela mesure l'efficacité de la CI/CD et des tests automatisés.
 3.  **Time to Restore Service (Temps moyen de restauration) :** Temps nécessaire pour corriger une anomalie en production.
 4.  **Change Failure Rate (Taux d'échec des changements) :** Pourcentage de déploiements provoquant une régression (bugs, plantages).
 

@@ -6,7 +6,7 @@
 **Objectif :** Définir la gouvernance, la stratégie de découpage et la gestion des risques pour ce chantier massif de transformation technologique.
 
 ## Contexte
-Nous lançons le développement de HexaPlanner, un produit hybride (Java/Rust/Elixir) visant l'état de l'art mondial en optimisation, en nous basant sur le cœur "abandonné" d'OptaPlanner. Ce projet est complexe : il implique de l'IA (RL), du système distribué, des FFI complexes et des refontes profondes, tout en devant s'interfacer avec les SI legacy de nos futurs clients industriels.
+Nous lançons le développement de HexaPlanner, un produit hybride (/Rust/Elixir) visant l'état de l'art mondial en optimisation, en nous basant sur le cœur "abandonné" d'OptaPlanner. Ce projet est complexe : il implique de l'IA (RL), du système distribué, des FFI complexes et des refontes profondes, tout en devant s'interfacer avec les SI legacy de nos futurs clients industriels.
 
 ## Ce que nous attendons de votre Guideline
 
@@ -14,7 +14,7 @@ Veuillez spécifier la méthodologie et les prérequis de gouvernance :
 
 1. **Gouvernance et Stratégie de Phasing :**
    - Comment structurer un projet de cette envergure pour éviter l'effet "Tunnel" (Tunnel Effect) de 2 ans ?
-   - Définition d'un MVP (Minimum Viable Product) industriel réaliste pour valider la séparation des plans (Rust/Java/Elixir) avant d'implémenter toutes les features métier.
+   - Définition d'un MVP (Minimum Viable Product) industriel réaliste pour valider la séparation des plans (Rust//Elixir) avant d'implémenter toutes les features métier.
 
 2. **Gestion des Risques d'Ingénierie (Risk Management) :**
    - L'intégration de solveurs C++ avec du Rust et l'exécution dans une VM Erlang présente des risques majeurs de crash en chaîne et de fuites mémoire. 

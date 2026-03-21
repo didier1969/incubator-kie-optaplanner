@@ -16,7 +16,7 @@ Veuillez définir la stratégie de livraison continue :
    - Comment faire travailler ensemble en sprint une équipe de chercheurs (qui entraîne des modèles RL sur GPU) et une équipe produit (qui intègre ces modèles dans un dashboard web) sans que l'un bloque l'autre ?
 
 2. **Gestion des Dépendances Inter-équipes :**
-   - L'équipe Rust aura besoin du moteur de Score Java pour tester son arbre de recherche. L'équipe Elixir aura besoin du Rust. 
+   - L'équipe Rust aura besoin du moteur de Score  pour tester son arbre de recherche. L'équipe Elixir aura besoin du Rust. 
    - Comment organiser la mise à disposition de "Bouchons" (Stubs/Mocks) ou d'interfaces contractuelles (API-First / Contract-Driven Development) ?
 
 3. **Indicateurs de Vélocité (DORA Metrics) :**

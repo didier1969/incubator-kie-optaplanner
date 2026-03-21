@@ -15,7 +15,7 @@ En 2026, coder manuellement chaque ligne est un anti-pattern de productivité. N
    - Définition de l'équilibre entre la génération de code par IA et la responsabilité de l'ingénieur (Zero-Trust AI Code).
 
 2. **Pipelines de Refactoring et de Migration :**
-   - Stratégie d'utilisation d'agents autonomes pour nettoyer automatiquement la dette technique d'OptaPlanner (les TODOs/FIXMEs) et traduire certains modules Java en Rust.
+   - Stratégie d'utilisation d'agents autonomes pour nettoyer automatiquement la dette technique d'OptaPlanner (les TODOs/FIXMEs) et traduire certains modules  en Rust.
 
 3. **Génération Automatique de Tests et de Documentation :**
    - Comment utiliser les LLMs pour générer exhaustivement les tests de cas limites (edge cases) et maintenir la documentation technique (Doc-as-Code) à jour lors de chaque Pull Request.

@@ -1,7 +1,7 @@
 # HexaPlanner: Market Research & Open-Source Alternatives (Buy vs. Build)
 
 ## Executive Summary
-This document provides an evaluation of state-of-the-art open-source components, libraries, and frameworks that could replace or complement parts of the current OptaPlanner implementation for our new HexaPlanner hybrid architecture (Rust/Java/Elixir). The research covers four strategic areas: Rust ALNS frameworks, CP/SAT solvers, WASM sandboxing engines, and Graph Neural Network (GNN) libraries.
+This document provides an evaluation of state-of-the-art open-source components, libraries, and frameworks that could replace or complement parts of the current OptaPlanner implementation for our new HexaPlanner hybrid architecture (Rust//Elixir). The research covers four strategic areas: Rust ALNS frameworks, CP/SAT solvers, WASM sandboxing engines, and Graph Neural Network (GNN) libraries.
 
 ## 1. Rust ALNS (Adaptive Large Neighborhood Search) Frameworks
 
@@ -19,17 +19,17 @@ ALNS is a powerful metaheuristic framework for Vehicle Routing (VRP) and Schedul
 ## 2. CP/SAT Solvers (Google OR-Tools, Choco, Rust-Native)
 
 **State of the Art:**
-The choice of solver depends heavily on the integration ecosystem (Rust vs. Java) and the problem type (Scheduling vs. VRP).
+The choice of solver depends heavily on the integration ecosystem (Rust vs. ) and the problem type (Scheduling vs. VRP).
 
 **Key Libraries/Projects:**
 *   **Google OR-Tools (CP-SAT):** The industry standard for large-scale optimization and scheduling. Written in C++, it consistently wins the MiniZinc Challenge. Rust integration is possible via the community `cp_sat` crate (FFI wrapper). It also includes a specialized Routing Library for VRP using Local Search.
-*   **Choco Solver (Java):** A mature Constraint Programming library. It is highly extensible, making it excellent for writing custom constraints. However, it trails CP-SAT in raw solving speed for standard benchmarks. Fits well into our Java legacy/ecosystem.
+*   **Choco Solver ():** A mature Constraint Programming library. It is highly extensible, making it excellent for writing custom constraints. However, it trails CP-SAT in raw solving speed for standard benchmarks. Fits well into our  legacy/ecosystem.
 *   **Rust-Native Solvers:**
     *   **SolverForge:** A modern framework designed for planning and scheduling focusing on metaheuristics. It uses a "zero-erasure" architecture for CPU cache efficiency.
     *   **Pumpkin:** A state-of-the-art Lazy Clause Generation solver written in pure Rust, supporting global constraints like `Cumulative` and `Disjunctive`.
 
 **Buy vs. Build Analysis:**
-*   **Buy (Integrate):** For pure performance in scheduling, wrapping **Google OR-Tools CP-SAT** via FFI in Rust is the most pragmatic approach. For deep integration within the existing Java ecosystem where custom heuristics are needed, **Choco** is a strong candidate. For a pure Rust CP approach without C++ dependencies, integrating **Pumpkin** or **SolverForge** is viable. We should "Buy" (integrate) these engines rather than building a CP-SAT solver from scratch, which requires years of specialized academic effort.
+*   **Buy (Integrate):** For pure performance in scheduling, wrapping **Google OR-Tools CP-SAT** via FFI in Rust is the most pragmatic approach. For deep integration within the existing  ecosystem where custom heuristics are needed, **Choco** is a strong candidate. For a pure Rust CP approach without C++ dependencies, integrating **Pumpkin** or **SolverForge** is viable. We should "Buy" (integrate) these engines rather than building a CP-SAT solver from scratch, which requires years of specialized academic effort.
 
 ## 3. WASM Sandboxing Engines: Extism vs. Wasmtime
 
@@ -38,10 +38,10 @@ WebAssembly (WASM) provides a secure, portable execution environment, ideal for 
 
 **Key Libraries/Projects:**
 *   **Wasmtime:** A low-level, high-performance standalone runtime by the Bytecode Alliance (written in Rust). It offers near-native performance using the Cranelift JIT compiler and strong WASI-based sandboxing. Passing complex data types requires manual memory management.
-*   **Extism:** A high-level framework that simplifies building plugin systems. It wraps low-level engines (often Wasmtime on the server) and handles complex data types (Strings, JSON, Protobuf) via a shared virtual memory space ("Kernel"). Supported in over 15 languages including Rust, Java, and Elixir.
+*   **Extism:** A high-level framework that simplifies building plugin systems. It wraps low-level engines (often Wasmtime on the server) and handles complex data types (Strings, JSON, Protobuf) via a shared virtual memory space ("Kernel"). Supported in over 15 languages including Rust, , and Elixir.
 
 **Buy vs. Build Analysis:**
-*   **Buy (Integrate):** We should definitely leverage existing engines. **Extism** is the clear winner for our hybrid architecture. Its multi-language support (Rust, Java, Elixir) and abstraction over WASM linear memory will drastically reduce the engineering effort needed to implement a universal plugin system for custom constraints or score calculation modules.
+*   **Buy (Integrate):** We should definitely leverage existing engines. **Extism** is the clear winner for our hybrid architecture. Its multi-language support (Rust, , Elixir) and abstraction over WASM linear memory will drastically reduce the engineering effort needed to implement a universal plugin system for custom constraints or score calculation modules.
 
 ## 4. Graph Neural Network (GNN) Libraries for Routing/Scheduling
 
@@ -62,5 +62,5 @@ GNNs are increasingly used for "Neural Combinatorial Optimization," augmenting o
 For the HexaPlanner hybrid architecture:
 1.  **ALNS:** **Build** a custom, highly parallel ALNS framework in Rust using `rayon` and core algorithmic crates.
 2.  **CP/SAT:** **Integrate** Google OR-Tools (via FFI) for raw performance, or explore pure Rust solvers like Pumpkin for a C++-free stack.
-3.  **WASM Plugins:** **Integrate** Extism to enable seamless, cross-language (Rust/Java/Elixir) execution of custom scoring rules and constraints.
+3.  **WASM Plugins:** **Integrate** Extism to enable seamless, cross-language (Rust//Elixir) execution of custom scoring rules and constraints.
 4.  **AI/GNN:** **Integrate** PyG / RL4CO models to serve as advanced dispatchers or learned heuristics.

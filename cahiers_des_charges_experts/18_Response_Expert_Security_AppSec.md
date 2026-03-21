@@ -17,13 +17,13 @@ Ce document dicte les barrières de sécurité obligatoires (guardrails) couvran
 
 ## 2. Modèle de Menace (Threat Model) : Architecture Hybride
 
-Notre architecture combine Elixir (Orchestration), Java (Moteur de base), Rust (Calcul intensif via C-FFI), et WASM (Exécution de plugins clients).
+Notre architecture combine Elixir (Orchestration),  (Moteur de base), Rust (Calcul intensif via C-FFI), et WASM (Exécution de plugins clients).
 
 | Composant | Vecteurs d'Attaque Principaux (Menaces) | Impact Potentiel | Mitigations Architecturales |
 | :--- | :--- | :--- | :--- |
 | **Orchestrateur Elixir / Erlang VM** | Déni de Service (DoS) sur l'orchestration, empoisonnement des messages (Inter-Process Communication). | Arrêt complet du système, corruption de l'état global. | Isolation par Actor Model. Validation stricte du schéma des messages entrants. Rate-limiting au niveau réseau. |
-| **Pont C-FFI (Java <-> Rust)** | Dépassement de tampon (Buffer Overflow), fuite de mémoire (Memory Leak), corruption de pointeurs, injection de données malveillantes via FFI. | Exécution de code à distance (RCE), compromission totale du nœud hôte, exfiltration de mémoire. | Types stricts aux frontières. Rust `unsafe` confiné et audité. Passage par valeur ou copies sécurisées. Fuzzing ciblé des interfaces FFI. |
-| **Moteur Rust / Java** | Logique métier faussée (falsification des calculs), saturation CPU/RAM (ReDoS, bombes logiques). | Faux positifs dans les plannings (impact business majeur), DoS. | Timeouts d'exécution stricts (circuit breakers). Quotas de mémoire par job (cgroups). |
+| **Pont C-FFI ( <-> Rust)** | Dépassement de tampon (Buffer Overflow), fuite de mémoire (Memory Leak), corruption de pointeurs, injection de données malveillantes via FFI. | Exécution de code à distance (RCE), compromission totale du nœud hôte, exfiltration de mémoire. | Types stricts aux frontières. Rust `unsafe` confiné et audité. Passage par valeur ou copies sécurisées. Fuzzing ciblé des interfaces FFI. |
+| **Moteur Rust / ** | Logique métier faussée (falsification des calculs), saturation CPU/RAM (ReDoS, bombes logiques). | Faux positifs dans les plannings (impact business majeur), DoS. | Timeouts d'exécution stricts (circuit breakers). Quotas de mémoire par job (cgroups). |
 | **Environnement WASM (Plugins Clients)** | Évasion de la sandbox (Sandbox Escape), tentatives d'appels système (Syscalls), exfiltration de données via réseau. | Accès au système de fichiers hôte, vol de données d'autres locataires (Cross-Tenant). | Mode "WASI-restricted" absolu. `network=none`, `fs=none`. Temps d'exécution (Fuel) strictement limité. |
 
 ---
@@ -32,7 +32,7 @@ Notre architecture combine Elixir (Orchestration), Java (Moteur de base), Rust (
 
 ### 3.1. Frontières FFI (Foreign Function Interface)
 - **Rust `unsafe` Minimal :** L'utilisation du bloc `unsafe` dans Rust est interdite sauf justification architecturale documentée et approbation par le CISO. Chaque bloc `unsafe` doit être isolé dans des modules spécifiques et soumis à une revue par des pairs obligatoire.
-- **Validation des Entrées aux Frontières :** Toute donnée traversant la frontière Java/Rust ou Elixir/Rust doit être traitée comme *untrusted*. La désérialisation doit s'appuyer sur des bibliothèques éprouvées (ex: Serde avec limites de profondeur) pour éviter les attaques de type *Billion Laughs* ou de consommation de mémoire.
+- **Validation des Entrées aux Frontières :** Toute donnée traversant la frontière /Rust ou Elixir/Rust doit être traitée comme *untrusted*. La désérialisation doit s'appuyer sur des bibliothèques éprouvées (ex: Serde avec limites de profondeur) pour éviter les attaques de type *Billion Laughs* ou de consommation de mémoire.
 
 ### 3.2. Durcissement WASM (WASM Hardening)
 Les plugins fournis par les clients pour personnaliser les règles doivent s'exécuter dans un environnement WASM totalement hermétique :
@@ -46,7 +46,7 @@ Les plugins fournis par les clients pour personnaliser les règles doivent s'ex�
 
 La compromission d'une dépendance est notre risque probabiliste le plus élevé.
 
-### 4.1. Gestion des Dépendances (Rust, Java, Elixir)
+### 4.1. Gestion des Dépendances (Rust, , Elixir)
 - **Verrouillage et Hachage :** Les fichiers de lock (`Cargo.lock`, `mix.lock`, résolutions Maven) sont obligatoires. Toute modification d'une dépendance exige une revue humaine justifiant le changement de version.
 - **Miroir Privé & Scan de Quarantaine :** Les artefacts (Crates, Hex, Maven) ne sont pas tirés directement d'Internet lors du build de production. Ils doivent passer par un registre interne (ex: Artifactory) qui effectue un scan antiviral et une analyse de vulnérabilité (SCA) avant de les marquer comme "approuvés".
 
@@ -62,7 +62,7 @@ La sécurité "Shift-Left" impose que les vulnérabilités soient bloquées avan
 
 ### 5.1. Pipeline d'Analyse Statique (SAST) et Composition (SCA)
 Les outils suivants sont intégrés dans les workflows de Pull Request et bloquent le merge en cas de criticité *High* ou *Critical* :
-- **SAST Multi-langage :** Semgrep avec des règles personnalisées pour interdire les patterns dangereux en Java et Elixir.
+- **SAST Multi-langage :** Semgrep avec des règles personnalisées pour interdire les patterns dangereux en  et Elixir.
 - **Rust-specific :** `cargo audit` (SCA), `cargo clippy` (qualité/sécurité), et `cargo deny` (pour la validation des licences et l'interdiction de crates spécifiques).
 - **Elixir-specific :** `sobelow` pour l'analyse statique du code Elixir.
 
@@ -84,7 +84,7 @@ Pour garantir la résilience du moteur face à des entrées malformées :
 - **Principe du Moindre Privilège :** Les rôles applicatifs sont granulaires. Le composant WASM n'a aucune identité. Le moteur d'optimisation Rust n'a d'accès qu'en lecture aux données d'entrée et en écriture vers une file de résultats isolée.
 
 ### 6.2. Chiffrement et Conformité
-- **Data at Rest & In Transit :** Chiffrement systématique via AES-256-GCM au repos et mTLS strict entre tous les microservices et composants internes (Elixir <-> Java/Rust IPC si externalisé via réseau local).
+- **Data at Rest & In Transit :** Chiffrement systématique via AES-256-GCM au repos et mTLS strict entre tous les microservices et composants internes (Elixir <-> /Rust IPC si externalisé via réseau local).
 - **Audit Logging :** Toute action administrative ou modification de sécurité est loguée dans un système immuable de type WORM (Write Once Read Many) pour l'analyse post-mortem (SIEM).
 
 ---

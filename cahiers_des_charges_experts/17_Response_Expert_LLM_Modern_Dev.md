@@ -31,9 +31,9 @@ Pour gérer la dette technique historique d'OptaPlanner et accompagner la transi
 - **Agents Spécialisés :** Création d'agents autonomes dédiés (via des frameworks comme LangGraph ou AutoGen) capables d'analyser le backlog de dette technique et de proposer des Pull Requests (PRs) correctives.
 - **Workflow :** Les agents scannent la base de code, identifient les `TODO` triviaux ou la dette structurelle isolée, génèrent le correctif avec ses tests, et ouvrent une PR assignée au *code owner* concerné.
 
-### Migration Java vers Rust (Modules Critiques)
-- **Traduction Assistée :** Déploiement d'un pipeline LLM pour la première passe de traduction algorithmique (Java vers Rust). Ce pipeline est conçu pour respecter les idiomes Rust (ownership, borrowing) et non faire du "Java en syntaxe Rust".
-- **Validation Formelle :** Le code traduit par l'IA doit compiler, passer des suites de tests de fuzzing comparatifs (Java vs Rust), et être optimisé par des ingénieurs Rust seniors (SIMD, allocation mémoire). L'IA fait le gros œuvre (80%), l'expert fait la finition critique (20%).
+### Migration  vers Rust (Modules Critiques)
+- **Traduction Assistée :** Déploiement d'un pipeline LLM pour la première passe de traduction algorithmique ( vers Rust). Ce pipeline est conçu pour respecter les idiomes Rust (ownership, borrowing) et non faire du " en syntaxe Rust".
+- **Validation Formelle :** Le code traduit par l'IA doit compiler, passer des suites de tests de fuzzing comparatifs ( vs Rust), et être optimisé par des ingénieurs Rust seniors (SIMD, allocation mémoire). L'IA fait le gros œuvre (80%), l'expert fait la finition critique (20%).
 
 ---
 

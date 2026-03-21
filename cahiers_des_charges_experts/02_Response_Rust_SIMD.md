@@ -88,12 +88,12 @@ L'interfaçage se fera via la crate **`cxx`** pour des appels C++ FFI "Safe" san
 
 ---
 
-## 4. Interopérabilité : Le Pont Java - Rust - Elixir
+## 4. Interopérabilité : Le Pont  - Rust - Elixir
 
-### 4.1 Vers Java / GraalVM (Project Panama)
-Pour échanger les données avec OptaPlanner (qui réside sur la JVM), l'utilisation historique de JNI est abandonnée au profit du **Project Panama (Foreign Function & Memory API)**.
+### 4.1 Vers  /  ()
+Pour échanger les données avec OptaPlanner (qui réside sur la JVM), l'utilisation historique de  est abandonnée au profit du ** (Foreign Function & Memory API)**.
 1. Le moteur Rust alloue l'état dans un pointeur de mémoire partagée.
-2. Java accède directement à ce Memory Segment (Zero-Copy).
+2.  accède directement à ce Memory Segment (Zero-Copy).
 3. Les appels de fonctions se font via des Downcall/Upcall Method Handles pour minimiser la latence de franchissement du pont.
 
 ### 4.2 Vers Elixir / BEAM (Rustler NIFs)
@@ -110,7 +110,7 @@ L'orchestrateur système, reposant sur Erlang/OTP, gère les aspects distribués
 sequenceDiagram
     participant Elixir as Orchestrateur (Elixir/OTP)
     participant Rust as Cerveau Rust (ALNS/SIMD)
-    participant Java as JVM (Project Panama)
+    participant  as JVM ()
     participant CP as CP-SAT (C++)
 
     Elixir->>Rust: Démarre la recherche (Dirty NIF)
@@ -124,8 +124,8 @@ sequenceDiagram
             CP-->>Rust: Retour de séquence valide
         end
         Rust->>Rust: Validation globale SIMD (Makespan, Setups)
-        Rust->>Java: Partage mémoire zéro-copie (Panama)
-        Java-->>Rust: Évaluation du Soft Score (Moteur de règles)
+        Rust->>: Partage mémoire zéro-copie (Panama)
+        -->>Rust: Évaluation du Soft Score (Moteur de règles)
         Rust-->>Elixir: (Asynchrone) Envoi Nouvelle Meilleure Solution
     end
     Rust-->>Elixir: Fin du temps imparti, retour final
@@ -133,4 +133,4 @@ sequenceDiagram
 
 ## Conclusion
 
-Ce design tire parti de ce que 2026 a de mieux à offrir : l'écosystème Rust 2024 stabilisé, la vectorisation explicite standardisée pour des performances extrêmes, et des ponts d'interopérabilité modernes (Project Panama, Rustler, `cxx`) pour combiner harmonieusement le contrôle système (Elixir), l'évaluation métier (Java) et l'optimisation pure (Rust/C++).
+Ce design tire parti de ce que 2026 a de mieux à offrir : l'écosystème Rust 2024 stabilisé, la vectorisation explicite standardisée pour des performances extrêmes, et des ponts d'interopérabilité modernes (, Rustler, `cxx`) pour combiner harmonieusement le contrôle système (Elixir), l'évaluation métier () et l'optimisation pure (Rust/C++).
