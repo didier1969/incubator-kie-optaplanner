@@ -21,7 +21,7 @@
             rustfmt
             clippy
             gcc
-            postgresql_15
+            (postgresql_15.withPackages (p: [ p.postgis ]))
           ];
 
           shellHook = ''
