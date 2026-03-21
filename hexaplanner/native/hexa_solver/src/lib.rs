@@ -25,4 +25,15 @@ fn optimize_problem(problem: domain::Problem, iterations: i32) -> domain::Proble
     solver::optimize(problem, iterations)
 }
 
+#[rustler::nif]
+fn build_network_graph(edges: Vec<(String, String, f64)>) -> usize {
+    let mut network = topology::PhysicalNetwork::new();
+    for (station_a, station_b, weight) in edges {
+        let node_a = network.add_station(&station_a);
+        let node_b = network.add_station(&station_b);
+        network.add_track(node_a, node_b, weight);
+    }
+    network.station_count()
+}
+
 rustler::init!("Elixir.HexaPlanner.SolverNif");

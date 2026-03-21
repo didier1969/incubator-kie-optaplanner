@@ -14,4 +14,6 @@ defmodule HexaPlanner.SolverNif do
   @spec optimize_problem(HexaPlanner.Domain.Problem.t(), integer()) ::
           HexaPlanner.Domain.Problem.t()
   def optimize_problem(_problem, _iterations), do: :erlang.nif_error(:nif_not_loaded)
+
+  def build_network_graph(_edges), do: :erlang.nif_error(:nif_not_loaded)
 end
