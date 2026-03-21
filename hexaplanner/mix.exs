@@ -24,7 +24,9 @@ defmodule HexaPlanner.MixProject do
     [
       {:rustler, "== 0.35.0"},
       {:oban, "== 2.18.0"},
-      {:horde, "== 0.9.0"}
+      {:horde, "== 0.9.0"},
+      {:credo, "== 1.7.5", only: [:dev, :test], runtime: false},
+      {:dialyxir, "== 1.4.3", only: [:dev, :test], runtime: false}
       # {:dep_from_hexpm, "~> 0.3.0"},
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
     ]
