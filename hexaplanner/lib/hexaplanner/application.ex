@@ -8,8 +8,9 @@ defmodule HexaPlanner.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      # Starts a worker by calling: HexaPlanner.Worker.start_link(arg)
-      # {HexaPlanner.Worker, arg}
+      {Horde.Registry, [name: HexaPlanner.HordeRegistry, keys: :unique]},
+      {Horde.DynamicSupervisor, [name: HexaPlanner.HordeSupervisor, strategy: :one_for_one]}
+      # Oban will be added to the children here in the DB setup phase.
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
