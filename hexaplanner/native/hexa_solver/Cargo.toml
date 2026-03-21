@@ -15,3 +15,4 @@ rayon = "=1.11.0"
 localsearch = "=0.24.0" # State-of-the-art for parallel Tabu Search & Simulated Annealing
 metaheuristics-nature = "=0.16.0" # For Genetic Algorithms & Swarm
 salsa = "0.16.1"
+petgraph = "0.6.5"
