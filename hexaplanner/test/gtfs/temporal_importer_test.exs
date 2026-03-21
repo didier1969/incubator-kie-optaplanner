@@ -37,7 +37,7 @@ defmodule HexaPlanner.GTFS.TemporalImporterTest do
 
     trips = Repo.all(HexaPlanner.GTFS.Trip)
     assert length(trips) == 1
-    assert hd(trips).trip_id == "TRIP_1"
+    assert hd(trips).original_trip_id == "TRIP_1"
 
     stop_times = Repo.all(HexaPlanner.GTFS.StopTime) |> Enum.sort_by(& &1.stop_sequence)
     assert length(stop_times) == 2

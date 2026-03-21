@@ -4,12 +4,7 @@ defmodule HexaPlanner.GTFS.TripTest do
 
   test "validates required trip fields" do
     changeset = Trip.changeset(%Trip{}, %{})
-
-    assert %{
-             trip_id: ["can't be blank"],
-             route_id: ["can't be blank"],
-             service_id: ["can't be blank"]
-           } = errors_on(changeset)
+    assert %{original_trip_id: ["can't be blank"], route_id: ["can't be blank"], service_id: ["can't be blank"]} = errors_on(changeset)
   end
 end
 

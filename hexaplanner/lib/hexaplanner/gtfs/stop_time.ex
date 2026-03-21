@@ -4,13 +4,11 @@ defmodule HexaPlanner.GTFS.StopTime do
 
   @primary_key false
   schema "gtfs_stop_times" do
-    field(:trip_id, :string)
-    # Seconds from midnight
-    field(:arrival_time, :integer)
-    # Seconds from midnight
-    field(:departure_time, :integer)
-    field(:stop_id, :string)
-    field(:stop_sequence, :integer)
+    field :trip_id, :integer
+    field :arrival_time, :integer # Seconds from midnight
+    field :departure_time, :integer # Seconds from midnight
+    field :stop_id, :integer
+    field :stop_sequence, :integer
   end
 
   def changeset(stop_time, attrs) do
