@@ -7,4 +7,7 @@ defmodule HexaPlanner.SolverNif do
 
   @spec add(integer(), integer()) :: integer()
   def add(_a, _b), do: :erlang.nif_error(:nif_not_loaded)
+
+  @spec evaluate_problem(HexaPlanner.Domain.Problem.t()) :: integer()
+  def evaluate_problem(_problem), do: :erlang.nif_error(:nif_not_loaded)
 end
