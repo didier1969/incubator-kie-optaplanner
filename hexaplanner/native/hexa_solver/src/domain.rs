@@ -1,6 +1,6 @@
 use rustler::NifStruct;
 
-#[derive(Debug, NifStruct)]
+#[derive(Debug, Clone, NifStruct)]
 #[module = "HexaPlanner.Domain.Resource"]
 pub struct Resource {
     pub id: i64,
@@ -8,7 +8,7 @@ pub struct Resource {
     pub capacity: i64,
 }
 
-#[derive(Debug, NifStruct)]
+#[derive(Debug, Clone, NifStruct)]
 #[module = "HexaPlanner.Domain.Job"]
 pub struct Job {
     pub id: i64,
@@ -17,7 +17,7 @@ pub struct Job {
     pub start_time: Option<i64>,
 }
 
-#[derive(Debug, NifStruct)]
+#[derive(Debug, Clone, NifStruct)]
 #[module = "HexaPlanner.Domain.Problem"]
 pub struct Problem {
     pub id: String,
@@ -28,6 +28,13 @@ pub struct Problem {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_domain_clone() {
+        let j1 = Job { id: 1, duration: 10, required_resources: vec![], start_time: None };
+        let j2 = j1.clone();
+        assert_eq!(j1.id, j2.id);
+    }
 
     #[test]
     fn test_problem_instantiation() {
