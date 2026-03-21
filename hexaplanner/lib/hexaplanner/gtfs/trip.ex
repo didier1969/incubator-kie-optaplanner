@@ -4,9 +4,9 @@ defmodule HexaPlanner.GTFS.Trip do
 
   @primary_key {:trip_id, :string, autogenerate: false}
   schema "gtfs_trips" do
-    field :route_id, :string
-    field :service_id, :string
-    
+    field(:route_id, :string)
+    field(:service_id, :string)
+
     # We omit direction_id, block_id, shape_id for MVP unless strictly needed for topology
   end
 
