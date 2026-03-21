@@ -21,6 +21,7 @@
             rustfmt
             clippy
             gcc
+            unzip
             (postgresql_15.withPackages (p: [ p.postgis ]))
           ];
 

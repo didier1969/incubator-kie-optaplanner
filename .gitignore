@@ -1,2 +1,4 @@
 .pgdata
 hexaplanner/priv/data/raw/*.geojson
+hexaplanner/priv/data/raw/*.zip
+hexaplanner/priv/data/raw/gtfs/*
