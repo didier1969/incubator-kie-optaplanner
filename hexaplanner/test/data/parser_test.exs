@@ -1,6 +1,8 @@
 defmodule HexaPlanner.Data.ParserTest do
   use ExUnit.Case
 
+  alias HexaPlanner.Data.Parser
+
   test "extracts track segments from GeoJSON" do
     geojson = %{
       "type" => "FeatureCollection",
@@ -16,9 +18,9 @@ defmodule HexaPlanner.Data.ParserTest do
       ]
     }
 
-    segments = HexaPlanner.Data.Parser.extract_segments(geojson)
+    segments = Parser.extract_segments(geojson)
     assert length(segments) == 1
-    
+
     segment = hd(segments)
     assert segment.line_id == "100"
     assert segment.point_a == {7.4, 46.9}

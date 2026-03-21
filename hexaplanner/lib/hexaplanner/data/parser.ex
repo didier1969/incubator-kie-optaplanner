@@ -4,6 +4,9 @@ defmodule HexaPlanner.Data.Parser do
   """
 
   defmodule TrackSegment do
+    @moduledoc """
+    Represents a physical connection between two geospatial points.
+    """
     @enforce_keys [:line_id, :point_a, :point_b]
     defstruct [:line_id, :point_a, :point_b]
   end
@@ -17,7 +20,7 @@ defmodule HexaPlanner.Data.Parser do
   defp parse_feature(feature) do
     line_id = get_in(feature, ["properties", "linie"]) || "UNKNOWN"
     coords = get_in(feature, ["geometry", "coordinates"])
-    
+
     # Take start and end of the line string to form the logical segment
     start_coord = List.first(coords)
     end_coord = List.last(coords)
