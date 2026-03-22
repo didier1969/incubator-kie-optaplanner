@@ -16,12 +16,12 @@ defmodule Mix.Tasks.Data.Download do
   @impl Mix.Task
   def run(_) do
     Application.ensure_all_started(:req)
-    
+
     # We use the version date as the folder name
     version_str = "20260318"
     year_str = String.slice(version_str, 0, 4)
     data_dir = Path.join([:code.priv_dir(:hexaplanner), "data/raw", year_str, version_str])
-    
+
     File.mkdir_p!(data_dir)
 
     Logger.info("Saving datasets to #{data_dir}")
@@ -34,26 +34,29 @@ defmodule Mix.Tasks.Data.Download do
 
     gtfs_zip_path = Path.join(data_dir, "timetable.zip")
     Logger.info("Starting download of Swiss GTFS Timetable...")
+
     if download_and_save(@gtfs_url, gtfs_zip_path) == :ok do
       Logger.info("Extracting GTFS Timetable...")
       gtfs_dir = Path.join(data_dir, "gtfs")
       File.mkdir_p!(gtfs_dir)
       extract_zip(gtfs_zip_path, gtfs_dir)
     end
-    
+
     Logger.info("All downloads and extractions completed successfully.")
   end
 
   defp download_and_save(url, target_path) do
     req = Req.new(url: url)
-    
+
     case Req.get(req, into: File.stream!(target_path)) do
       {:ok, %Req.Response{status: 200}} ->
         Logger.info("Successfully saved to #{target_path}")
         :ok
+
       {:ok, %Req.Response{status: status}} ->
         Logger.error("Failed to download from #{url}. Status: #{status}")
         :error
+
       {:error, reason} ->
         Logger.error("Network error while downloading from #{url}: #{inspect(reason)}")
         :error

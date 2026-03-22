@@ -36,6 +36,22 @@ defmodule Mix.Tasks.Data.Import do
     transfers_path = Path.join(data_dir, "transfers.txt")
     calendar_path = Path.join(data_dir, "calendar.txt")
     calendar_dates_path = Path.join(data_dir, "calendar_dates.txt")
+    agency_path = Path.join(data_dir, "agency.txt")
+    routes_path = Path.join(data_dir, "routes.txt")
+    frequencies_path = Path.join(data_dir, "frequencies.txt")
+    feed_info_path = Path.join(data_dir, "feed_info.txt")
+
+    Logger.info("Starting ingestion of GTFS Feed Info...")
+    Importer.import_feed_info(feed_info_path)
+    Logger.info("✅ Feed Info imported successfully.")
+
+    Logger.info("Starting ingestion of GTFS Agency...")
+    Importer.import_agency(agency_path)
+    Logger.info("✅ Agency imported successfully.")
+
+    Logger.info("Starting ingestion of GTFS Routes...")
+    Importer.import_routes(routes_path)
+    Logger.info("✅ Routes imported successfully.")
 
     Logger.info("Starting ingestion of GTFS Stops...")
     Importer.import_stops(stops_path)
@@ -49,6 +65,10 @@ defmodule Mix.Tasks.Data.Import do
     Logger.info("Starting ingestion of GTFS Trips...")
     Importer.import_trips(trips_path)
     Logger.info("✅ Trips imported successfully.")
+
+    Logger.info("Starting ingestion of GTFS Frequencies...")
+    Importer.import_frequencies(frequencies_path)
+    Logger.info("✅ Frequencies imported successfully.")
 
     Logger.info("Starting massive ingestion of GTFS Stop Times (~20 Million rows)...")
     Logger.info("This process uses PostgreSQL unlogged tables and may take 2-5 minutes.")
