@@ -4,10 +4,13 @@ pub trait ScoreEngine: salsa::Database {
     fn get_base_score(&self) -> i32;
 
     #[salsa::input]
-    fn job_assigned(&self, job_id: u32) -> bool;
+    fn job_assigned(&self, job_id: i64) -> bool;
+
+    #[salsa::input]
+    fn job_ids(&self) -> Vec<i64>;
 
     fn get_total_score(&self) -> i32;
-    fn unassigned_penalty(&self, job_id: u32) -> i32;
+    fn unassigned_penalty(&self, job_id: i64) -> i32;
     fn calculate_penalties(&self) -> i32;
 }
 
@@ -15,7 +18,7 @@ fn get_total_score(db: &dyn ScoreEngine) -> i32 {
     db.get_base_score() + db.calculate_penalties()
 }
 
-fn unassigned_penalty(db: &dyn ScoreEngine, job_id: u32) -> i32 {
+fn unassigned_penalty(db: &dyn ScoreEngine, job_id: i64) -> i32 {
     if db.job_assigned(job_id) {
         0
     } else {
@@ -24,8 +27,7 @@ fn unassigned_penalty(db: &dyn ScoreEngine, job_id: u32) -> i32 {
 }
 
 fn calculate_penalties(db: &dyn ScoreEngine) -> i32 {
-    // In a real system, we'd iterate over known jobs. For MVP, hardcode job 1.
-    db.unassigned_penalty(1)
+    db.job_ids().iter().map(|&id| db.unassigned_penalty(id)).sum()
 }
 
 #[salsa::database(ScoreStorage)]
@@ -44,6 +46,7 @@ mod tests {
     fn test_salsa_database_initialization() {
         let mut db = ScoreDatabase::default();
         db.set_get_base_score(10);
+        db.set_job_ids(vec![1]);
         db.set_job_assigned(1, true); // Prevent panic on uninitialized input
         assert_eq!(db.get_total_score(), 10);
     }
@@ -51,6 +54,7 @@ mod tests {
     #[test]
     fn test_incremental_constraint_evaluation() {
         let mut db = ScoreDatabase::default();
+        db.set_job_ids(vec![1]);
         // Assume Job 1 is unassigned
         db.set_job_assigned(1, false);
         assert_eq!(db.calculate_penalties(), -100); // Penalty for unassigned

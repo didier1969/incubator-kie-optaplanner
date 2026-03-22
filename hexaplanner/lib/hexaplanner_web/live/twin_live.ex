@@ -3,15 +3,25 @@ defmodule HexaPlannerWeb.TwinLive do
   alias HexaPlanner.Domain.{Job, Problem}
   alias HexaPlanner.SolverNif
 
+  alias HexaPlanner.GTFS.Trip
+  alias HexaPlanner.Repo
+  import Ecto.Query
+
   def mount(_params, _session, socket) do
-    # Initialize a dummy Digital Twin state
+    # Load real trips from the GTFS database (first 5 for the dashboard)
+    trips = Repo.all(from t in Trip, limit: 5)
+    
     problem = %Problem{
-      id: "Factory_A",
+      id: "SBB_CFF_FFS_NETWORK",
       resources: [],
-      jobs: [
-        %Job{id: 101, duration: 45, required_resources: [], start_time: nil},
-        %Job{id: 102, duration: 30, required_resources: [], start_time: nil}
-      ]
+      jobs: Enum.map(trips, fn t ->
+        %Job{
+          id: t.id, 
+          duration: 60, # Standard slot
+          required_resources: [], 
+          start_time: nil
+        }
+      end)
     }
 
     score = SolverNif.evaluate_problem(problem)

@@ -9,20 +9,21 @@ pub fn optimize(mut current_problem: Problem, iterations: i32) -> Problem {
     // Initialize Salsa Database
     let mut db = ScoreDatabase::default();
     db.set_get_base_score(0);
+    db.set_job_ids(current_problem.jobs.iter().map(|j| j.id).collect());
+    for job in &current_problem.jobs {
+        db.set_job_assigned(job.id, job.start_time.is_some());
+    }
 
     for i in 0..iterations {
         // Create a neighbor (mutation)
         let mut neighbor = current_problem.clone();
         
-        // Very basic mutation: assign a dummy start time to the first unassigned job
+        // Very basic mutation: assign a start time to the first unassigned job
         if let Some(job) = neighbor.jobs.iter_mut().find(|j| j.start_time.is_none()) {
             job.start_time = Some(i64::from(i) * 10);
             
             // Sync mutation to Salsa DB
-            // In a real system, we'd map all jobs. For now we hardcode job 1 as in our MVP test.
-            if job.id == 1 {
-                db.set_job_assigned(1, true);
-            }
+            db.set_job_assigned(job.id, true);
         }
 
         // We still use calculate_score for the core loop logic to keep tests green 
