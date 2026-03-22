@@ -107,6 +107,41 @@ pub struct TrackSegment {
 }
 
 #[derive(Debug, Clone, NifStruct)]
+#[module = "HexaPlanner.Domain.EOS"]
+pub struct ElementaryOccupationSegment {
+    pub trip_id: i64,
+    pub track_id: String,
+    pub start_time: i32,
+    pub end_time: i32,
+}
+
+#[derive(Debug, Clone, NifStruct)]
+#[module = "HexaPlanner.Domain.Conflict"]
+pub struct Conflict {
+    pub trip_a: i64,
+    pub trip_b: i64,
+    pub track_id: String,
+    pub start_time: i32,
+    pub end_time: i32,
+}
+
+#[derive(Debug, Clone, NifStruct)]
+#[module = "HexaPlanner.Domain.ConflictSummary"]
+pub struct ConflictSummary {
+    pub total_conflicts: usize,
+    pub sample_conflicts: Vec<Conflict>,
+}
+
+#[derive(Debug, Clone, NifStruct)]
+#[module = "HexaPlanner.Domain.CompactEOS"]
+pub struct CompactEOS {
+    pub trip_idx: u32,
+    pub track_idx: u32,
+    pub start_time: u32,
+    pub end_time: u32,
+}
+
+#[derive(Debug, Clone, NifStruct)]
 #[module = "HexaPlanner.Domain.Problem"]
 pub struct Problem {
     pub id: String,

@@ -16,3 +16,6 @@ localsearch = "=0.24.0" # State-of-the-art for parallel Tabu Search & Simulated 
 metaheuristics-nature = "=0.16.0" # For Genetic Algorithms & Swarm
 salsa = "0.16.1"
 petgraph = "0.6.5"
+lasso = "0.7.3"
+rdst = "0.20.14"
+kdtree = "0.8.0"

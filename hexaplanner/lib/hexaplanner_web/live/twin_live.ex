@@ -29,23 +29,25 @@ defmodule HexaPlannerWeb.TwinLive do
       end)
     }
 
-    score = SolverNif.evaluate_problem(problem)
+    resource = SolverNif.init_network()
+    score = SolverNif.evaluate_problem(resource, problem)
 
     socket = 
       socket
-      |> assign(problem: problem, score: score, is_optimizing: false)
+      |> assign(problem: problem, score: score, is_optimizing: false, network_resource: resource)
       |> stream(:trips, trips)
 
     {:ok, socket}
-  end
+    end
 
-  def handle_event("optimize", _, socket) do
-    # Trigger the Rust Engine on the FULL 1.19M entities
-    optimized_problem = SolverNif.optimize_problem(socket.assigns.problem, 100)
-    new_score = SolverNif.evaluate_problem(optimized_problem)
+    def handle_event("optimize", _, socket) do
+    # Placeholder for Phase 13 Tick Engine integration.
+    # We pass the network_resource to the optimizer.
+    optimized_problem = SolverNif.optimize_problem(socket.assigns.network_resource, socket.assigns.problem, 100)
+    new_score = SolverNif.evaluate_problem(socket.assigns.network_resource, optimized_problem)
 
     {:noreply, assign(socket, problem: optimized_problem, score: new_score, is_optimizing: false)}
-  end
+    end
 
   def render(assigns) do
     ~H"""

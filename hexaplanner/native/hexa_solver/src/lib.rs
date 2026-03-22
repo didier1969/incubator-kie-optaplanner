@@ -18,8 +18,9 @@ pub struct NetworkResource {
 }
 
 #[rustler::nif]
-fn evaluate_problem(problem: domain::Problem) -> i64 {
-    score::calculate_score(&problem)
+fn evaluate_problem(resource: ResourceArc<NetworkResource>, problem: domain::Problem) -> i64 {
+    let manager = resource.manager.read().unwrap();
+    score::calculate_score(&problem, &manager)
 }
 
 #[rustler::nif]
@@ -29,8 +30,9 @@ fn add(a: i64, b: i64) -> i64 {
 
 #[rustler::nif]
 #[allow(clippy::needless_pass_by_value)]
-fn optimize_problem(problem: domain::Problem, iterations: i32) -> domain::Problem {
-    solver::optimize(problem, iterations)
+fn optimize_problem(resource: ResourceArc<NetworkResource>, problem: domain::Problem, iterations: i32) -> domain::Problem {
+    let manager = resource.manager.read().unwrap();
+    solver::optimize(problem, &manager, iterations)
 }
 
 #[rustler::nif]
@@ -107,6 +109,12 @@ fn get_train_position(
 fn finalize_temporal_graph(resource: ResourceArc<NetworkResource>) -> usize {
     let mut manager = resource.manager.write().unwrap();
     manager.finalize_temporal_graph()
+}
+
+#[rustler::nif]
+fn detect_conflicts(resource: ResourceArc<NetworkResource>) -> domain::ConflictSummary {
+    let manager = resource.manager.read().unwrap();
+    manager.detect_conflicts()
 }
 
 fn load(env: Env, _info: Term) -> bool {

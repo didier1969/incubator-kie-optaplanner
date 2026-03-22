@@ -9,27 +9,13 @@ defmodule Mix.Tasks.Data.LoadRust do
   @impl Mix.Task
   def run(_args) do
     Mix.Task.run("app.start")
-
+    
     Logger.info("Initializing Rust Network Manager...")
     resource = SolverNif.init_network()
 
     Logger.info("Loading 100% of Stops into Rust...")
-    # Load stops and their abbreviations from GeoJSON for high-fidelity physical linkage
-    stops_geojson = 
-      Path.join([:code.priv_dir(:hexaplanner), "data/raw/2026/20260318/stops.geojson"])
-      |> File.read!()
-      |> Jason.decode!()
-      
-    abbreviations_map = 
-      stops_geojson["features"]
-      |> Enum.map(fn f -> {to_string(f["properties"]["number"]), f["properties"]["abbreviation"]} end)
-      |> Map.new()
-
-    stops = Repo.all(Stop) |> Enum.map(fn s ->
-      # Attach abbreviation to the stop struct before sending to Rust
-      # We'll repurpose a field or add one if needed. Let's add it to Rust side GtfsStop.
-      Map.put(s, :abbreviation, Map.get(abbreviations_map, s.original_stop_id))
-    end)
+    # Now we use the abbreviation field we added to the DB
+    stops = Repo.all(Stop)
     SolverNif.load_stops(resource, stops)
     Logger.info("✅ Stops loaded.")
 
@@ -80,11 +66,15 @@ defmodule Mix.Tasks.Data.LoadRust do
         IO.write(".")
       end)
     end, timeout: :infinity)
-
-    Logger.info("\nFinalizing Temporal Graph in Rust (O(N) assembly)...")
+    
+    Logger.info("\nFinalizing STIG Graph in Rust (Fusion pass)...")
     edge_count = SolverNif.finalize_temporal_graph(resource)
-    Logger.info("✅ All temporal data loaded. Graph contains #{edge_count} schedule edges.")
+    Logger.info("✅ All data loaded. STIG contains #{edge_count} edges.")
 
+    Logger.info("Detecting Spatio-Temporal Conflicts (Sweep-Line)...")
+    summary = SolverNif.detect_conflicts(resource)
+    Logger.info("⚠️ Detected #{summary.total_conflicts} physical collisions (including headway violations) in the baseline schedule.")
+    
     # Measure memory (approximate)
     :erlang.garbage_collect()
     mem = :erlang.memory(:total) / 1024 / 1024

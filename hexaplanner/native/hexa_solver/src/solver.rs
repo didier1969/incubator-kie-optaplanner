@@ -1,10 +1,11 @@
 use crate::domain::Problem;
 use crate::score::calculate_score;
 use crate::incremental_score::{ScoreDatabase, ScoreEngine};
+use crate::topology::NetworkManager;
 
 #[must_use]
-pub fn optimize(mut current_problem: Problem, iterations: i32) -> Problem {
-    let mut current_score = calculate_score(&current_problem);
+pub fn optimize(mut current_problem: Problem, manager: &NetworkManager, iterations: i32) -> Problem {
+    let mut current_score = calculate_score(&current_problem, manager);
     
     // Initialize Salsa Database
     let mut db = ScoreDatabase::default();
@@ -28,7 +29,7 @@ pub fn optimize(mut current_problem: Problem, iterations: i32) -> Problem {
 
         // We still use calculate_score for the core loop logic to keep tests green 
         // while we transition fully to Salsa. We compute salsa score alongside it.
-        let neighbor_score = calculate_score(&neighbor);
+        let neighbor_score = calculate_score(&neighbor, manager);
         let _salsa_score = db.get_total_score();
 
         // Hill Climbing: Accept if strictly better
@@ -59,14 +60,15 @@ mod tests {
             resources: vec![],
             jobs: vec![Job { id: 1, duration: 10, required_resources: vec![], start_time: None }],
         };
+        let manager = NetworkManager::new();
 
         // Initially score is -100
-        assert_eq!(score::calculate_score(&problem), -100);
+        assert_eq!(score::calculate_score(&problem, &manager), -100);
 
-        let optimized = optimize(problem, 10);
+        let optimized = optimize(problem, &manager, 10);
         
         // After optimization, the job should have a start_time, making score 0
-        assert_eq!(score::calculate_score(&optimized), 0);
+        assert_eq!(score::calculate_score(&optimized, &manager), 0);
         assert!(optimized.jobs[0].start_time.is_some());
     }
 }
