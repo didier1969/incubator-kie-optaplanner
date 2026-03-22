@@ -53,18 +53,32 @@ defmodule HexaPlanner.GTFS.Importer do
     # 1. Sync dictionaries to PostgreSQL unlogged tables for ultra-fast, zero-memory SQL JOINs
     Repo.query!("TRUNCATE TABLE gtfs_stops_dict")
     Repo.query!("TRUNCATE TABLE gtfs_trips_dict")
-    
-    Repo.query!("INSERT INTO gtfs_stops_dict (original_id, id) SELECT original_stop_id, id FROM gtfs_stops")
-    Repo.query!("INSERT INTO gtfs_trips_dict (original_id, id) SELECT original_trip_id, id FROM gtfs_trips")
+
+    Repo.query!(
+      "INSERT INTO gtfs_stops_dict (original_id, id) SELECT original_stop_id, id FROM gtfs_stops"
+    )
+
+    Repo.query!(
+      "INSERT INTO gtfs_trips_dict (original_id, id) SELECT original_trip_id, id FROM gtfs_trips"
+    )
 
     # 2. Stream the file and insert into a temporary unlogged staging table
-    Repo.query!("CREATE UNLOGGED TABLE IF NOT EXISTS gtfs_stop_times_staging (trip_id_str text, arrival_time int, departure_time int, stop_id_str text, stop_sequence int)")
+    Repo.query!(
+      "CREATE UNLOGGED TABLE IF NOT EXISTS gtfs_stop_times_staging (trip_id_str text, arrival_time int, departure_time int, stop_id_str text, stop_sequence int)"
+    )
+
     Repo.query!("TRUNCATE TABLE gtfs_stop_times_staging")
 
     file_path
     |> File.stream!()
     |> GTFSParser.parse_stream()
-    |> Stream.map(fn [trip_id_str, arrival_time, departure_time, stop_id_str, stop_sequence | _rest] ->
+    |> Stream.map(fn [
+                       trip_id_str,
+                       arrival_time,
+                       departure_time,
+                       stop_id_str,
+                       stop_sequence | _rest
+                     ] ->
       [
         trip_id_str,
         parse_time(arrival_time),
@@ -77,45 +91,63 @@ defmodule HexaPlanner.GTFS.Importer do
     |> Enum.each(fn chunk ->
       # We use bare Repo.query! to bypass Ecto schema overhead for the staging table
       placeholders = Enum.map(1..5, &"$#{&1}") |> Enum.join(",")
-      
+
       # Flatten the chunk for the parameterized query
       flat_params = List.flatten(chunk)
-      
-      # Build the massive INSERT statement dynamically
-      values_str = chunk
-                   |> Enum.with_index()
-                   |> Enum.map(fn {_, idx} ->
-                     offset = idx * 5
-                     "($#{offset + 1}, $#{offset + 2}, $#{offset + 3}, $#{offset + 4}, $#{offset + 5})"
-                   end)
-                   |> Enum.join(",")
 
-      query = "INSERT INTO gtfs_stop_times_staging (trip_id_str, arrival_time, departure_time, stop_id_str, stop_sequence) VALUES " <> values_str
+      # Build the massive INSERT statement dynamically
+      values_str =
+        chunk
+        |> Enum.with_index()
+        |> Enum.map(fn {_, idx} ->
+          offset = idx * 5
+          "($#{offset + 1}, $#{offset + 2}, $#{offset + 3}, $#{offset + 4}, $#{offset + 5})"
+        end)
+        |> Enum.join(",")
+
+      query =
+        "INSERT INTO gtfs_stop_times_staging (trip_id_str, arrival_time, departure_time, stop_id_str, stop_sequence) VALUES " <>
+          values_str
+
       Repo.query!(query, flat_params)
     end)
 
     # 3. Perform the massive resolution directly inside PostgreSQL using a single query
-    Repo.query!("""
-      INSERT INTO gtfs_stop_times (trip_id, arrival_time, departure_time, stop_id, stop_sequence)
-      SELECT t.id, s.arrival_time, s.departure_time, st.id, s.stop_sequence
-      FROM gtfs_stop_times_staging s
-      JOIN gtfs_trips_dict t ON s.trip_id_str = t.original_id
-      JOIN gtfs_stops_dict st ON s.stop_id_str = st.original_id
-      ON CONFLICT DO NOTHING
-    """, [], timeout: :infinity)
+    Repo.query!(
+      """
+        INSERT INTO gtfs_stop_times (trip_id, arrival_time, departure_time, stop_id, stop_sequence)
+        SELECT t.id, s.arrival_time, s.departure_time, st.id, s.stop_sequence
+        FROM gtfs_stop_times_staging s
+        JOIN gtfs_trips_dict t ON s.trip_id_str = t.original_id
+        JOIN gtfs_stops_dict st ON s.stop_id_str = st.original_id
+        ON CONFLICT DO NOTHING
+      """,
+      [], timeout: :infinity)
 
     # 4. Cleanup
     Repo.query!("TRUNCATE TABLE gtfs_stop_times_staging")
   end
 
   def import_transfers(file_path) do
-    Repo.query!("CREATE UNLOGGED TABLE IF NOT EXISTS gtfs_transfers_staging (from_stop_id_str text, to_stop_id_str text, transfer_type int, min_transfer_time int, from_trip_id_str text, to_trip_id_str text)")
+    Repo.query!(
+      "CREATE UNLOGGED TABLE IF NOT EXISTS gtfs_transfers_staging (from_stop_id_str text, to_stop_id_str text, transfer_type int, min_transfer_time int, from_trip_id_str text, to_trip_id_str text)"
+    )
+
     Repo.query!("TRUNCATE TABLE gtfs_transfers_staging")
 
     file_path
     |> File.stream!()
     |> GTFSParser.parse_stream()
-    |> Stream.map(fn [from_stop_id_str, to_stop_id_str, from_route_id, to_route_id, from_trip_id_str, to_trip_id_str, transfer_type, min_transfer_time | _rest] ->
+    |> Stream.map(fn [
+                       from_stop_id_str,
+                       to_stop_id_str,
+                       from_route_id,
+                       to_route_id,
+                       from_trip_id_str,
+                       to_trip_id_str,
+                       transfer_type,
+                       min_transfer_time | _rest
+                     ] ->
       [
         from_stop_id_str,
         to_stop_id_str,
@@ -128,37 +160,127 @@ defmodule HexaPlanner.GTFS.Importer do
     |> Stream.chunk_every(10_000)
     |> Enum.each(fn chunk ->
       flat_params = List.flatten(chunk)
-      values_str = chunk
-                   |> Enum.with_index()
-                   |> Enum.map(fn {_, idx} ->
-                     offset = idx * 6
-                     "($#{offset + 1}, $#{offset + 2}, $#{offset + 3}, $#{offset + 4}, $#{offset + 5}, $#{offset + 6})"
-                   end)
-                   |> Enum.join(",")
 
-      query = "INSERT INTO gtfs_transfers_staging (from_stop_id_str, to_stop_id_str, transfer_type, min_transfer_time, from_trip_id_str, to_trip_id_str) VALUES " <> values_str
+      values_str =
+        chunk
+        |> Enum.with_index()
+        |> Enum.map(fn {_, idx} ->
+          offset = idx * 6
+
+          "($#{offset + 1}, $#{offset + 2}, $#{offset + 3}, $#{offset + 4}, $#{offset + 5}, $#{offset + 6})"
+        end)
+        |> Enum.join(",")
+
+      query =
+        "INSERT INTO gtfs_transfers_staging (from_stop_id_str, to_stop_id_str, transfer_type, min_transfer_time, from_trip_id_str, to_trip_id_str) VALUES " <>
+          values_str
+
       Repo.query!(query, flat_params)
     end)
 
     # Resolve foreign keys via SQL
-    Repo.query!("""
-      INSERT INTO gtfs_transfers (from_stop_id, to_stop_id, transfer_type, min_transfer_time, from_trip_id, to_trip_id)
-      SELECT
-        st_from.id,
-        st_to.id,
-        s.transfer_type,
-        s.min_transfer_time,
-        tr_from.id,
-        tr_to.id
-      FROM gtfs_transfers_staging s
-      JOIN gtfs_stops_dict st_from ON s.from_stop_id_str = st_from.original_id
-      JOIN gtfs_stops_dict st_to ON s.to_stop_id_str = st_to.original_id
-      LEFT JOIN gtfs_trips_dict tr_from ON s.from_trip_id_str = tr_from.original_id
-      LEFT JOIN gtfs_trips_dict tr_to ON s.to_trip_id_str = tr_to.original_id
-      ON CONFLICT DO NOTHING
-    """, [], timeout: :infinity)
+    Repo.query!(
+      """
+        INSERT INTO gtfs_transfers (from_stop_id, to_stop_id, transfer_type, min_transfer_time, from_trip_id, to_trip_id)
+        SELECT
+          st_from.id,
+          st_to.id,
+          s.transfer_type,
+          s.min_transfer_time,
+          tr_from.id,
+          tr_to.id
+        FROM gtfs_transfers_staging s
+        JOIN gtfs_stops_dict st_from ON s.from_stop_id_str = st_from.original_id
+        JOIN gtfs_stops_dict st_to ON s.to_stop_id_str = st_to.original_id
+        LEFT JOIN gtfs_trips_dict tr_from ON s.from_trip_id_str = tr_from.original_id
+        LEFT JOIN gtfs_trips_dict tr_to ON s.to_trip_id_str = tr_to.original_id
+        ON CONFLICT DO NOTHING
+      """,
+      [], timeout: :infinity)
 
     Repo.query!("TRUNCATE TABLE gtfs_transfers_staging")
+  end
+
+  def import_calendars(file_path) do
+    file_path
+    |> File.stream!()
+    |> GTFSParser.parse_stream()
+    |> Stream.map(fn [
+                       service_id,
+                       monday,
+                       tuesday,
+                       wednesday,
+                       thursday,
+                       friday,
+                       saturday,
+                       sunday,
+                       start_date,
+                       end_date | _rest
+                     ] ->
+      [
+        service_id,
+        String.to_integer(monday),
+        String.to_integer(tuesday),
+        String.to_integer(wednesday),
+        String.to_integer(thursday),
+        String.to_integer(friday),
+        String.to_integer(saturday),
+        String.to_integer(sunday),
+        String.to_integer(start_date),
+        String.to_integer(end_date)
+      ]
+    end)
+    |> Stream.chunk_every(10_000)
+    |> Enum.each(fn chunk ->
+      flat_params = List.flatten(chunk)
+
+      values_str =
+        chunk
+        |> Enum.with_index()
+        |> Enum.map(fn {_, idx} ->
+          offset = idx * 10
+
+          "($#{offset + 1}, $#{offset + 2}, $#{offset + 3}, $#{offset + 4}, $#{offset + 5}, $#{offset + 6}, $#{offset + 7}, $#{offset + 8}, $#{offset + 9}, $#{offset + 10})"
+        end)
+        |> Enum.join(",")
+
+      query =
+        "INSERT INTO gtfs_calendars (service_id, monday, tuesday, wednesday, thursday, friday, saturday, sunday, start_date, end_date) VALUES " <>
+          values_str <> " ON CONFLICT (service_id) DO NOTHING"
+
+      Repo.query!(query, flat_params)
+    end)
+  end
+
+  def import_calendar_dates(file_path) do
+    file_path
+    |> File.stream!()
+    |> GTFSParser.parse_stream()
+    |> Stream.map(fn [service_id, date, exception_type | _rest] ->
+      [
+        service_id,
+        String.to_integer(date),
+        String.to_integer(exception_type)
+      ]
+    end)
+    |> Stream.chunk_every(10_000)
+    |> Enum.each(fn chunk ->
+      flat_params = List.flatten(chunk)
+
+      values_str =
+        chunk
+        |> Enum.with_index()
+        |> Enum.map(fn {_, idx} ->
+          offset = idx * 3
+          "($#{offset + 1}, $#{offset + 2}, $#{offset + 3})"
+        end)
+        |> Enum.join(",")
+
+      query =
+        "INSERT INTO gtfs_calendar_dates (service_id, date, exception_type) VALUES " <> values_str
+
+      Repo.query!(query, flat_params)
+    end)
   end
 
   defp parse_integer_or_null(""), do: nil
