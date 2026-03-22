@@ -15,7 +15,15 @@ defmodule HexaPlanner.GTFS.Importer do
     file_path
     |> File.stream!()
     |> GTFSParser.parse_stream()
-    |> Stream.map(fn [stop_id, stop_name, stop_lat, stop_lon | _] ->
+    |> Stream.map(fn [
+                       stop_id,
+                       stop_name,
+                       stop_lat,
+                       stop_lon,
+                       location_type,
+                       parent_station,
+                       platform_code | _
+                     ] ->
       lat = String.to_float(stop_lat)
       lon = String.to_float(stop_lon)
       point = %Geo.Point{coordinates: {lon, lat}, srid: 4326}
@@ -23,7 +31,10 @@ defmodule HexaPlanner.GTFS.Importer do
       %{
         original_stop_id: stop_id,
         stop_name: stop_name,
-        location: point
+        location: point,
+        location_type: parse_integer_or_null(location_type),
+        parent_station: if(parent_station == "", do: nil, else: parent_station),
+        platform_code: if(platform_code == "", do: nil, else: platform_code)
       }
     end)
     |> Stream.chunk_every(1000)
@@ -36,11 +47,26 @@ defmodule HexaPlanner.GTFS.Importer do
     file_path
     |> File.stream!()
     |> GTFSParser.parse_stream()
-    |> Stream.map(fn [route_id, service_id, trip_id | _rest] ->
+    |> Stream.map(fn [
+                       route_id,
+                       service_id,
+                       trip_id,
+                       trip_headsign,
+                       trip_short_name,
+                       direction_id,
+                       block_id,
+                       _original_trip_id,
+                       hints | _rest
+                     ] ->
       %{
         original_trip_id: trip_id,
         route_id: route_id,
-        service_id: service_id
+        service_id: service_id,
+        trip_headsign: if(trip_headsign == "", do: nil, else: trip_headsign),
+        trip_short_name: if(trip_short_name == "", do: nil, else: trip_short_name),
+        direction_id: parse_integer_or_null(direction_id),
+        block_id: if(block_id == "", do: nil, else: block_id),
+        hints: if(hints == "", do: nil, else: hints)
       }
     end)
     |> Stream.chunk_every(5000)
@@ -64,7 +90,7 @@ defmodule HexaPlanner.GTFS.Importer do
 
     # 2. Stream the file and insert into a temporary unlogged staging table
     Repo.query!(
-      "CREATE UNLOGGED TABLE IF NOT EXISTS gtfs_stop_times_staging (trip_id_str text, arrival_time int, departure_time int, stop_id_str text, stop_sequence int)"
+      "CREATE UNLOGGED TABLE IF NOT EXISTS gtfs_stop_times_staging (trip_id_str text, arrival_time int, departure_time int, stop_id_str text, stop_sequence int, pickup_type int, drop_off_type int)"
     )
 
     Repo.query!("TRUNCATE TABLE gtfs_stop_times_staging")
@@ -77,20 +103,24 @@ defmodule HexaPlanner.GTFS.Importer do
                        arrival_time,
                        departure_time,
                        stop_id_str,
-                       stop_sequence | _rest
+                       stop_sequence,
+                       pickup_type,
+                       drop_off_type | _rest
                      ] ->
       [
         trip_id_str,
         parse_time(arrival_time),
         parse_time(departure_time),
         stop_id_str,
-        String.to_integer(stop_sequence)
+        String.to_integer(stop_sequence),
+        parse_integer_or_null(pickup_type),
+        parse_integer_or_null(drop_off_type)
       ]
     end)
     |> Stream.chunk_every(10_000)
     |> Enum.each(fn chunk ->
       # We use bare Repo.query! to bypass Ecto schema overhead for the staging table
-      placeholders = Enum.map(1..5, &"$#{&1}") |> Enum.join(",")
+      placeholders = Enum.map(1..7, &"$#{&1}") |> Enum.join(",")
 
       # Flatten the chunk for the parameterized query
       flat_params = List.flatten(chunk)
@@ -100,13 +130,14 @@ defmodule HexaPlanner.GTFS.Importer do
         chunk
         |> Enum.with_index()
         |> Enum.map(fn {_, idx} ->
-          offset = idx * 5
-          "($#{offset + 1}, $#{offset + 2}, $#{offset + 3}, $#{offset + 4}, $#{offset + 5})"
+          offset = idx * 7
+
+          "($#{offset + 1}, $#{offset + 2}, $#{offset + 3}, $#{offset + 4}, $#{offset + 5}, $#{offset + 6}, $#{offset + 7})"
         end)
         |> Enum.join(",")
 
       query =
-        "INSERT INTO gtfs_stop_times_staging (trip_id_str, arrival_time, departure_time, stop_id_str, stop_sequence) VALUES " <>
+        "INSERT INTO gtfs_stop_times_staging (trip_id_str, arrival_time, departure_time, stop_id_str, stop_sequence, pickup_type, drop_off_type) VALUES " <>
           values_str
 
       Repo.query!(query, flat_params)
@@ -115,8 +146,8 @@ defmodule HexaPlanner.GTFS.Importer do
     # 3. Perform the massive resolution directly inside PostgreSQL using a single query
     Repo.query!(
       """
-        INSERT INTO gtfs_stop_times (trip_id, arrival_time, departure_time, stop_id, stop_sequence)
-        SELECT t.id, s.arrival_time, s.departure_time, st.id, s.stop_sequence
+        INSERT INTO gtfs_stop_times (trip_id, arrival_time, departure_time, stop_id, stop_sequence, pickup_type, drop_off_type)
+        SELECT t.id, s.arrival_time, s.departure_time, st.id, s.stop_sequence, s.pickup_type, s.drop_off_type
         FROM gtfs_stop_times_staging s
         JOIN gtfs_trips_dict t ON s.trip_id_str = t.original_id
         JOIN gtfs_stops_dict st ON s.stop_id_str = st.original_id
