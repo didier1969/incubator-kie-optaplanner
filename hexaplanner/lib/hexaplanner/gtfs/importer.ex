@@ -50,20 +50,35 @@ defmodule HexaPlanner.GTFS.Importer do
   end
 
   def import_stop_times(file_path) do
-    # 1. Preload dictionaries for ultra-fast in-memory resolution
-    # In a real 1.5GB file scenario, this might need to be chunked or use an ETS table.
-    # For MVP, we load maps.
-    stop_dict = Repo.all(from s in Stop, select: {s.original_stop_id, s.id}) |> Map.new()
-    trip_dict = Repo.all(from t in Trip, select: {t.original_trip_id, t.id}) |> Map.new()
+    stops_table = :ets.new(:stops_dict, [:set, :public, read_concurrency: true])
+    trips_table = :ets.new(:trips_dict, [:set, :public, read_concurrency: true])
+
+    Repo.all(from(s in Stop, select: {s.original_stop_id, s.id}))
+    |> Enum.each(fn {orig, id} -> :ets.insert(stops_table, {orig, id}) end)
+
+    Repo.all(from(t in Trip, select: {t.original_trip_id, t.id}))
+    |> Enum.each(fn {orig, id} -> :ets.insert(trips_table, {orig, id}) end)
 
     file_path
     |> File.stream!()
     |> GTFSParser.parse_stream()
-    |> Stream.map(fn [trip_id_str, arrival_time, departure_time, stop_id_str, stop_sequence | _rest] ->
-      trip_id_int = Map.get(trip_dict, trip_id_str)
-      stop_id_int = Map.get(stop_dict, stop_id_str)
+    |> Stream.map(fn [
+                       trip_id_str,
+                       arrival_time,
+                       departure_time,
+                       stop_id_str,
+                       stop_sequence | _rest
+                     ] ->
+      trip_id_int = case :ets.lookup(trips_table, trip_id_str) do
+        [{_, id}] -> id
+        [] -> nil
+      end
 
-      # Only process if both foreign keys exist in our DB
+      stop_id_int = case :ets.lookup(stops_table, stop_id_str) do
+        [{_, id}] -> id
+        [] -> nil
+      end
+
       if trip_id_int && stop_id_int do
         %{
           trip_id: trip_id_int,
@@ -81,6 +96,9 @@ defmodule HexaPlanner.GTFS.Importer do
     |> Enum.each(fn chunk ->
       Repo.insert_all(StopTime, chunk, on_conflict: :nothing)
     end)
+
+    :ets.delete(stops_table)
+    :ets.delete(trips_table)
   end
 
   defp parse_time(time_str) do
