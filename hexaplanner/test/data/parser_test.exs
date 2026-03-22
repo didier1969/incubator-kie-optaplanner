@@ -12,7 +12,7 @@ defmodule HexaPlanner.Data.ParserTest do
           "properties" => %{"linie" => "100", "km" => "10.5"},
           "geometry" => %{
             "type" => "LineString",
-            "coordinates" => [[7.4, 46.9], [7.5, 47.0]]
+            "coordinates" => [[7.4, 46.9], [7.45, 46.95], [7.5, 47.0]]
           }
         }
       ]
@@ -23,7 +23,7 @@ defmodule HexaPlanner.Data.ParserTest do
 
     segment = hd(segments)
     assert segment.line_id == "100"
-    assert segment.point_a == {7.4, 46.9}
-    assert segment.point_b == {7.5, 47.0}
+    assert segment.coordinates == [{7.4, 46.9}, {7.45, 46.95}, {7.5, 47.0}]
+    assert segment.properties == %{"linie" => "100", "km" => "10.5"}
   end
 end
