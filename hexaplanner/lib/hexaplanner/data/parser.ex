@@ -24,10 +24,24 @@ defmodule HexaPlanner.Data.Parser do
 
     parsed_coords = Enum.map(coords, fn [lon, lat | _] -> {lon, lat} end)
 
+    string_properties =
+      properties
+      |> Enum.map(fn {k, v} ->
+        val_str =
+          if is_map(v) or is_list(v) do
+            Jason.encode!(v)
+          else
+            to_string(v)
+          end
+
+        {to_string(k), val_str}
+      end)
+      |> Map.new()
+
     %TrackSegment{
       line_id: to_string(line_id),
       coordinates: parsed_coords,
-      properties: properties
+      properties: string_properties
     }
   end
 end

@@ -3,22 +3,26 @@ defmodule HexaPlannerWeb.TwinLive do
   alias HexaPlanner.Domain.{Job, Problem}
   alias HexaPlanner.SolverNif
 
-  alias HexaPlanner.GTFS.Trip
+  alias HexaPlanner.GTFS.{Trip, StopTime}
   alias HexaPlanner.Repo
   import Ecto.Query
 
   def mount(_params, _session, socket) do
-    # MANDATE: NO REDUCTION. Loading the entire Swiss railway network (1.19 Million trips).
-    # This fits in the 64GB RAM allocated for this environment.
+    # MANDATE: NO REDUCTION. Loading the entire Swiss railway network.
+    # Calculate real durations for each trip from stop_times
+    durations_query = from st in StopTime, group_by: st.trip_id, select: {st.trip_id, max(st.departure_time) - min(st.arrival_time)}
+    durations_map = Repo.all(durations_query) |> Map.new()
+
     trips = Repo.all(Trip)
-    
+
     problem = %Problem{
       id: "SBB_CFF_FFS_NETWORK_FULL",
       resources: [],
       jobs: Enum.map(trips, fn t ->
+        duration = Map.get(durations_map, t.id, 60)
         %Job{
           id: t.id, 
-          duration: 60,
+          duration: duration,
           required_resources: [], 
           start_time: nil
         }
@@ -26,7 +30,7 @@ defmodule HexaPlannerWeb.TwinLive do
     }
 
     score = SolverNif.evaluate_problem(problem)
-    
+
     socket = 
       socket
       |> assign(problem: problem, score: score, is_optimizing: false)

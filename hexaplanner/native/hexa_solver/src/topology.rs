@@ -6,6 +6,7 @@ use crate::domain::{GtfsStop, GtfsStopTime, TrackSegment, GtfsTransfer, GtfsCale
 pub struct PhysicalNetwork {
     pub graph: UnGraph<String, Vec<(f64, f64)>>, // Node: Station ID, Edge: Curve Coordinates
     pub station_map: HashMap<String, NodeIndex>,
+    pub all_tracks: Vec<TrackSegment>,
 }
 
 /// Represents the temporal layer: schedule and service occurrences.
@@ -30,6 +31,7 @@ impl PhysicalNetwork {
         Self {
             graph: UnGraph::new_undirected(),
             station_map: HashMap::new(),
+            all_tracks: Vec::new(),
         }
     }
 
@@ -55,6 +57,15 @@ impl PhysicalNetwork {
     #[must_use]
     pub fn track_count(&self) -> usize {
         self.graph.edge_count()
+    }
+
+    pub fn find_path_coordinates(&self, from_id: &str, to_id: &str) -> Option<Vec<(f64, f64)>> {
+        let start = *self.station_map.get(from_id)?;
+        let end = *self.station_map.get(to_id)?;
+
+        // Simple direct edge lookup for now
+        let edge = self.graph.find_edge(start, end)?;
+        Some(self.graph.edge_weight(edge)?.clone())
     }
 }
 
@@ -93,17 +104,29 @@ impl NetworkManager {
 
     pub fn load_stops(&mut self, stops: Vec<GtfsStop>) {
         for stop in stops {
-            self.physical.add_station(&stop.original_stop_id);
+            // High-fidelity: use official abbreviation if present for physical linkage
+            let physical_id = stop.abbreviation.clone().unwrap_or_else(|| stop.original_stop_id.clone());
+            self.physical.add_station(&physical_id);
+            
             self.temporal.get_or_create_node(stop.id);
             self.stops.insert(stop.id, stop);
         }
     }
 
-    pub fn load_tracks(&mut self, _tracks: Vec<TrackSegment>) {
-        // Implementation for spatial matching goes here in Phase 12B
+    pub fn load_tracks(&mut self, tracks: Vec<TrackSegment>) {
+        for track in tracks {
+            let start_id = track.properties.get("bp_anfang").cloned().unwrap_or_default();
+            let end_id = track.properties.get("bp_ende").cloned().unwrap_or_default();
+            
+            if !start_id.is_empty() && !end_id.is_empty() {
+                let a = self.physical.add_station(&start_id);
+                let b = self.physical.add_station(&end_id);
+                self.physical.add_track(a, b, track.coordinates.clone());
+            }
+            self.physical.all_tracks.push(track);
+        }
     }
 
-    /// Fast accumulation of stop times. Does NOT build edges yet.
     pub fn load_stop_times(&mut self, stop_times: Vec<GtfsStopTime>) {
         for st in stop_times {
             self.trips.entry(st.trip_id).or_default().push(st);
@@ -124,10 +147,7 @@ impl NetworkManager {
         self.calendar_dates.extend(dates);
     }
 
-    /// Finalizes the temporal graph in a single O(N) pass.
-    /// Should be called after all stop times are loaded.
     pub fn finalize_temporal_graph(&mut self) -> usize {
-        // Use add_edge instead of update_edge to allow multiple trips between same stations
         for events in self.trips.values_mut() {
             events.sort_by_key(|e| e.stop_sequence);
             for pair in events.windows(2) {
@@ -141,6 +161,15 @@ impl NetworkManager {
                 self.temporal.graph.add_edge(from_node, to_node, travel_time);
             }
         }
+
+        // Add Transfer Edges
+        for transfer in &self.transfers {
+            let from_node = self.temporal.get_or_create_node(transfer.from_stop_id);
+            let to_node = self.temporal.get_or_create_node(transfer.to_stop_id);
+            let time = transfer.min_transfer_time.unwrap_or(120); // Default 2 mins
+            self.temporal.graph.add_edge(from_node, to_node, time);
+        }
+
         self.temporal.graph.edge_count()
     }
 
@@ -149,7 +178,6 @@ impl NetworkManager {
         let events = self.trips.get(&trip_id)?;
         if events.is_empty() { return None; }
 
-        // 1. Find the segment the train is currently in
         for i in 0..events.len() - 1 {
             let from = &events[i];
             let to = &events[i+1];
@@ -158,30 +186,51 @@ impl NetworkManager {
                 let from_stop = self.stops.get(&from.stop_id)?;
                 let to_stop = self.stops.get(&to.stop_id)?;
 
+                // HIGH-FIDELITY POSITIONING:
+                // Use abbreviations to look up the physical curve
+                let from_abbr = from_stop.abbreviation.as_ref().unwrap_or(&from_stop.original_stop_id);
+                let to_abbr = to_stop.abbreviation.as_ref().unwrap_or(&to_stop.original_stop_id);
+
+                if let Some(coords) = self.physical.find_path_coordinates(from_abbr, to_abbr) {
+                    let progress = f64::from(time - from.departure_time) / f64::from(to.arrival_time - from.departure_time);
+                    return Some(self.interpolate_on_curve(&coords, progress));
+                }
+
+                // Fallback to linear
                 let duration = to.arrival_time - from.departure_time;
                 if duration <= 0 { return Some(from_stop.location.coordinates); }
-                
                 let progress = f64::from(time - from.departure_time) / f64::from(duration);
-                
-                // HIGH-FIDELITY: In Phase 12B, we lookup the PhysicalNetwork edge 
-                // between from_stop and to_stop to get the CURVE.
-                // For now, we perform high-precision linear interpolation.
                 let lon = from_stop.location.coordinates.0 + (to_stop.location.coordinates.0 - from_stop.location.coordinates.0) * progress;
                 let lat = from_stop.location.coordinates.1 + (to_stop.location.coordinates.1 - from_stop.location.coordinates.1) * progress;
-                
                 return Some((lon, lat));
             }
         }
 
-        // 2. Handle cases where train is stopped at a station
         for event in events {
             if time >= event.arrival_time && time <= event.departure_time {
                 let stop = self.stops.get(&event.stop_id)?;
                 return Some(stop.location.coordinates);
             }
         }
-
         None
+    }
+
+    fn interpolate_on_curve(&self, coords: &[(f64, f64)], progress: f64) -> (f64, f64) {
+        if coords.is_empty() { return (0.0, 0.0); }
+        if coords.len() == 1 { return coords[0]; }
+        
+        let target_idx_float = progress * (coords.len() - 1) as f64;
+        let idx = target_idx_float.floor() as usize;
+        let local_progress = target_idx_float - idx as f64;
+        
+        if idx >= coords.len() - 1 { return coords[coords.len() - 1]; }
+        
+        let p1 = coords[idx];
+        let p2 = coords[idx + 1];
+        
+        let lon = p1.0 + (p2.0 - p1.0) * local_progress;
+        let lat = p1.1 + (p2.1 - p1.1) * local_progress;
+        (lon, lat)
     }
 }
 

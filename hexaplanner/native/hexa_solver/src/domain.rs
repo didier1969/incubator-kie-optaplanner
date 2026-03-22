@@ -30,6 +30,7 @@ pub struct GtfsStop {
     pub id: i64,
     pub original_stop_id: String,
     pub stop_name: String,
+    pub abbreviation: Option<String>,
     pub location_type: Option<i32>,
     pub parent_station: Option<String>,
     pub platform_code: Option<String>,
@@ -102,6 +103,7 @@ pub struct GtfsCalendarDate {
 pub struct TrackSegment {
     pub line_id: String,
     pub coordinates: Vec<(f64, f64)>,
+    pub properties: std::collections::HashMap<String, String>,
 }
 
 #[derive(Debug, Clone, NifStruct)]
@@ -138,6 +140,7 @@ mod tests {
             id: 1,
             original_stop_id: "8500010".to_string(),
             stop_name: "Basel SBB".to_string(),
+            abbreviation: Some("BS".to_string()),
             location_type: Some(1),
             parent_station: None,
             platform_code: Some("4".to_string()),

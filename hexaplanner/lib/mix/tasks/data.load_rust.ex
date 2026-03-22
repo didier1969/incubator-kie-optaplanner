@@ -14,7 +14,22 @@ defmodule Mix.Tasks.Data.LoadRust do
     resource = SolverNif.init_network()
 
     Logger.info("Loading 100% of Stops into Rust...")
-    stops = Repo.all(Stop)
+    # Load stops and their abbreviations from GeoJSON for high-fidelity physical linkage
+    stops_geojson = 
+      Path.join([:code.priv_dir(:hexaplanner), "data/raw/2026/20260318/stops.geojson"])
+      |> File.read!()
+      |> Jason.decode!()
+      
+    abbreviations_map = 
+      stops_geojson["features"]
+      |> Enum.map(fn f -> {to_string(f["properties"]["number"]), f["properties"]["abbreviation"]} end)
+      |> Map.new()
+
+    stops = Repo.all(Stop) |> Enum.map(fn s ->
+      # Attach abbreviation to the stop struct before sending to Rust
+      # We'll repurpose a field or add one if needed. Let's add it to Rust side GtfsStop.
+      Map.put(s, :abbreviation, Map.get(abbreviations_map, s.original_stop_id))
+    end)
     SolverNif.load_stops(resource, stops)
     Logger.info("✅ Stops loaded.")
 
@@ -38,6 +53,21 @@ defmodule Mix.Tasks.Data.LoadRust do
     transfers = Repo.all(HexaPlanner.GTFS.Transfer)
     SolverNif.load_transfers(resource, transfers)
     Logger.info("✅ Transfers loaded.")
+
+    Logger.info("Loading Physical Rail Geometry (GeoJSON Curves)...")
+    topology_path = Path.join([:code.priv_dir(:hexaplanner), "data/raw/2026/20260318/topology.geojson"])
+    if File.exists?(topology_path) do
+      tracks = 
+        topology_path
+        |> File.read!()
+        |> Jason.decode!()
+        |> HexaPlanner.Data.Parser.extract_segments()
+      
+      SolverNif.load_tracks(resource, tracks)
+      Logger.info("✅ Physical topology loaded.")
+    else
+      Logger.warning("Topology file not found at #{topology_path}. Skipping.")
+    end
 
     Logger.info("Loading 100% of Stop Times into Rust (~19 Million rows)...")
     # Stream in chunks to avoid BEAM memory spikes

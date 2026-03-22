@@ -106,8 +106,7 @@ fn get_train_position(
 #[rustler::nif]
 fn finalize_temporal_graph(resource: ResourceArc<NetworkResource>) -> usize {
     let mut manager = resource.manager.write().unwrap();
-    manager.finalize_temporal_graph();
-    manager.temporal.graph.edge_count()
+    manager.finalize_temporal_graph()
 }
 
 fn load(env: Env, _info: Term) -> bool {
