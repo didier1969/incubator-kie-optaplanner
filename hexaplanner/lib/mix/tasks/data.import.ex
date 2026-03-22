@@ -10,6 +10,8 @@ defmodule Mix.Tasks.Data.Import do
   require Logger
   alias HexaPlanner.GTFS.Importer
 
+  alias HexaPlanner.Repo
+
   @impl Mix.Task
   def run(args) do
     # Start the Ecto Repo
@@ -30,55 +32,100 @@ defmodule Mix.Tasks.Data.Import do
       exit({:shutdown, 1})
     end
 
-    stops_path = Path.join(data_dir, "stops.txt")
-    trips_path = Path.join(data_dir, "trips.txt")
-    stop_times_path = Path.join(data_dir, "stop_times.txt")
-    transfers_path = Path.join(data_dir, "transfers.txt")
-    calendar_path = Path.join(data_dir, "calendar.txt")
-    calendar_dates_path = Path.join(data_dir, "calendar_dates.txt")
-    agency_path = Path.join(data_dir, "agency.txt")
-    routes_path = Path.join(data_dir, "routes.txt")
-    frequencies_path = Path.join(data_dir, "frequencies.txt")
-    feed_info_path = Path.join(data_dir, "feed_info.txt")
+    total_start = System.monotonic_time()
 
-    Logger.info("Starting ingestion of GTFS Feed Info...")
-    Importer.import_feed_info(feed_info_path)
-    Logger.info("✅ Feed Info imported successfully.")
+    import_with_stats("Feed Info", Path.join(data_dir, "feed_info.txt"), "gtfs_feed_info", fn p ->
+      Importer.import_feed_info(p)
+    end)
 
-    Logger.info("Starting ingestion of GTFS Agency...")
-    Importer.import_agency(agency_path)
-    Logger.info("✅ Agency imported successfully.")
+    import_with_stats("Agency", Path.join(data_dir, "agency.txt"), "gtfs_agency", fn p ->
+      Importer.import_agency(p)
+    end)
 
-    Logger.info("Starting ingestion of GTFS Routes...")
-    Importer.import_routes(routes_path)
-    Logger.info("✅ Routes imported successfully.")
+    import_with_stats("Routes", Path.join(data_dir, "routes.txt"), "gtfs_routes", fn p ->
+      Importer.import_routes(p)
+    end)
 
-    Logger.info("Starting ingestion of GTFS Stops...")
-    Importer.import_stops(stops_path)
-    Logger.info("✅ Stops imported successfully.")
+    import_with_stats("Stops", Path.join(data_dir, "stops.txt"), "gtfs_stops", fn p ->
+      Importer.import_stops(p)
+    end)
 
-    Logger.info("Starting ingestion of GTFS Calendars...")
-    Importer.import_calendars(calendar_path)
-    Importer.import_calendar_dates(calendar_dates_path)
-    Logger.info("✅ Calendars imported successfully.")
+    import_with_stats("Calendars", Path.join(data_dir, "calendar.txt"), "gtfs_calendars", fn p ->
+      Importer.import_calendars(p)
+    end)
 
-    Logger.info("Starting ingestion of GTFS Trips...")
-    Importer.import_trips(trips_path)
-    Logger.info("✅ Trips imported successfully.")
+    import_with_stats(
+      "Calendar Dates",
+      Path.join(data_dir, "calendar_dates.txt"),
+      "gtfs_calendar_dates",
+      fn p ->
+        Importer.import_calendar_dates(p)
+      end
+    )
 
-    Logger.info("Starting ingestion of GTFS Frequencies...")
-    Importer.import_frequencies(frequencies_path)
-    Logger.info("✅ Frequencies imported successfully.")
+    import_with_stats("Trips", Path.join(data_dir, "trips.txt"), "gtfs_trips", fn p ->
+      Importer.import_trips(p)
+    end)
 
-    Logger.info("Starting massive ingestion of GTFS Stop Times (~20 Million rows)...")
-    Logger.info("This process uses PostgreSQL unlogged tables and may take 2-5 minutes.")
-    Importer.import_stop_times(stop_times_path)
-    Logger.info("✅ Stop Times imported successfully.")
+    import_with_stats(
+      "Frequencies",
+      Path.join(data_dir, "frequencies.txt"),
+      "gtfs_frequencies",
+      fn p ->
+        Importer.import_frequencies(p)
+      end
+    )
 
-    Logger.info("Starting ingestion of GTFS Transfers...")
-    Importer.import_transfers(transfers_path)
-    Logger.info("✅ Transfers imported successfully.")
+    import_with_stats(
+      "Stop Times",
+      Path.join(data_dir, "stop_times.txt"),
+      "gtfs_stop_times",
+      fn p ->
+        Importer.import_stop_times(p)
+      end
+    )
 
-    Logger.info("🎉 Database ingestion complete! The Digital Twin is ready.")
+    import_with_stats("Transfers", Path.join(data_dir, "transfers.txt"), "gtfs_transfers", fn p ->
+      Importer.import_transfers(p)
+    end)
+
+    total_end = System.monotonic_time()
+    total_duration = System.convert_time_unit(total_end - total_start, :native, :second)
+
+    Logger.info(
+      "🎉 Global Ingestion Complete in #{total_duration}s! The Digital Twin is fully synchronized."
+    )
+  end
+
+  defp import_with_stats(name, file_path, table_name, func) do
+    # Count source lines (efficiently)
+    {wc_out, 0} = System.cmd("wc", ["-l", file_path])
+    [line_count_str | _] = String.split(String.trim(wc_out), " ")
+    source_count = String.to_integer(line_count_str) - 1
+
+    # Get DB count before
+    %Postgrex.Result{rows: [[count_before]]} =
+      Repo.query!("SELECT count(*) FROM #{table_name}", [], log: false)
+
+    Logger.info(
+      "Importing #{name}: [Current DB: #{count_before} entries | Source File: #{source_count} entries]"
+    )
+
+    start_time = System.monotonic_time()
+
+    # Execute import
+    func.(file_path)
+
+    # Get DB count after
+    %Postgrex.Result{rows: [[count_after]]} =
+      Repo.query!("SELECT count(*) FROM #{table_name}", [], log: false)
+
+    imported_count = count_after - count_before
+    end_time = System.monotonic_time()
+    duration = System.convert_time_unit(end_time - start_time, :native, :millisecond) / 1000
+
+    Logger.info(
+      "✅ #{name} ingestion finished: +#{imported_count} new entries in #{Float.round(duration, 2)}s"
+    )
   end
 end

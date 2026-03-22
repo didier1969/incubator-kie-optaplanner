@@ -4,10 +4,8 @@ defmodule HexaPlanner.GTFS.Importer do
   into the PostgreSQL database.
   """
   alias HexaPlanner.GTFS.Stop
-  alias HexaPlanner.GTFS.StopTime
   alias HexaPlanner.GTFS.Trip
   alias HexaPlanner.Repo
-  import Ecto.Query
 
   NimbleCSV.define(GTFSParser, separator: ",", escape: "\"")
 
@@ -39,8 +37,11 @@ defmodule HexaPlanner.GTFS.Importer do
     end)
     |> Stream.chunk_every(1000)
     |> Enum.each(fn chunk ->
-      Repo.insert_all(Stop, chunk, on_conflict: :nothing)
+      Repo.insert_all(Stop, chunk, on_conflict: :nothing, log: false)
+      IO.write(".")
     end)
+
+    IO.puts("")
   end
 
   def import_trips(file_path) do
@@ -71,29 +72,43 @@ defmodule HexaPlanner.GTFS.Importer do
     end)
     |> Stream.chunk_every(5000)
     |> Enum.each(fn chunk ->
-      Repo.insert_all(Trip, chunk, on_conflict: :replace_all, conflict_target: :original_trip_id)
+      Repo.insert_all(Trip, chunk,
+        on_conflict: :replace_all,
+        conflict_target: :original_trip_id,
+        log: false
+      )
+
+      IO.write(".")
     end)
+
+    IO.puts("")
   end
 
   def import_stop_times(file_path) do
     # 1. Sync dictionaries to PostgreSQL unlogged tables for ultra-fast, zero-memory SQL JOINs
-    Repo.query!("TRUNCATE TABLE gtfs_stops_dict")
-    Repo.query!("TRUNCATE TABLE gtfs_trips_dict")
+    Repo.query!("TRUNCATE TABLE gtfs_stops_dict", [], log: false)
+    Repo.query!("TRUNCATE TABLE gtfs_trips_dict", [], log: false)
 
     Repo.query!(
-      "INSERT INTO gtfs_stops_dict (original_id, id) SELECT original_stop_id, id FROM gtfs_stops"
+      "INSERT INTO gtfs_stops_dict (original_id, id) SELECT original_stop_id, id FROM gtfs_stops",
+      [],
+      log: false
     )
 
     Repo.query!(
-      "INSERT INTO gtfs_trips_dict (original_id, id) SELECT original_trip_id, id FROM gtfs_trips"
+      "INSERT INTO gtfs_trips_dict (original_id, id) SELECT original_trip_id, id FROM gtfs_trips",
+      [],
+      log: false
     )
 
     # 2. Stream the file and insert into a temporary unlogged staging table
-    Repo.query!(
-      "CREATE UNLOGGED TABLE IF NOT EXISTS gtfs_stop_times_staging (trip_id_str text, arrival_time int, departure_time int, stop_id_str text, stop_sequence int, pickup_type int, drop_off_type int)"
-    )
+    Repo.query!("DROP TABLE IF EXISTS gtfs_stop_times_staging", [], log: false)
 
-    Repo.query!("TRUNCATE TABLE gtfs_stop_times_staging")
+    Repo.query!(
+      "CREATE UNLOGGED TABLE gtfs_stop_times_staging (trip_id_str text, arrival_time int, departure_time int, stop_id_str text, stop_sequence int, pickup_type int, drop_off_type int)",
+      [],
+      log: false
+    )
 
     file_path
     |> File.stream!()
@@ -117,14 +132,9 @@ defmodule HexaPlanner.GTFS.Importer do
         parse_integer_or_null(drop_off_type)
       ]
     end)
-    |> Stream.chunk_every(10_000)
+    # 8000 * 7 = 56000 < 65535 limit
+    |> Stream.chunk_every(8000)
     |> Enum.each(fn chunk ->
-      # We use bare Repo.query! to bypass Ecto schema overhead for the staging table
-      placeholders = Enum.map(1..7, &"$#{&1}") |> Enum.join(",")
-
-      # Flatten the chunk for the parameterized query
-      flat_params = List.flatten(chunk)
-
       # Build the massive INSERT statement dynamically
       values_str =
         chunk
@@ -140,8 +150,12 @@ defmodule HexaPlanner.GTFS.Importer do
         "INSERT INTO gtfs_stop_times_staging (trip_id_str, arrival_time, departure_time, stop_id_str, stop_sequence, pickup_type, drop_off_type) VALUES " <>
           values_str
 
-      Repo.query!(query, flat_params)
+      flat_params = List.flatten(chunk)
+      Repo.query!(query, flat_params, log: false)
+      IO.write(".")
     end)
+
+    IO.puts("\nResolving IDs in PostgreSQL...")
 
     # 3. Perform the massive resolution directly inside PostgreSQL using a single query
     Repo.query!(
@@ -154,19 +168,23 @@ defmodule HexaPlanner.GTFS.Importer do
         ON CONFLICT DO NOTHING
       """,
       [],
-      timeout: :infinity
+      timeout: :infinity,
+      log: false
     )
 
     # 4. Cleanup
-    Repo.query!("TRUNCATE TABLE gtfs_stop_times_staging")
+    Repo.query!("DROP TABLE IF EXISTS gtfs_stop_times_staging", [], log: false)
+    IO.puts("Done.")
   end
 
   def import_transfers(file_path) do
-    Repo.query!(
-      "CREATE UNLOGGED TABLE IF NOT EXISTS gtfs_transfers_staging (from_stop_id_str text, to_stop_id_str text, transfer_type int, min_transfer_time int, from_trip_id_str text, to_trip_id_str text, from_route_id_str text, to_route_id_str text)"
-    )
+    Repo.query!("DROP TABLE IF EXISTS gtfs_transfers_staging", [], log: false)
 
-    Repo.query!("TRUNCATE TABLE gtfs_transfers_staging")
+    Repo.query!(
+      "CREATE UNLOGGED TABLE gtfs_transfers_staging (from_stop_id_str text, to_stop_id_str text, transfer_type int, min_transfer_time int, from_trip_id_str text, to_trip_id_str text, from_route_id_str text, to_route_id_str text)",
+      [],
+      log: false
+    )
 
     file_path
     |> File.stream!()
@@ -192,7 +210,8 @@ defmodule HexaPlanner.GTFS.Importer do
         if(to_route_id == "", do: nil, else: to_route_id)
       ]
     end)
-    |> Stream.chunk_every(10_000)
+    # 8000 * 8 = 56000 < 65535 limit
+    |> Stream.chunk_every(8000)
     |> Enum.each(fn chunk ->
       flat_params = List.flatten(chunk)
 
@@ -210,7 +229,8 @@ defmodule HexaPlanner.GTFS.Importer do
         "INSERT INTO gtfs_transfers_staging (from_stop_id_str, to_stop_id_str, transfer_type, min_transfer_time, from_trip_id_str, to_trip_id_str, from_route_id_str, to_route_id_str) VALUES " <>
           values_str
 
-      Repo.query!(query, flat_params)
+      Repo.query!(query, flat_params, log: false)
+      IO.write(".")
     end)
 
     # Resolve foreign keys via SQL
@@ -236,10 +256,12 @@ defmodule HexaPlanner.GTFS.Importer do
         ON CONFLICT DO NOTHING
       """,
       [],
-      timeout: :infinity
+      timeout: :infinity,
+      log: false
     )
 
-    Repo.query!("TRUNCATE TABLE gtfs_transfers_staging")
+    Repo.query!("DROP TABLE IF EXISTS gtfs_transfers_staging", [], log: false)
+    IO.puts("")
   end
 
   def import_calendars(file_path) do
@@ -271,6 +293,7 @@ defmodule HexaPlanner.GTFS.Importer do
         String.to_integer(end_date)
       ]
     end)
+    # 5000 * 10 = 50000 < 65535 limit
     |> Stream.chunk_every(5000)
     |> Enum.each(fn chunk ->
       flat_params = List.flatten(chunk)
@@ -289,8 +312,11 @@ defmodule HexaPlanner.GTFS.Importer do
         "INSERT INTO gtfs_calendars (service_id, monday, tuesday, wednesday, thursday, friday, saturday, sunday, start_date, end_date) VALUES " <>
           values_str <> " ON CONFLICT (service_id) DO NOTHING"
 
-      Repo.query!(query, flat_params)
+      Repo.query!(query, flat_params, log: false)
+      IO.write(".")
     end)
+
+    IO.puts("")
   end
 
   def import_calendar_dates(file_path) do
@@ -304,6 +330,7 @@ defmodule HexaPlanner.GTFS.Importer do
         String.to_integer(exception_type)
       ]
     end)
+    # 10000 * 3 = 30000 < 65535 limit
     |> Stream.chunk_every(10_000)
     |> Enum.each(fn chunk ->
       flat_params = List.flatten(chunk)
@@ -320,16 +347,21 @@ defmodule HexaPlanner.GTFS.Importer do
       query =
         "INSERT INTO gtfs_calendar_dates (service_id, date, exception_type) VALUES " <> values_str
 
-      Repo.query!(query, flat_params)
+      Repo.query!(query, flat_params, log: false)
+      IO.write(".")
     end)
+
+    IO.puts("")
   end
 
   def import_agency(file_path) do
-    Repo.query!(
-      "CREATE UNLOGGED TABLE IF NOT EXISTS gtfs_agency_staging (original_agency_id text, agency_name text, agency_url text, agency_timezone text, agency_lang text, agency_phone text)"
-    )
+    Repo.query!("DROP TABLE IF EXISTS gtfs_agency_staging", [], log: false)
 
-    Repo.query!("TRUNCATE TABLE gtfs_agency_staging")
+    Repo.query!(
+      "CREATE UNLOGGED TABLE gtfs_agency_staging (original_agency_id text, agency_name text, agency_url text, agency_timezone text, agency_lang text, agency_phone text)",
+      [],
+      log: false
+    )
 
     file_path
     |> File.stream!()
@@ -369,25 +401,33 @@ defmodule HexaPlanner.GTFS.Importer do
         "INSERT INTO gtfs_agency_staging (original_agency_id, agency_name, agency_url, agency_timezone, agency_lang, agency_phone) VALUES " <>
           values_str
 
-      Repo.query!(query, flat_params)
+      Repo.query!(query, flat_params, log: false)
+      IO.write(".")
     end)
 
-    Repo.query!("""
-      INSERT INTO gtfs_agency (original_agency_id, agency_name, agency_url, agency_timezone, agency_lang, agency_phone)
-      SELECT original_agency_id, agency_name, agency_url, agency_timezone, agency_lang, agency_phone
-      FROM gtfs_agency_staging
-      ON CONFLICT DO NOTHING
-    """)
+    Repo.query!(
+      """
+        INSERT INTO gtfs_agency (original_agency_id, agency_name, agency_url, agency_timezone, agency_lang, agency_phone)
+        SELECT original_agency_id, agency_name, agency_url, agency_timezone, agency_lang, agency_phone
+        FROM gtfs_agency_staging
+        ON CONFLICT DO NOTHING
+      """,
+      [],
+      log: false
+    )
 
-    Repo.query!("TRUNCATE TABLE gtfs_agency_staging")
+    Repo.query!("DROP TABLE IF EXISTS gtfs_agency_staging", [], log: false)
+    IO.puts("")
   end
 
   def import_routes(file_path) do
-    Repo.query!(
-      "CREATE UNLOGGED TABLE IF NOT EXISTS gtfs_routes_staging (original_route_id text, agency_id_str text, route_short_name text, route_long_name text, route_desc text, route_type int)"
-    )
+    Repo.query!("DROP TABLE IF EXISTS gtfs_routes_staging", [], log: false)
 
-    Repo.query!("TRUNCATE TABLE gtfs_routes_staging")
+    Repo.query!(
+      "CREATE UNLOGGED TABLE gtfs_routes_staging (original_route_id text, agency_id_str text, route_short_name text, route_long_name text, route_desc text, route_type int)",
+      [],
+      log: false
+    )
 
     file_path
     |> File.stream!()
@@ -427,32 +467,40 @@ defmodule HexaPlanner.GTFS.Importer do
         "INSERT INTO gtfs_routes_staging (original_route_id, agency_id_str, route_short_name, route_long_name, route_desc, route_type) VALUES " <>
           values_str
 
-      Repo.query!(query, flat_params)
+      Repo.query!(query, flat_params, log: false)
+      IO.write(".")
     end)
 
-    Repo.query!("""
-      INSERT INTO gtfs_routes (original_route_id, agency_id, route_short_name, route_long_name, route_desc, route_type)
-      SELECT
-        s.original_route_id,
-        a.id,
-        s.route_short_name,
-        s.route_long_name,
-        s.route_desc,
-        s.route_type
-      FROM gtfs_routes_staging s
-      LEFT JOIN gtfs_agency a ON s.agency_id_str = a.original_agency_id
-      ON CONFLICT DO NOTHING
-    """)
+    Repo.query!(
+      """
+        INSERT INTO gtfs_routes (original_route_id, agency_id, route_short_name, route_long_name, route_desc, route_type)
+        SELECT
+          s.original_route_id,
+          a.id,
+          s.route_short_name,
+          s.route_long_name,
+          s.route_desc,
+          s.route_type
+        FROM gtfs_routes_staging s
+        LEFT JOIN gtfs_agency a ON s.agency_id_str = a.original_agency_id
+        ON CONFLICT DO NOTHING
+      """,
+      [],
+      log: false
+    )
 
-    Repo.query!("TRUNCATE TABLE gtfs_routes_staging")
+    Repo.query!("DROP TABLE IF EXISTS gtfs_routes_staging", [], log: false)
+    IO.puts("")
   end
 
   def import_frequencies(file_path) do
-    Repo.query!(
-      "CREATE UNLOGGED TABLE IF NOT EXISTS gtfs_frequencies_staging (trip_id_str text, start_time int, end_time int, headway_secs int, exact_times int)"
-    )
+    Repo.query!("DROP TABLE IF EXISTS gtfs_frequencies_staging", [], log: false)
 
-    Repo.query!("TRUNCATE TABLE gtfs_frequencies_staging")
+    Repo.query!(
+      "CREATE UNLOGGED TABLE gtfs_frequencies_staging (trip_id_str text, start_time int, end_time int, headway_secs int, exact_times int)",
+      [],
+      log: false
+    )
 
     file_path
     |> File.stream!()
@@ -483,23 +531,29 @@ defmodule HexaPlanner.GTFS.Importer do
         "INSERT INTO gtfs_frequencies_staging (trip_id_str, start_time, end_time, headway_secs, exact_times) VALUES " <>
           values_str
 
-      Repo.query!(query, flat_params)
+      Repo.query!(query, flat_params, log: false)
+      IO.write(".")
     end)
 
-    Repo.query!("""
-      INSERT INTO gtfs_frequencies (trip_id, start_time, end_time, headway_secs, exact_times)
-      SELECT
-        t.id,
-        s.start_time,
-        s.end_time,
-        s.headway_secs,
-        s.exact_times
-      FROM gtfs_frequencies_staging s
-      JOIN gtfs_trips t ON s.trip_id_str = t.original_trip_id
-      ON CONFLICT DO NOTHING
-    """)
+    Repo.query!(
+      """
+        INSERT INTO gtfs_frequencies (trip_id, start_time, end_time, headway_secs, exact_times)
+        SELECT
+          t.id,
+          s.start_time,
+          s.end_time,
+          s.headway_secs,
+          s.exact_times
+        FROM gtfs_frequencies_staging s
+        JOIN gtfs_trips t ON s.trip_id_str = t.original_trip_id
+        ON CONFLICT DO NOTHING
+      """,
+      [],
+      log: false
+    )
 
-    Repo.query!("TRUNCATE TABLE gtfs_frequencies_staging")
+    Repo.query!("DROP TABLE IF EXISTS gtfs_frequencies_staging", [], log: false)
+    IO.puts("")
   end
 
   def import_feed_info(file_path) do
@@ -512,14 +566,18 @@ defmodule HexaPlanner.GTFS.Importer do
         VALUES ($1, $2, $3, $4, $5, $6)
       """
 
-      Repo.query!(query, [
-        publisher_name,
-        publisher_url,
-        lang,
-        parse_integer_or_null(start_date),
-        parse_integer_or_null(end_date),
-        version
-      ])
+      Repo.query!(
+        query,
+        [
+          publisher_name,
+          publisher_url,
+          lang,
+          parse_integer_or_null(start_date),
+          parse_integer_or_null(end_date),
+          version
+        ],
+        log: false
+      )
     end)
   end
 
