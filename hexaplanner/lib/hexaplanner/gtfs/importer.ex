@@ -28,7 +28,7 @@ defmodule HexaPlanner.GTFS.Importer do
     end)
     |> Stream.chunk_every(1000)
     |> Enum.each(fn chunk ->
-      Repo.insert_all(Stop, chunk, on_conflict: :replace_all, conflict_target: :original_stop_id)
+      Repo.insert_all(Stop, chunk, on_conflict: :nothing)
     end)
   end
 
@@ -122,7 +122,9 @@ defmodule HexaPlanner.GTFS.Importer do
         JOIN gtfs_stops_dict st ON s.stop_id_str = st.original_id
         ON CONFLICT DO NOTHING
       """,
-      [], timeout: :infinity)
+      [],
+      timeout: :infinity
+    )
 
     # 4. Cleanup
     Repo.query!("TRUNCATE TABLE gtfs_stop_times_staging")
@@ -196,7 +198,9 @@ defmodule HexaPlanner.GTFS.Importer do
         LEFT JOIN gtfs_trips_dict tr_to ON s.to_trip_id_str = tr_to.original_id
         ON CONFLICT DO NOTHING
       """,
-      [], timeout: :infinity)
+      [],
+      timeout: :infinity
+    )
 
     Repo.query!("TRUNCATE TABLE gtfs_transfers_staging")
   end
@@ -230,7 +234,7 @@ defmodule HexaPlanner.GTFS.Importer do
         String.to_integer(end_date)
       ]
     end)
-    |> Stream.chunk_every(10_000)
+    |> Stream.chunk_every(5000)
     |> Enum.each(fn chunk ->
       flat_params = List.flatten(chunk)
 
@@ -280,6 +284,205 @@ defmodule HexaPlanner.GTFS.Importer do
         "INSERT INTO gtfs_calendar_dates (service_id, date, exception_type) VALUES " <> values_str
 
       Repo.query!(query, flat_params)
+    end)
+  end
+
+  def import_agency(file_path) do
+    Repo.query!(
+      "CREATE UNLOGGED TABLE IF NOT EXISTS gtfs_agency_staging (original_agency_id text, agency_name text, agency_url text, agency_timezone text, agency_lang text, agency_phone text)"
+    )
+
+    Repo.query!("TRUNCATE TABLE gtfs_agency_staging")
+
+    file_path
+    |> File.stream!()
+    |> GTFSParser.parse_stream()
+    |> Stream.map(fn [
+                       original_agency_id,
+                       agency_name,
+                       agency_url,
+                       agency_timezone,
+                       agency_lang,
+                       agency_phone | _rest
+                     ] ->
+      [
+        original_agency_id,
+        agency_name,
+        agency_url,
+        agency_timezone,
+        agency_lang,
+        agency_phone
+      ]
+    end)
+    |> Stream.chunk_every(10_000)
+    |> Enum.each(fn chunk ->
+      flat_params = List.flatten(chunk)
+
+      values_str =
+        chunk
+        |> Enum.with_index()
+        |> Enum.map(fn {_, idx} ->
+          offset = idx * 6
+
+          "($#{offset + 1}, $#{offset + 2}, $#{offset + 3}, $#{offset + 4}, $#{offset + 5}, $#{offset + 6})"
+        end)
+        |> Enum.join(",")
+
+      query =
+        "INSERT INTO gtfs_agency_staging (original_agency_id, agency_name, agency_url, agency_timezone, agency_lang, agency_phone) VALUES " <>
+          values_str
+
+      Repo.query!(query, flat_params)
+    end)
+
+    Repo.query!("""
+      INSERT INTO gtfs_agency (original_agency_id, agency_name, agency_url, agency_timezone, agency_lang, agency_phone)
+      SELECT original_agency_id, agency_name, agency_url, agency_timezone, agency_lang, agency_phone
+      FROM gtfs_agency_staging
+      ON CONFLICT DO NOTHING
+    """)
+
+    Repo.query!("TRUNCATE TABLE gtfs_agency_staging")
+  end
+
+  def import_routes(file_path) do
+    Repo.query!(
+      "CREATE UNLOGGED TABLE IF NOT EXISTS gtfs_routes_staging (original_route_id text, agency_id_str text, route_short_name text, route_long_name text, route_desc text, route_type int)"
+    )
+
+    Repo.query!("TRUNCATE TABLE gtfs_routes_staging")
+
+    file_path
+    |> File.stream!()
+    |> GTFSParser.parse_stream()
+    |> Stream.map(fn [
+                       original_route_id,
+                       agency_id_str,
+                       route_short_name,
+                       route_long_name,
+                       route_desc,
+                       route_type | _rest
+                     ] ->
+      [
+        original_route_id,
+        agency_id_str,
+        route_short_name,
+        route_long_name,
+        route_desc,
+        parse_integer_or_null(route_type)
+      ]
+    end)
+    |> Stream.chunk_every(10_000)
+    |> Enum.each(fn chunk ->
+      flat_params = List.flatten(chunk)
+
+      values_str =
+        chunk
+        |> Enum.with_index()
+        |> Enum.map(fn {_, idx} ->
+          offset = idx * 6
+
+          "($#{offset + 1}, $#{offset + 2}, $#{offset + 3}, $#{offset + 4}, $#{offset + 5}, $#{offset + 6})"
+        end)
+        |> Enum.join(",")
+
+      query =
+        "INSERT INTO gtfs_routes_staging (original_route_id, agency_id_str, route_short_name, route_long_name, route_desc, route_type) VALUES " <>
+          values_str
+
+      Repo.query!(query, flat_params)
+    end)
+
+    Repo.query!("""
+      INSERT INTO gtfs_routes (original_route_id, agency_id, route_short_name, route_long_name, route_desc, route_type)
+      SELECT
+        s.original_route_id,
+        a.id,
+        s.route_short_name,
+        s.route_long_name,
+        s.route_desc,
+        s.route_type
+      FROM gtfs_routes_staging s
+      LEFT JOIN gtfs_agency a ON s.agency_id_str = a.original_agency_id
+      ON CONFLICT DO NOTHING
+    """)
+
+    Repo.query!("TRUNCATE TABLE gtfs_routes_staging")
+  end
+
+  def import_frequencies(file_path) do
+    Repo.query!(
+      "CREATE UNLOGGED TABLE IF NOT EXISTS gtfs_frequencies_staging (trip_id_str text, start_time int, end_time int, headway_secs int, exact_times int)"
+    )
+
+    Repo.query!("TRUNCATE TABLE gtfs_frequencies_staging")
+
+    file_path
+    |> File.stream!()
+    |> GTFSParser.parse_stream()
+    |> Stream.map(fn [trip_id_str, start_time, end_time, headway_secs, exact_times | _rest] ->
+      [
+        trip_id_str,
+        parse_time(start_time),
+        parse_time(end_time),
+        parse_integer_or_null(headway_secs),
+        parse_integer_or_null(exact_times)
+      ]
+    end)
+    |> Stream.chunk_every(10_000)
+    |> Enum.each(fn chunk ->
+      flat_params = List.flatten(chunk)
+
+      values_str =
+        chunk
+        |> Enum.with_index()
+        |> Enum.map(fn {_, idx} ->
+          offset = idx * 5
+          "($#{offset + 1}, $#{offset + 2}, $#{offset + 3}, $#{offset + 4}, $#{offset + 5})"
+        end)
+        |> Enum.join(",")
+
+      query =
+        "INSERT INTO gtfs_frequencies_staging (trip_id_str, start_time, end_time, headway_secs, exact_times) VALUES " <>
+          values_str
+
+      Repo.query!(query, flat_params)
+    end)
+
+    Repo.query!("""
+      INSERT INTO gtfs_frequencies (trip_id, start_time, end_time, headway_secs, exact_times)
+      SELECT
+        t.id,
+        s.start_time,
+        s.end_time,
+        s.headway_secs,
+        s.exact_times
+      FROM gtfs_frequencies_staging s
+      JOIN gtfs_trips t ON s.trip_id_str = t.original_trip_id
+      ON CONFLICT DO NOTHING
+    """)
+
+    Repo.query!("TRUNCATE TABLE gtfs_frequencies_staging")
+  end
+
+  def import_feed_info(file_path) do
+    file_path
+    |> File.stream!()
+    |> GTFSParser.parse_stream()
+    |> Enum.each(fn [publisher_name, publisher_url, lang, start_date, end_date, version | _rest] ->
+      query = """
+        INSERT INTO gtfs_feed_info (feed_publisher_name, feed_publisher_url, feed_lang, feed_start_date, feed_end_date, feed_version)
+        VALUES ($1, $2, $3, $4, $5, $6)
+      """
+
+      Repo.query!(query, [
+        publisher_name,
+        publisher_url,
+        lang,
+        parse_integer_or_null(start_date),
+        parse_integer_or_null(end_date),
+        version
+      ])
     end)
   end
 
