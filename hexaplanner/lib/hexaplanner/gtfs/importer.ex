@@ -102,11 +102,67 @@ defmodule HexaPlanner.GTFS.Importer do
       JOIN gtfs_trips_dict t ON s.trip_id_str = t.original_id
       JOIN gtfs_stops_dict st ON s.stop_id_str = st.original_id
       ON CONFLICT DO NOTHING
-    """)
+    """, [], timeout: :infinity)
 
     # 4. Cleanup
     Repo.query!("TRUNCATE TABLE gtfs_stop_times_staging")
   end
+
+  def import_transfers(file_path) do
+    Repo.query!("CREATE UNLOGGED TABLE IF NOT EXISTS gtfs_transfers_staging (from_stop_id_str text, to_stop_id_str text, transfer_type int, min_transfer_time int, from_trip_id_str text, to_trip_id_str text)")
+    Repo.query!("TRUNCATE TABLE gtfs_transfers_staging")
+
+    file_path
+    |> File.stream!()
+    |> GTFSParser.parse_stream()
+    |> Stream.map(fn [from_stop_id_str, to_stop_id_str, from_route_id, to_route_id, from_trip_id_str, to_trip_id_str, transfer_type, min_transfer_time | _rest] ->
+      [
+        from_stop_id_str,
+        to_stop_id_str,
+        parse_integer_or_null(transfer_type),
+        parse_integer_or_null(min_transfer_time),
+        if(from_trip_id_str == "", do: nil, else: from_trip_id_str),
+        if(to_trip_id_str == "", do: nil, else: to_trip_id_str)
+      ]
+    end)
+    |> Stream.chunk_every(10_000)
+    |> Enum.each(fn chunk ->
+      flat_params = List.flatten(chunk)
+      values_str = chunk
+                   |> Enum.with_index()
+                   |> Enum.map(fn {_, idx} ->
+                     offset = idx * 6
+                     "($#{offset + 1}, $#{offset + 2}, $#{offset + 3}, $#{offset + 4}, $#{offset + 5}, $#{offset + 6})"
+                   end)
+                   |> Enum.join(",")
+
+      query = "INSERT INTO gtfs_transfers_staging (from_stop_id_str, to_stop_id_str, transfer_type, min_transfer_time, from_trip_id_str, to_trip_id_str) VALUES " <> values_str
+      Repo.query!(query, flat_params)
+    end)
+
+    # Resolve foreign keys via SQL
+    Repo.query!("""
+      INSERT INTO gtfs_transfers (from_stop_id, to_stop_id, transfer_type, min_transfer_time, from_trip_id, to_trip_id)
+      SELECT
+        st_from.id,
+        st_to.id,
+        s.transfer_type,
+        s.min_transfer_time,
+        tr_from.id,
+        tr_to.id
+      FROM gtfs_transfers_staging s
+      JOIN gtfs_stops_dict st_from ON s.from_stop_id_str = st_from.original_id
+      JOIN gtfs_stops_dict st_to ON s.to_stop_id_str = st_to.original_id
+      LEFT JOIN gtfs_trips_dict tr_from ON s.from_trip_id_str = tr_from.original_id
+      LEFT JOIN gtfs_trips_dict tr_to ON s.to_trip_id_str = tr_to.original_id
+      ON CONFLICT DO NOTHING
+    """, [], timeout: :infinity)
+
+    Repo.query!("TRUNCATE TABLE gtfs_transfers_staging")
+  end
+
+  defp parse_integer_or_null(""), do: nil
+  defp parse_integer_or_null(val), do: String.to_integer(val)
 
   defp parse_time(time_str) do
     [h, m, s] = String.split(time_str, ":") |> Enum.map(&String.to_integer/1)
