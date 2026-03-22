@@ -1,7 +1,11 @@
-# Master Architecture Document: HexaPlanner
+# Master Architecture Document: HexaPlanner Framework
 
 ## 1. Executive Summary & Vision
-HexaPlanner is an advanced, ultra-performant Digital Twin. Its ultimate "North Star" goal is to model, simulate, and optimize the entirety of the Swiss Federal Railways (CFF/SBB) network in real-time, without any simplifications. This document consolidates all functional, technical, and operational requirements. The system relies on a state-of-the-art hybrid architecture that combines the resilience and orchestration capabilities of Elixir/OTP, the raw computational speed of Rust (SIMD, Incremental computation via salsa), and the intelligence of Neuro-Symbolic AI.
+HexaPlanner is a universal, high-fidelity Digital Twin and Optimization Framework. Its mission is to provide an agostic, ultra-performant infrastructure capable of modeling, simulating, and optimizing complex systems at any scale. 
+
+The framework is built on a "Zero Simplification" mandate: it models the real world with 100% fidelity, ensuring that calculated optimizations are physically and temporally actionable. As a primary technical validator and showcase, HexaPlanner currently implements the entirety of the Swiss Federal Railways (CFF/SBB) network—representing the highest level of logistical complexity—to prove the engine's capability to handle millions of interdependent events in real-time.
+
+The system utilizes a state-of-the-art polyglot architecture: an Elixir/OTP Control Plane for resilient orchestration and a Rust Data Plane for high-speed incremental computation (Salsa) and spatial analysis (Petgraph).
 
 ---
 
@@ -19,11 +23,11 @@ The central optimization engine is responsible for high-performance sequence gen
 *   **Data-Oriented Design & SIMD:** Adopts a Structure of Arrays (SoA) layout with arena allocators (no GC overhead). Sequence validation heavily utilizes `std::simd` (AVX-512) to process moves in parallel [Source: 02_Response_Rust_SIMD.md].
 *   **Dirty NIFs:** Interaction with Elixir occurs via `Rustler`. Heavy workloads are run on Dirty NIFs or isolated OS processes to avoid starving the BEAM schedulers [Source: 03_Response_Elixir_OTP.md, 11_Response_Manager_Program_Director.md].
 
-### 2.3. Incremental Score Evaluation (Java / GraalVM)
-Handles the complex, historical OptaPlanner business logic optimally.
-*   **Decapitated Core:** The engine only retains the Bavet Constraint Streams incremental calculator; local search and orchestration have been purged [Source: 01_Response_Java_GraalVM.md].
-*   **Zero-Copy Interoperability:** Employs Project Panama (Rust 2024). The Rust solver allocates a shared contiguous memory segment mapped to Java. Java accesses this segment via FFI directly, completely eliminating serialization overhead [Source: 01_Response_Java_GraalVM.md].
-*   **GraalVM AOT Compilation:** The Java core is compiled to a native shared library (`.so`) using GraalVM Native Image for sub-10ms startups and minimal RAM consumption [Source: 01_Response_Java_GraalVM.md].
+### 2.3. Incremental Score Evaluation (Rust / Salsa)
+Handles the complex CFF/SBB business logic optimally using incremental computation.
+*   **Pure Rust Core:** All Java/GraalVM legacy components have been eliminated. The score engine is built in pure Rust using the `salsa` framework for demand-driven, incremental computation [Source: 24_Mapping_OptaPlanner_Elixir_Rust.md].
+*   **Zero-Simplification Mandate:** The engine models the entirety of the Swiss network (96k stops, 1.19M trips, 19M stop times) with 100% fidelity. No data reduction or abstraction is permitted [Source: ADR-001].
+*   **Memory Efficiency:** Utilizing integer surrogate keys and optimized data structures, the entire network state is designed to fit within a 3GB RAM footprint in the Rust Data Plane, while supporting massive parallel simulations [Source: 24_Mapping_OptaPlanner_Elixir_Rust.md].
 
 ### 2.4. Neuro-Symbolic AI (GPU Acceleration)
 *   **GNN & Meta-Heuristics:** Employs Graph Neural Networks to represent the topology and output meta-actions for the symbolic Rust solver, bridging intuition and exact constraints [Source: 04_Response_IA_GPU.md].
