@@ -39,4 +39,8 @@ Update all project documentation to 100% compliance with the current architectur
 - [x] README.md updated with the "Zero Simplification" vision.
 - [x] CFF/SBB case explicitly identified as a "Showcase Validator".
 - [x] Ingestion pipeline (Phase 11) fully documented and implemented without reduction.
+- [x] Phase 12 (STIG) and Phase 13 (Tick Engine) completed.
+- [ ] Phase 14: Deck.gl UI Visualization.
+- [ ] Phase 15: Rolling Stock Digital Twin (API SBB Train Formation integration).
+- [ ] Phase 16: Chaos Engineering and Salsa Solver Reaction.
 

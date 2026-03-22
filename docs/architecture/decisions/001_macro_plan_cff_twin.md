@@ -26,8 +26,9 @@ Le réseau complet ne tolère aucune approximation.
 - **Phase 13 (Tick Engine Distribué) :** Implémentation de l'horloge système (`GenServer`) interpolant les positions des trains en temps réel.
 
 ### Époque 4 : Chaos Engineering et Résolution (Rust)
-- **Phase 14 (Interface de Perturbation) :** UX permettant à l'opérateur de sectionner une voie ou bloquer une gare.
-- **Phase 15 (Réaction du Solveur) :** Ruin & Recreate sur le graphe `salsa` pour maximiser la ponctualité globale.
+- **Phase 14 (Interface de Perturbation & Deck.gl) :** UX permettant à l'opérateur de visualiser le flux et de sectionner une voie ou bloquer une gare.
+- **Phase 15 (Rolling Stock Digital Twin) :** Intégration de l'API REST "SBB Train Formation". Liaison des `block_id` et `trip_id` pour modéliser les compositions de rames physiques (longueur, masse, couplage/découplage) et assurer la continuité nocturne des véhicules.
+- **Phase 16 (Réaction du Solveur) :** Ruin & Recreate sur le graphe `salsa` pour maximiser la ponctualité globale et ré-assigner le matériel roulant.
 
 **Conséquences :**
 - **Techniques :** Nécessite l'intégration de PostGIS pour Elixir (Ecto) et de bibliothèques de graphes pointues (ex: `petgraph`) côté Rust pour la topologie.
