@@ -163,7 +163,7 @@ defmodule HexaPlanner.GTFS.Importer do
 
   def import_transfers(file_path) do
     Repo.query!(
-      "CREATE UNLOGGED TABLE IF NOT EXISTS gtfs_transfers_staging (from_stop_id_str text, to_stop_id_str text, transfer_type int, min_transfer_time int, from_trip_id_str text, to_trip_id_str text)"
+      "CREATE UNLOGGED TABLE IF NOT EXISTS gtfs_transfers_staging (from_stop_id_str text, to_stop_id_str text, transfer_type int, min_transfer_time int, from_trip_id_str text, to_trip_id_str text, from_route_id_str text, to_route_id_str text)"
     )
 
     Repo.query!("TRUNCATE TABLE gtfs_transfers_staging")
@@ -187,7 +187,9 @@ defmodule HexaPlanner.GTFS.Importer do
         parse_integer_or_null(transfer_type),
         parse_integer_or_null(min_transfer_time),
         if(from_trip_id_str == "", do: nil, else: from_trip_id_str),
-        if(to_trip_id_str == "", do: nil, else: to_trip_id_str)
+        if(to_trip_id_str == "", do: nil, else: to_trip_id_str),
+        if(from_route_id == "", do: nil, else: from_route_id),
+        if(to_route_id == "", do: nil, else: to_route_id)
       ]
     end)
     |> Stream.chunk_every(10_000)
@@ -198,14 +200,14 @@ defmodule HexaPlanner.GTFS.Importer do
         chunk
         |> Enum.with_index()
         |> Enum.map(fn {_, idx} ->
-          offset = idx * 6
+          offset = idx * 8
 
-          "($#{offset + 1}, $#{offset + 2}, $#{offset + 3}, $#{offset + 4}, $#{offset + 5}, $#{offset + 6})"
+          "($#{offset + 1}, $#{offset + 2}, $#{offset + 3}, $#{offset + 4}, $#{offset + 5}, $#{offset + 6}, $#{offset + 7}, $#{offset + 8})"
         end)
         |> Enum.join(",")
 
       query =
-        "INSERT INTO gtfs_transfers_staging (from_stop_id_str, to_stop_id_str, transfer_type, min_transfer_time, from_trip_id_str, to_trip_id_str) VALUES " <>
+        "INSERT INTO gtfs_transfers_staging (from_stop_id_str, to_stop_id_str, transfer_type, min_transfer_time, from_trip_id_str, to_trip_id_str, from_route_id_str, to_route_id_str) VALUES " <>
           values_str
 
       Repo.query!(query, flat_params)
@@ -214,19 +216,23 @@ defmodule HexaPlanner.GTFS.Importer do
     # Resolve foreign keys via SQL
     Repo.query!(
       """
-        INSERT INTO gtfs_transfers (from_stop_id, to_stop_id, transfer_type, min_transfer_time, from_trip_id, to_trip_id)
+        INSERT INTO gtfs_transfers (from_stop_id, to_stop_id, transfer_type, min_transfer_time, from_trip_id, to_trip_id, from_route_id, to_route_id)
         SELECT
           st_from.id,
           st_to.id,
           s.transfer_type,
           s.min_transfer_time,
           tr_from.id,
-          tr_to.id
+          tr_to.id,
+          r_from.id,
+          r_to.id
         FROM gtfs_transfers_staging s
         JOIN gtfs_stops_dict st_from ON s.from_stop_id_str = st_from.original_id
         JOIN gtfs_stops_dict st_to ON s.to_stop_id_str = st_to.original_id
         LEFT JOIN gtfs_trips_dict tr_from ON s.from_trip_id_str = tr_from.original_id
         LEFT JOIN gtfs_trips_dict tr_to ON s.to_trip_id_str = tr_to.original_id
+        LEFT JOIN gtfs_routes r_from ON s.from_route_id_str = r_from.original_route_id
+        LEFT JOIN gtfs_routes r_to ON s.to_route_id_str = r_to.original_route_id
         ON CONFLICT DO NOTHING
       """,
       [],
