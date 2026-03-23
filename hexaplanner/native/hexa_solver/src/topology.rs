@@ -13,6 +13,8 @@ use lasso::Rodeo;
 use rayon::prelude::*;
 use kdtree::KdTree;
 use kdtree::distance::squared_euclidean;
+use std::fs::File;
+use std::io::{BufReader, BufWriter};
 
 /// Represents the physical layer: rails and stations.
 pub struct PhysicalNetwork {
@@ -586,15 +588,18 @@ impl NetworkManager {
                 if events.is_empty() { return None; }
                 let first = events.first()?;
                 let last = events.last()?;
-                
-                // Fast rejection
+
                 if time < first.departure_time || time > last.arrival_time {
                     return None;
                 }
-                
-                // Get precise position
+
                 if let Some((lon, lat)) = self.get_position(trip_id, time) {
-                    Some((trip_id, lon, lat))
+                    // Prevent Rustler ArgumentError by stripping out any NaN or Infinity that might have leaked from Bad Data
+                    if lon.is_nan() || lat.is_nan() || lon.is_infinite() || lat.is_infinite() {
+                        None
+                    } else {
+                        Some((trip_id, lon, lat))
+                    }
                 } else {
                     None
                 }
@@ -659,12 +664,109 @@ impl NetworkManager {
         if progress <= 0.0 { return coords[0]; }
 
         let target_idx_float = progress * (coords.len() - 1) as f64;
-        let idx = target_idx_float.floor() as usize;
+        let mut idx = target_idx_float.floor() as usize;
+        
+        // Prevent floating-point precision loss from causing out-of-bounds
+        if idx >= coords.len() - 1 {
+            idx = coords.len() - 2;
+        }
+        
         let local_progress = target_idx_float - idx as f64;
 
         let p1 = coords[idx];
         let p2 = coords[idx + 1];
         (p1.0 + (p2.0 - p1.0) * local_progress, p1.1 + (p2.1 - p1.1) * local_progress)
+    }
+
+    pub fn freeze_state(&self, path: &str) -> Result<(), String> {
+        let file = File::create(path).map_err(|e| e.to_string())?;
+        let writer = BufWriter::new(file);
+        let state = (&self.trips, &self.eos_buffer);
+        bincode::serialize_into(writer, &state).map_err(|e| e.to_string())?;
+        Ok(())
+    }
+
+    pub fn thaw_state(&mut self, path: &str) -> Result<(), String> {
+        let file = File::open(path).map_err(|e| e.to_string())?;
+        let reader = BufReader::new(file);
+        let (trips, eos_buffer): (HashMap<i64, Vec<GtfsStopTime>>, Vec<CompactEOS>) = bincode::deserialize_from(reader).map_err(|e| e.to_string())?;
+        self.trips = trips;
+        self.eos_buffer = eos_buffer;
+        Ok(())
+    }
+    pub fn inject_delay(&mut self, trip_id: i64, delay_seconds: i32) -> Result<(), String> {
+        if let Some(events) = self.trips.get_mut(&trip_id) {
+            for event in events.iter_mut() {
+                event.arrival_time += delay_seconds;
+                event.departure_time += delay_seconds;
+            }
+            Ok(())
+        } else {
+            Err(format!("Trip {} not found", trip_id))
+        }
+    }
+
+    pub fn resolve_conflict_greedy(&mut self) -> crate::domain::ResolutionMetrics {
+        use std::collections::HashSet;
+        let start_time_ms = std::time::Instant::now();
+        let mut total_delay_added = 0;
+        let mut trains_impacted = HashSet::new();
+        let mut iterations = 0;
+
+        let mut idx_to_trip = HashMap::new();
+        for (&trip_id, &trip_idx) in &self.trip_id_map {
+            idx_to_trip.insert(trip_idx, trip_id);
+        }
+
+        loop {
+            iterations += 1;
+            if iterations > 20 { break; } // Safety escape valve
+            
+            // Rebuild STIG based on current self.trips
+            self.finalize_temporal_graph();
+
+            let mut track_occupancy: HashMap<u32, u32> = HashMap::new();
+            let mut conflicts_found = false;
+
+            // self.eos_buffer is already sorted by start_time
+            for eos in &self.eos_buffer {
+                if let Some(&last_end) = track_occupancy.get(&eos.track_idx) {
+                    if eos.start_time < last_end {
+                        // CONFLICT!
+                        let delay = last_end - eos.start_time;
+                        total_delay_added += delay;
+                        if let Some(&trip_id) = idx_to_trip.get(&eos.trip_idx) {
+                            trains_impacted.insert(trip_id);
+                            
+                            // Push this trip's future schedule forward
+                            if let Some(events) = self.trips.get_mut(&trip_id) {
+                                for event in events.iter_mut() {
+                                    if event.arrival_time >= eos.start_time as i32 {
+                                        event.arrival_time += delay as i32;
+                                        event.departure_time += delay as i32;
+                                    }
+                                }
+                            }
+                        }
+                        
+                        conflicts_found = true;
+                        break; // Restart the sweep-line with the new timeline
+                    }
+                }
+                track_occupancy.insert(eos.track_idx, eos.end_time);
+            }
+            
+            if !conflicts_found {
+                break;
+            }
+        }
+
+        crate::domain::ResolutionMetrics {
+            status: "success".to_string(),
+            trains_impacted: trains_impacted.len(),
+            total_delay_added,
+            computation_time_ms: start_time_ms.elapsed().as_millis() as u32,
+        }
     }
 }
 

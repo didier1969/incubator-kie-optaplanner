@@ -28,9 +28,14 @@ defmodule HexaPlannerWeb.TwinLive do
       |> assign(:current_time, format_time(engine_state.current_time))
       |> assign(:active_count, 0)
       |> assign(:sim_speed, 60)
+      |> assign(:chaos_event, nil)
       |> stream(:active_trains, [], limit: 20)
 
     {:ok, socket}
+  end
+
+  def handle_info({:chaos_detected, event}, socket) do
+    {:noreply, assign(socket, chaos_event: event)}
   end
 
   def handle_info({:loading_progress, percent, msg}, socket) do
@@ -56,6 +61,26 @@ defmodule HexaPlannerWeb.TwinLive do
       |> stream_insert_many(:active_trains, sidebar_updates)
       |> push_event("update_trains", %{positions: json_positions})
 
+    {:noreply, socket}
+  end
+
+  def handle_event("resolve_chaos", %{"strategy" => strategy}, socket) do
+    # Later this will call the Rust solver. For now, we simulate resolution.
+    msg = case strategy do
+      "greedy" -> "Resolving using Salsa Greedy..."
+      "local_search" -> "Resolving using Local Search..."
+      "genetic" -> "Resolving using Global Genetic..."
+      "otp" -> "Resolving using OTP Actors..."
+      _ -> "Resolving..."
+    end
+    
+    # We clear the chaos event and show a temporary resolution message
+    {:noreply, assign(socket, chaos_event: %{resolved: true, message: msg})}
+  end
+
+  def handle_event("inject_chaos", _, socket) do
+    # For phase 1, we simulate a mock critical breakdown to test the UI flow
+    send(self(), {:chaos_detected, %{trip_id: 9224174, severity: "critical", type: "Breakdown"}})
     {:noreply, socket}
   end
 
@@ -171,23 +196,63 @@ defmodule HexaPlannerWeb.TwinLive do
           </div>
 
           <!-- Simulation Controls -->
-          <div class="p-4 border-t border-slate-800 bg-slate-900/50 space-y-4">
-             <div class="grid grid-cols-2 gap-2">
+          <div class="p-4 border-t border-slate-800 bg-slate-900/50 space-y-4 shrink-0">
+             <div class="grid grid-cols-2 gap-2 mt-4">
                 <button phx-click="pause" class="bg-slate-800 hover:bg-slate-700 text-white py-2 rounded text-xs border border-slate-700 transition-all active:scale-95">PAUSE</button>
                 <button phx-click="resume" class="bg-amber-600 hover:bg-amber-500 text-white py-2 rounded text-xs font-bold shadow-lg shadow-amber-900/20 transition-all active:scale-95">RESUME</button>
+                <button phx-click="inject_chaos" class="bg-red-900/50 hover:bg-red-600 text-red-500 hover:text-white py-2 rounded text-xs border border-red-900 transition-all active:scale-95 col-span-2">INJECT CHAOS (SIMULATE BREAKDOWN)</button>
              </div>
           </div>
         </aside>
-<!-- Visualization Surface (WebGL Hook) -->
-<section class="flex-grow relative bg-slate-950 overflow-hidden">
-  <div id="deckgl-wrapper" class="absolute inset-0 w-full h-full [&_canvas]:block [&_canvas]:absolute" phx-hook="DeckGLMap" phx-update="ignore"></div>
+        <!-- Visualization Surface (WebGL Hook) -->
+        <section class="flex-grow relative bg-slate-950 overflow-hidden h-full">
+          <div id="deckgl-wrapper" class="absolute inset-0 w-full h-full [&_canvas]:block [&_canvas]:absolute" phx-hook="DeckGLMap" phx-update="ignore"></div>
 
   <!-- Map Overlay HUD -->
-          <div class="absolute bottom-8 right-8 bg-slate-900/80 border border-slate-800 p-4 rounded-xl backdrop-blur-lg shadow-2xl z-20 pointer-events-none">
-            <div class="text-[10px] text-slate-500 uppercase mb-2 tracking-widest">Physical Layer Status</div>
-            <div class="flex items-center space-x-3">
-              <div class="w-2 h-2 bg-blue-500 rounded-full shadow-[0_0_8px_#3b82f6]"></div>
-              <span class="text-xs text-slate-300 font-medium italic">STIG (150M Cantons) Active</span>
+          <div class="absolute bottom-8 right-8 flex flex-col items-end space-y-4 pointer-events-none">
+            
+            <!-- Chaos Resolution Panel -->
+            <%= if @chaos_event do %>
+              <%= if @chaos_event[:resolved] do %>
+                <div class="bg-emerald-900/80 border border-emerald-500 p-4 rounded-xl backdrop-blur-lg shadow-[0_0_20px_rgba(16,185,129,0.4)] pointer-events-auto w-80">
+                  <h3 class="text-emerald-400 font-bold mb-2 flex items-center"><span class="mr-2">✓</span> Conflict Resolved</h3>
+                  <p class="text-xs text-slate-300"><%= @chaos_event.message %></p>
+                </div>
+              <% else %>
+                <div class="bg-red-950/90 border border-red-600 p-5 rounded-xl backdrop-blur-lg shadow-[0_0_30px_rgba(220,38,38,0.5)] pointer-events-auto w-96">
+                  <div class="flex items-center space-x-3 mb-4">
+                    <div class="w-3 h-3 bg-red-500 rounded-full animate-ping"></div>
+                    <h3 class="text-red-500 font-black uppercase tracking-widest text-sm">Chaos Event Detected</h3>
+                  </div>
+                  
+                  <div class="mb-4 bg-black/50 p-3 rounded text-xs font-mono">
+                    <p class="text-slate-300">Target: <span class="text-white font-bold">TR-<%= @chaos_event.trip_id %></span></p>
+                    <p class="text-slate-300">Severity: <span class="text-red-400 font-bold"><%= String.upcase(@chaos_event.severity) %></span></p>
+                  </div>
+
+                  <form id="chaos-resolve-form" phx-submit="resolve_chaos">
+                    <label class="block text-[10px] uppercase tracking-widest text-slate-400 mb-2">Resolution Strategy</label>
+                    <select name="strategy" class="w-full bg-slate-900 border border-slate-700 text-white text-xs rounded p-2 mb-4 focus:ring-red-500 focus:border-red-500 outline-none">
+                      <option value="greedy">Salsa (Greedy Incremental)</option>
+                      <option value="local_search">Local Search (Tabu)</option>
+                      <option value="genetic">Global Metaheuristic (GA)</option>
+                      <option value="otp">OTP Actor Negotiation</option>
+                    </select>
+                    
+                    <button type="submit" class="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-2 rounded text-xs transition-colors shadow-lg shadow-red-900/50">
+                      EXECUTE RESOLUTION
+                    </button>
+                  </form>
+                </div>
+              <% end %>
+            <% end %>
+
+            <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-xl backdrop-blur-lg shadow-2xl pointer-events-none">
+              <div class="text-[10px] text-slate-500 uppercase mb-2 tracking-widest">Physical Layer Status</div>
+              <div class="flex items-center space-x-3">
+                <div class="w-2 h-2 bg-blue-500 rounded-full shadow-[0_0_8px_#3b82f6]"></div>
+                <span class="text-xs text-slate-300 font-medium italic">STIG (150M Cantons) Active</span>
+              </div>
             </div>
           </div>
         </section>

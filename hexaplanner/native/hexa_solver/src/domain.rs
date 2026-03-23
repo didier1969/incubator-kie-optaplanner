@@ -1,4 +1,5 @@
 use rustler::NifStruct;
+use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Clone, NifStruct)]
 #[module = "HexaPlanner.Domain.Resource"]
@@ -50,7 +51,7 @@ pub struct GtfsTrip {
     pub block_id: Option<String>,
 }
 
-#[derive(Debug, Clone, NifStruct)]
+#[derive(Debug, Clone, NifStruct, Serialize, Deserialize)]
 #[module = "HexaPlanner.GTFS.StopTime"]
 pub struct GtfsStopTime {
     pub trip_id: i64,
@@ -133,6 +134,15 @@ pub struct ConflictSummary {
 }
 
 #[derive(Debug, Clone, NifStruct)]
+#[module = "HexaPlanner.Domain.ResolutionMetrics"]
+pub struct ResolutionMetrics {
+    pub status: String,
+    pub trains_impacted: usize,
+    pub total_delay_added: u32,
+    pub computation_time_ms: u32,
+}
+
+#[derive(Debug, Clone, NifStruct, Serialize, Deserialize)]
 #[module = "HexaPlanner.Domain.CompactEOS"]
 pub struct CompactEOS {
     pub trip_idx: u32,

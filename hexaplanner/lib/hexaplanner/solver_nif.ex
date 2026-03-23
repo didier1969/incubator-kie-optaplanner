@@ -46,4 +46,10 @@ defmodule HexaPlanner.SolverNif do
   def finalize_temporal_graph(_resource), do: :erlang.nif_error(:nif_not_loaded)
 
   def detect_conflicts(_resource), do: :erlang.nif_error(:nif_not_loaded)
+
+  def freeze_state(_resource, _path), do: :erlang.nif_error(:nif_not_loaded)
+  def thaw_state(_resource, _path), do: :erlang.nif_error(:nif_not_loaded)
+
+  def inject_delay(_resource, _trip_id, _delay_seconds), do: :erlang.nif_error(:nif_not_loaded)
+  def resolve_conflict_greedy(_resource), do: :erlang.nif_error(:nif_not_loaded)
 end

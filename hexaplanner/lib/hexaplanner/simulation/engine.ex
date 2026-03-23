@@ -60,8 +60,34 @@ defmodule HexaPlanner.Simulation.Engine do
     end
     report_progress(40, "Micro-Topology (OSM) Stitched to Hubs")
 
-    # 4. StopTimes (The massive part)
-    # We report progress every 1M rows
+    # 4. StopTimes & STIG Matrix
+    snapshot_path = Path.join([:code.priv_dir(:hexaplanner), "data", "stig_snapshot.bin"])
+
+    if File.exists?(snapshot_path) do
+      report_progress(60, "Zero-Copy Deserialization: Thawing STIG Snapshot...")
+      case SolverNif.thaw_state(resource, snapshot_path) do
+        "ok" -> 
+          report_progress(95, "STIG Matrix Restored from Cold Storage.")
+        {:ok, _} -> 
+          report_progress(95, "STIG Matrix Restored from Cold Storage.")
+        {:error, reason} ->
+          require Logger
+          Logger.error("Failed to thaw state: #{inspect(reason)}. Rebuilding from DB...")
+          build_and_freeze_stig(resource, snapshot_path)
+        err ->
+          require Logger
+          Logger.error("Failed to thaw state (unknown): #{inspect(err)}. Rebuilding from DB...")
+          build_and_freeze_stig(resource, snapshot_path)
+      end
+    else
+      build_and_freeze_stig(resource, snapshot_path)
+    end
+    
+    report_progress(100, "All Systems Green. Launching.")
+    send(HexaPlanner.Simulation.Engine, :data_ready)
+  end
+
+  defp build_and_freeze_stig(resource, snapshot_path) do
     total_st = 19_169_401
     Repo.transaction(fn ->
       StopTime
@@ -77,9 +103,14 @@ defmodule HexaPlanner.Simulation.Engine do
 
     report_progress(95, "Finalizing Spatio-Temporal Interval Graph...")
     SolverNif.finalize_temporal_graph(resource)
-    
-    report_progress(100, "All Systems Green. Launching.")
-    send(HexaPlanner.Simulation.Engine, :data_ready)
+
+    report_progress(98, "Zero-Copy: Freezing STIG to disk...")
+    case SolverNif.freeze_state(resource, snapshot_path) do
+      "ok" -> require Logger; Logger.info("STIG state frozen to #{snapshot_path}")
+      {:ok, _} -> require Logger; Logger.info("STIG state frozen to #{snapshot_path}")
+      {:error, reason} -> require Logger; Logger.error("Failed to freeze STIG: #{inspect(reason)}")
+      err -> require Logger; Logger.error("Failed to freeze STIG (unknown): #{inspect(err)}")
+    end
   end
 
   defp report_progress(percent, msg) do

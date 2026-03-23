@@ -155,6 +155,39 @@ fn detect_conflicts(resource: ResourceArc<NetworkResource>) -> domain::ConflictS
     manager.detect_conflicts()
 }
 
+#[rustler::nif]
+fn freeze_state(resource: ResourceArc<NetworkResource>, path: String) -> Result<String, rustler::Error> {
+    let manager = resource.manager.read().unwrap();
+    match manager.freeze_state(&path) {
+        Ok(_) => Ok("ok".to_string()),
+        Err(e) => Err(rustler::Error::Term(Box::new(e))),
+    }
+}
+
+#[rustler::nif]
+fn thaw_state(resource: ResourceArc<NetworkResource>, path: String) -> Result<String, rustler::Error> {
+    let mut manager = resource.manager.write().unwrap();
+    match manager.thaw_state(&path) {
+        Ok(_) => Ok("ok".to_string()),
+        Err(e) => Err(rustler::Error::Term(Box::new(e))),
+    }
+}
+
+#[rustler::nif]
+fn inject_delay(resource: ResourceArc<NetworkResource>, trip_id: i64, delay_seconds: i32) -> rustler::Atom {
+    let mut manager = resource.manager.write().unwrap();
+    match manager.inject_delay(trip_id, delay_seconds) {
+        Ok(_) => rustler::types::atom::ok(),
+        Err(_) => rustler::types::atom::error(),
+    }
+}
+
+#[rustler::nif]
+fn resolve_conflict_greedy(resource: ResourceArc<NetworkResource>) -> domain::ResolutionMetrics {
+    let mut manager = resource.manager.write().unwrap();
+    manager.resolve_conflict_greedy()
+}
+
 fn load(env: Env, _info: Term) -> bool {
     let _ = rustler::resource!(NetworkResource, env);
     true

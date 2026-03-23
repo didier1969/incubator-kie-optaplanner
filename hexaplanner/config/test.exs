@@ -13,5 +13,5 @@ config :hexaplanner, Oban, testing: :manual
 
 config :hexaplanner, HexaPlannerWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 15002],
-  secret_key_base: "TEST_SECRET_KEY_BASE_HEXAPLANNER_VERY_LONG",
+  secret_key_base: "TEST_SECRET_KEY_BASE_HEXAPLANNER_VERY_LONG_MUST_BE_AT_LEAST_64_BYTES_LONG",
   server: false

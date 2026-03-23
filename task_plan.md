@@ -1,46 +1,39 @@
-# Task Plan: Documentation Alignment (Phase 1-11 Consolidation)
+# Task Plan: HexaPlanner Phase 18 (Chaos Engineering & Metaheuristics)
 
 ## Goal
-Update all project documentation to 100% compliance with the current architecture and implementation of the CFF/SBB Digital Twin, ensuring no simplifications are mentioned or implied, and reflecting the full-scale data ingestion and Rust/Elixir hybrid architecture.
+Transform HexaPlanner into a Benchmarking Optimization Framework by injecting "Chaos" (timetable perturbations) and resolving conflicts using various strategies (Baseline, Salsa Incremental, Local Search, Global GA).
+
+## Current Status
+- [x] Phase 17 (Zero-Copy & Vector Tiling) completed and validated.
+- [x] Phase 18 - Phase 1 (Chaos UI) completed and validated.
+- [x] Phase 18 - Phase 2 (Scenario A: Greedy Baseline) completed and validated.
+- [ ] Phase 18 - Phase 3 (Scenario C: Local Search) in progress.
 
 ## Phases
 
-### Phase 1: Audit & Inventory (Research)
-- [x] Audit all files in `docs/` and `cahiers_des_charges_experts/`.
-- [x] Identify contradictions between current implementation and existing documentation.
-- [x] Identify missing sections (e.g., massive GTFS ingestion details, zero-memory SQL resolution).
+### Phase 1: Chaos Injection UI & Infrastructure (The Judge)
+- [x] Define the "Strategy Pattern" for Conflict Resolvers.
+- [x] Build the UI panel in LiveView to trigger a "Breakdown" event.
+- [x] Build the UI panel to select the resolution strategy.
+- [x] Build the UI dashboard to display resolution metrics.
+- [x] **TDD**: Write Elixir tests verifying the UI components.
 
-### Phase 2: Master Architecture Update (Execution)
-- [x] Update `cahiers_des_charges_experts/19_Master_Architecture_Document.md`.
-- [x] Align with "Zero Simplification" mandate.
-- [x] Detail the Elixir Control Plane vs Rust Data Plane split.
+### Phase 2: Scenario A - The "Greedy" Baseline (Rust)
+- [x] **TDD (Red)**: Write Rust/Elixir test simulating a conflict and expecting resolution.
+- [x] **Implementation (Green)**: Create a `resolve_conflict_greedy` function in Rust.
+- [x] Algorithm logic: Find overlapping `CompactEOS` in the STIG. Delay the second train by the overlap duration.
+- [x] Connect the NIF to `handle_event("resolve_chaos", ...)` in LiveView.
 
-### Phase 3: Macro Plan Synchronization (Execution)
-- [x] Update `docs/architecture/decisions/001_macro_plan_cff_twin.md`.
-- [x] Mark Phases 1-11 as completed with technical specifics.
-- [x] Refine Phases 12-14 based on the established high-fidelity baseline.
+### Phase 3: Scenario C - Local Search (The 2026 SBB Standard)
+- [ ] **Plan**: Define `OptModel` for `localsearch` crate.
+- [ ] **TDD (Red)**: Add `resolve_conflict_local_search` test comparing it favorably to Greedy.
+- [ ] **Implementation (Green)**: Implement Tabu Search. Find "Blast Zone" trips, create neighborhood moves, evaluate fitness.
+- [ ] Connect NIF to UI.
+- [ ] **TDD**: Write tests proving it finds a better solution than Greedy.
 
-### Phase 4: Implementation Plans Cleanup (Execution)
-- [x] Review and potentially archive/update outdated `docs/plans/2026-03-21-hexaplanner-phase*.md` files.
-- [x] Ensure they reflect the *actual* implemented optimized techniques (PostgreSQL staging, etc.).
+### Phase 4: Scenario B & D
+- [ ] Future phases for Global GA and OTP Negotiation.
 
-### Phase 5: Domain & Technical Documentation (Execution)
-- [x] Update `README.md` in root.
-- [x] Document the `mix data.download` and `mix data.import` workflows.
-- [x] Document the schema mapping between GTFS and PostgreSQL.
-
-### Phase 6: Final Review & Validation (Verification)
-- [x] Cross-check all updated docs against the code.
-- [x] Ensure 100% consistency.
-
-## Progress
-- [x] Audit completed.
-- [x] Master Architecture corrected to reflect HexaPlanner as a Universal Framework.
-- [x] README.md updated with the "Zero Simplification" vision.
-- [x] CFF/SBB case explicitly identified as a "Showcase Validator".
-- [x] Ingestion pipeline (Phase 11) fully documented and implemented without reduction.
-- [x] Phase 12 (STIG) and Phase 13 (Tick Engine) completed.
-- [ ] Phase 14: Deck.gl UI Visualization.
-- [ ] Phase 15: Rolling Stock Digital Twin (API SBB Train Formation integration).
-- [ ] Phase 16: Chaos Engineering and Salsa Solver Reaction.
-
+## Notes
+- Strict adherence to TDD: Failing test FIRST, then minimal implementation.
+- Elixir remains Control Plane, Rust remains Data Plane.

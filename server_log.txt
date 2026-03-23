@@ -1,0 +1,93 @@
+warning: Git tree '/home/dstadel/projects/incubator-kie-optaplanner' has uncommitted changes
+HexaPlanner Dev Environment loaded.
+Elixir Elixir 1.19.5 (compiled with Erlang/OTP 28)
+Rust cargo 1.93.0 (083ac5135 2025-12-15)
+Starting local PostgreSQL server...
+pg_ctl: another server might be running; trying to start server anyway
+pg_ctl: could not start server
+Examine the log output.
+
+23:47:18.393 [error] Running HexaPlannerWeb.Endpoint with Bandit 1.4.2 at http failed, port 15000 already in use
+
+23:47:18.397 [notice] Application hexaplanner exited: HexaPlanner.Application.start(:normal, []) returned an error: shutdown: failed to start child: HexaPlannerWeb.Endpoint
+    ** (EXIT) shutdown: failed to start child: {HexaPlannerWeb.Endpoint, :http}
+        ** (EXIT) shutdown: failed to start child: :listener
+            ** (EXIT) :eaddrinuse
+
+23:47:18.404 [notice] Application geo_postgis exited: :stopped
+
+23:47:18.404 [notice] Application geo exited: :stopped
+
+23:47:18.407 [notice] Application phoenix_live_view exited: :stopped
+
+23:47:18.409 [notice] Application phoenix exited: :stopped
+
+23:47:18.409 [notice] Application websock_adapter exited: :stopped
+
+23:47:18.411 [notice] Application bandit exited: :stopped
+
+23:47:18.411 [notice] Application thousand_island exited: :stopped
+
+23:47:18.411 [notice] Application websock exited: :stopped
+
+23:47:18.411 [notice] Application phoenix_template exited: :stopped
+
+23:47:18.411 [notice] Application phoenix_html exited: :stopped
+
+23:47:18.412 [notice] Application phoenix_pubsub exited: :stopped
+
+23:47:18.412 [notice] Application horde exited: :stopped
+
+23:47:18.414 [notice] Application telemetry_poller exited: :stopped
+
+23:47:18.415 [notice] Application libring exited: :stopped
+
+23:47:18.415 [notice] Application delta_crdt exited: :stopped
+
+23:47:18.415 [notice] Application merkle_map exited: :stopped
+
+23:47:18.417 [notice] Application oban exited: :stopped
+
+23:47:18.418 [notice] Application ecto_sql exited: :stopped
+
+23:47:18.420 [notice] Application postgrex exited: :stopped
+
+23:47:18.440 [notice] Application db_connection exited: :stopped
+
+23:47:18.442 [notice] Application ecto exited: :stopped
+
+23:47:18.442 [notice] Application rustler exited: :stopped
+
+23:47:18.443 [notice] Application req exited: :stopped
+
+23:47:18.444 [notice] Application plug exited: :stopped
+
+23:47:18.446 [notice] Application plug_crypto exited: :stopped
+
+23:47:18.446 [notice] Application eex exited: :stopped
+
+23:47:18.446 [notice] Application nimble_csv exited: :stopped
+
+23:47:18.446 [notice] Application jason exited: :stopped
+
+23:47:18.446 [notice] Application decimal exited: :stopped
+
+23:47:18.446 [notice] Application finch exited: :stopped
+
+23:47:18.446 [notice] Application mime exited: :stopped
+
+23:47:18.448 [notice] Application telemetry exited: :stopped
+
+23:47:18.448 [notice] Application nimble_options exited: :stopped
+
+23:47:18.449 [notice] Application nimble_pool exited: :stopped
+
+23:47:18.450 [notice] Application mint exited: :stopped
+
+23:47:18.450 [notice] Application hpax exited: :stopped
+
+23:47:18.450 [notice] Application castore exited: :stopped
+** (Mix) Could not start application hexaplanner: HexaPlanner.Application.start(:normal, []) returned an error: shutdown: failed to start child: HexaPlannerWeb.Endpoint
+    ** (EXIT) shutdown: failed to start child: {HexaPlannerWeb.Endpoint, :http}
+        ** (EXIT) shutdown: failed to start child: :listener
+            ** (EXIT) :eaddrinuse
