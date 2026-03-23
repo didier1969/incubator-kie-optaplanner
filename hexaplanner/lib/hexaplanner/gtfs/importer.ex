@@ -10,6 +10,24 @@ defmodule HexaPlanner.GTFS.Importer do
   NimbleCSV.define(GTFSParser, separator: ",", escape: "\"")
 
   def import_stops(file_path) do
+    # Load abbreviations from GeoJSON for enrichment
+    data_dir = Path.dirname(file_path)
+    geojson_path = Path.join(data_dir, "../stops.geojson")
+
+    abbreviations_map =
+      if File.exists?(geojson_path) do
+        geojson_path
+        |> File.read!()
+        |> Jason.decode!()
+        |> Map.get("features")
+        |> Enum.map(fn f ->
+          {to_string(f["properties"]["number"]), f["properties"]["abbreviation"]}
+        end)
+        |> Map.new()
+      else
+        %{}
+      end
+
     file_path
     |> File.stream!()
     |> GTFSParser.parse_stream()
@@ -29,6 +47,7 @@ defmodule HexaPlanner.GTFS.Importer do
       %{
         original_stop_id: stop_id,
         stop_name: stop_name,
+        abbreviation: Map.get(abbreviations_map, stop_id),
         location: point,
         location_type: parse_integer_or_null(location_type),
         parent_station: if(parent_station == "", do: nil, else: parent_station),

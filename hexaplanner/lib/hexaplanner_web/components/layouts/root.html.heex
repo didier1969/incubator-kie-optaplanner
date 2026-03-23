@@ -1,22 +1,39 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full bg-slate-950">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>HexaPlanner Digital Twin</title>
-    <!-- Minimal CDN Tailwind for the MVP -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- LiveView Client JS logic (simplified for MVP) -->
-    <script defer src="https://cdn.jsdelivr.net/npm/phoenix@1.7.11/priv/static/phoenix.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/phoenix_live_view@0.20.14/priv/static/phoenix_live_view.min.js"></script>
+    <meta name="csrf-token" content={Phoenix.Controller.get_csrf_token()} />
+    <title>Nexus - CFF/SBB Digital Twin</title>
+    
+    <!-- CSS Dependencies (Local) -->
+    <link phx-track-static rel="stylesheet" href="/css/maplibre-gl.css" />
+    
+    <!-- Local JS Dependencies -->
+    <script phx-track-static src="/js/vendor/tailwind.min.js"></script>
+    <script phx-track-static src="/js/vendor/pmtiles.js"></script>
+    <script phx-track-static src="/js/vendor/maplibre-gl.js"></script>
+    <script phx-track-static src="/js/vendor/deck.gl.min.js"></script>
+    <script phx-track-static src="/js/vendor/phoenix.min.js"></script>
+    <script phx-track-static src="/js/vendor/phoenix_live_view.min.js"></script>
+    
     <script>
-      window.addEventListener("DOMContentLoaded", () => {
-        let liveSocket = new window.LiveView.LiveSocket("/live", window.Phoenix.Socket);
-        liveSocket.connect();
-      });
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              slate: { 950: '#020617', 900: '#0f172a', 800: '#1e293b' },
+              amber: { 500: '#f59e0b' }
+            }
+          }
+        }
+      }
     </script>
+    
+    <!-- Custom Application Logic -->
+    <script defer phx-track-static type="text/javascript" src="/js/app.js"></script>
   </head>
-  <body class="bg-gray-900 text-white antialiased">
+  <body class="text-white antialiased h-full font-mono overflow-hidden">
     <%= @inner_content %>
   </body>
 </html>

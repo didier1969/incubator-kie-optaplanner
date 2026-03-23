@@ -15,7 +15,11 @@ pub fn calculate_score(problem: &Problem, manager: &NetworkManager) -> i64 {
     // Constraint 2: Spatio-Temporal Conflicts (STIG)
     // Absolute fidelity: every physical collision is heavily penalized
     let conflict_summary = manager.detect_conflicts();
-    score -= (conflict_summary.total_conflicts as i64) * 1000;
+    
+    #[allow(clippy::cast_possible_wrap)]
+    {
+        score -= (conflict_summary.total_conflicts as i64) * 1000;
+    }
 
     score
 }

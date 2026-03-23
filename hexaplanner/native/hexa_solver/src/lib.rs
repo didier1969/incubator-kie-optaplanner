@@ -2,6 +2,8 @@
 #![deny(clippy::all)]
 #![deny(clippy::pedantic)]
 #![allow(non_local_definitions)]
+#![allow(clippy::needless_pass_by_value)]
+#![allow(clippy::type_complexity)]
 
 pub mod domain;
 pub mod incremental_score;
@@ -64,7 +66,7 @@ fn build_network_graph(edges: Vec<(String, String, Vec<(f64, f64)>)>) -> usize {
 fn load_stop_times(resource: ResourceArc<NetworkResource>, stop_times: Vec<domain::GtfsStopTime>) -> usize {
     let mut manager = resource.manager.write().unwrap();
     manager.load_stop_times(stop_times);
-    manager.trips.len()
+    0
 }
 
 #[rustler::nif]
@@ -89,10 +91,37 @@ fn load_calendar_dates(resource: ResourceArc<NetworkResource>, dates: Vec<domain
 }
 
 #[rustler::nif]
+fn load_fleet(resource: ResourceArc<NetworkResource>, profiles: std::collections::HashMap<i64, domain::RollingStockProfile>) -> usize {
+    let mut manager = resource.manager.write().unwrap();
+    manager.load_fleet(profiles);
+    manager.fleet.len()
+}
+
+#[rustler::nif]
 fn load_tracks(resource: ResourceArc<NetworkResource>, tracks: Vec<domain::TrackSegment>) -> usize {
     let mut manager = resource.manager.write().unwrap();
     manager.load_tracks(tracks);
     manager.physical.track_count()
+}
+
+#[rustler::nif]
+fn load_osm(resource: ResourceArc<NetworkResource>, nodes: Vec<domain::OsmNode>, ways: Vec<domain::OsmWay>) -> usize {
+    let mut manager = resource.manager.write().unwrap();
+    manager.load_osm(nodes, ways);
+    manager.micro.graph.edge_count()
+}
+
+#[rustler::nif]
+fn stitch_osm_to_macro(resource: ResourceArc<NetworkResource>) -> bool {
+    let mut manager = resource.manager.write().unwrap();
+    manager.stitch_osm_to_macro();
+    true
+}
+
+#[rustler::nif]
+fn get_all_tracks(resource: ResourceArc<NetworkResource>) -> Vec<domain::TrackSegment> {
+    let manager = resource.manager.read().unwrap();
+    manager.physical.all_tracks.clone()
 }
 
 #[rustler::nif]
@@ -103,6 +132,15 @@ fn get_train_position(
 ) -> Option<(f64, f64)> {
     let manager = resource.manager.read().unwrap();
     manager.get_position(trip_id, time)
+}
+
+#[rustler::nif]
+fn get_active_positions(
+    resource: ResourceArc<NetworkResource>,
+    time: i32,
+) -> Vec<(i64, f64, f64)> {
+    let manager = resource.manager.read().unwrap();
+    manager.get_active_positions(time)
 }
 
 #[rustler::nif]

@@ -40,6 +40,27 @@ defmodule Mix.Tasks.Data.LoadRust do
     SolverNif.load_transfers(resource, transfers)
     Logger.info("✅ Transfers loaded.")
 
+    Logger.info("Inferring and Loading Fleet Profiles (Rolling Stock)...")
+    # We load trips in chunks to assign physical fleet properties
+    Repo.transaction(fn ->
+      Trip
+      |> Repo.stream(max_rows: 50_000)
+      |> Stream.chunk_every(50_000)
+      |> Enum.each(fn chunk ->
+        profiles_map = 
+          chunk
+          |> Enum.map(fn trip -> 
+            profile = HexaPlanner.Fleet.infer_profile(trip.route_id)
+            # Map Elixir Struct to NIF Struct
+            nif_profile = %{profile | __struct__: HexaPlanner.Fleet.RollingStockProfile}
+            {trip.id, nif_profile}
+          end)
+          |> Map.new()
+        SolverNif.load_fleet(resource, profiles_map)
+      end)
+    end, timeout: :infinity)
+    Logger.info("✅ Fleet loaded.")
+
     Logger.info("Loading Physical Rail Geometry (GeoJSON Curves)...")
     topology_path = Path.join([:code.priv_dir(:hexaplanner), "data/raw/2026/20260318/topology.geojson"])
     if File.exists?(topology_path) do
@@ -53,6 +74,21 @@ defmodule Mix.Tasks.Data.LoadRust do
       Logger.info("✅ Physical topology loaded.")
     else
       Logger.warning("Topology file not found at #{topology_path}. Skipping.")
+    end
+
+    Logger.info("Loading Micro-Topology (OSM)...")
+    osm_dir = Path.join([:code.priv_dir(:hexaplanner), "data/raw/osm"])
+    if File.dir?(osm_dir) do
+      osm_files = Path.wildcard(Path.join(osm_dir, "*_micro.json"))
+      Enum.each(osm_files, fn file ->
+        {nodes, ways} = HexaPlanner.Data.OsmParser.parse_file(file)
+        mapped_nodes = Enum.map(nodes, fn n -> %{n | __struct__: HexaPlanner.Domain.OsmNode} end)
+        mapped_ways = Enum.map(ways, fn w -> %{w | __struct__: HexaPlanner.Domain.OsmWay} end)
+        SolverNif.load_osm(resource, mapped_nodes, mapped_ways)
+      end)
+      Logger.info("Stitching OSM Micro-Topology to GeoJSON Macro-Topology...")
+      SolverNif.stitch_osm_to_macro(resource)
+      Logger.info("✅ Micro-topology loaded and stitched.")
     end
 
     Logger.info("Loading 100% of Stop Times into Rust (~19 Million rows)...")

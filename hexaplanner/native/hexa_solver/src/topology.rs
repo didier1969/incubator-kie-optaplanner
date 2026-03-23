@@ -1,6 +1,14 @@
+#![allow(clippy::cast_possible_truncation)]
+#![allow(clippy::cast_sign_loss)]
+#![allow(clippy::cast_precision_loss)]
+#![allow(clippy::cast_possible_wrap)]
+#![allow(clippy::uninlined_format_args)]
+#![allow(clippy::needless_pass_by_value)]
+#![allow(clippy::too_many_lines)]
+
 use petgraph::graph::{NodeIndex, UnGraph, DiGraph};
 use std::collections::HashMap;
-use crate::domain::{GtfsStop, GtfsStopTime, TrackSegment, GtfsTransfer, GtfsCalendar, GtfsCalendarDate, Conflict, ConflictSummary, CompactEOS};
+use crate::domain::{GtfsStop, GtfsStopTime, TrackSegment, GtfsTransfer, GtfsCalendar, GtfsCalendarDate, Conflict, ConflictSummary, CompactEOS, OsmNode, OsmWay};
 use lasso::Rodeo;
 use rayon::prelude::*;
 use kdtree::KdTree;
@@ -12,6 +20,43 @@ pub struct PhysicalNetwork {
     pub station_map: HashMap<String, NodeIndex>,
     pub all_tracks: Vec<TrackSegment>,
     pub spatial_index: KdTree<f64, usize, [f64; 2]>, // Maps [lon, lat] -> Index in all_tracks
+}
+
+/// Represents the microscopic layer: exact rails, switches, and platforms inside stations (OSM Data).
+pub struct MicroNetwork {
+    pub graph: UnGraph<i64, f64>, // Node: OSM Node ID, Edge: Distance in meters
+    pub node_map: HashMap<i64, NodeIndex>,
+    pub node_coords: HashMap<i64, (f64, f64)>,
+    pub spatial_index: KdTree<f64, i64, [f64; 2]>, // Maps [lon, lat] -> OSM Node ID
+}
+
+impl MicroNetwork {
+    #[must_use]
+    pub fn new() -> Self {
+        Self {
+            graph: UnGraph::new_undirected(),
+            node_map: HashMap::new(),
+            node_coords: HashMap::new(),
+            spatial_index: KdTree::new(2),
+        }
+    }
+
+    pub fn get_or_create_node(&mut self, osm_id: i64, lon: f64, lat: f64) -> NodeIndex {
+        if let Some(&index) = self.node_map.get(&osm_id) {
+            return index;
+        }
+        let index = self.graph.add_node(osm_id);
+        self.node_map.insert(osm_id, index);
+        self.node_coords.insert(osm_id, (lon, lat));
+        let _ = self.spatial_index.add([lon, lat], osm_id);
+        index
+    }
+}
+
+impl Default for MicroNetwork {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl PhysicalNetwork {
@@ -34,7 +79,23 @@ impl PhysicalNetwork {
         self.station_map.insert(id_str, index);
         index
     }
+}
 
+// Helper to extract the macro logical station (abbreviation or parent station)
+fn get_logical_station_id(stop: &GtfsStop) -> &str {
+    if let Some(abbr) = &stop.abbreviation {
+        abbr
+    } else if let Some(parent) = &stop.parent_station {
+        if !parent.is_empty() {
+            return parent;
+        }
+        &stop.original_stop_id
+    } else {
+        &stop.original_stop_id
+    }
+}
+
+impl PhysicalNetwork {
     pub fn add_track(&mut self, a: NodeIndex, b: NodeIndex, coords: Vec<(f64, f64)>) {
         let mut length = 0.0;
         if coords.len() > 1 {
@@ -56,6 +117,7 @@ impl PhysicalNetwork {
         self.graph.edge_count()
     }
 
+    #[must_use]
     pub fn find_path_coordinates(&self, from_id: &str, to_id: &str) -> Option<Vec<(f64, f64)>> {
         let start = *self.station_map.get(from_id)?;
         let end = *self.station_map.get(to_id)?;
@@ -107,12 +169,14 @@ impl TemporalNetwork {
 
 pub struct NetworkManager {
     pub physical: PhysicalNetwork,
+    pub micro: MicroNetwork,
     pub temporal: TemporalNetwork,
     pub trips: HashMap<i64, Vec<GtfsStopTime>>,
     pub stops: HashMap<i64, GtfsStop>,
     pub transfers: Vec<GtfsTransfer>,
     pub calendars: HashMap<String, GtfsCalendar>,
     pub calendar_dates: Vec<GtfsCalendarDate>,
+    pub fleet: HashMap<i64, crate::domain::RollingStockProfile>,
     
     // HPC Structures
     pub interner: Rodeo,
@@ -125,23 +189,101 @@ impl NetworkManager {
     pub fn new() -> Self {
         Self {
             physical: PhysicalNetwork::new(),
+            micro: MicroNetwork::new(),
             temporal: TemporalNetwork::new(),
             trips: HashMap::new(),
             stops: HashMap::new(),
             transfers: Vec::new(),
             calendars: HashMap::new(),
             calendar_dates: Vec::new(),
+            fleet: HashMap::new(),
             interner: Rodeo::default(),
             trip_id_map: HashMap::new(),
             eos_buffer: Vec::with_capacity(1_000_000),
         }
     }
 
-    pub fn load_stops(&mut self, stops: Vec<GtfsStop>) {
-        for stop in stops {
-            let physical_id = stop.abbreviation.clone().unwrap_or_else(|| stop.original_stop_id.clone());
+    pub fn stitch_osm_to_macro(&mut self) {
+        // Phase 12I: The Stitch
+        // Connect logical GTFS stops to the nearest physical OSM node
+        let mut links_to_make = Vec::new();
+        for stop in self.stops.values() {
+            let abbr = get_logical_station_id(stop);
+            if let Some(&macro_idx) = self.physical.station_map.get(abbr) {
+                // Find nearest OSM node using the micro spatial index
+                if let Ok(nearest) = self.micro.spatial_index.nearest(&[stop.location.coordinates.0, stop.location.coordinates.1], 1, &squared_euclidean) {
+                    if let Some(&(dist_sq, &osm_id)) = nearest.first() {
+                        // CRITICAL FIX: Only stitch if the OSM node is within ~500 meters (0.00002 degrees squared)
+                        // This prevents creating 'wormhole super-hubs' that connect the entire country to 5 OSM nodes,
+                        // which was causing O(N^2) degradation in A* and find_edge.
+                        if dist_sq < 0.00002 {
+                            let osm_str = format!("OSM-{}", osm_id);
+                            if let Some(&micro_idx) = self.physical.station_map.get(&osm_str) {
+                                links_to_make.push((macro_idx, micro_idx));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Add 0-distance 'virtual' edges to stitch the graphs
+        for (macro_idx, micro_idx) in links_to_make {
+            // Check if edge exists to avoid duplicates
+            if self.physical.graph.find_edge(macro_idx, micro_idx).is_none() {
+                self.physical.graph.add_edge(macro_idx, micro_idx, (vec![], 0.1));
+            }
+        }
+    }
+
+    pub fn load_osm(&mut self, nodes: Vec<OsmNode>, ways: Vec<OsmWay>) {
+        // First load all nodes to have coordinates ready
+        for node in &nodes {
+            self.micro.get_or_create_node(node.id, node.lon, node.lat);
+            
+            // Phase 12I: Inject into Unified Physical Network
+            let physical_id = format!("OSM-{}", node.id);
             self.physical.add_station(&physical_id);
+        }
+
+        // Then build edges from ways
+        for way in ways {
+            if way.nodes.len() < 2 { continue; }
+            for window in way.nodes.windows(2) {
+                let u_id = window[0];
+                let v_id = window[1];
+                
+                if let (Some(u_idx), Some(v_idx)) = (self.micro.node_map.get(&u_id), self.micro.node_map.get(&v_id)) {
+                    if let (Some(u_coords), Some(v_coords)) = (self.micro.node_coords.get(&u_id), self.micro.node_coords.get(&v_id)) {
+                        let distance = haversine_distance(u_coords.0, u_coords.1, v_coords.0, v_coords.1);
+                        self.micro.graph.add_edge(*u_idx, *v_idx, distance);
+                        
+                        // Phase 12I: Inject edges into Unified Physical Network
+                        let p_u_id = format!("OSM-{}", u_id);
+                        let p_v_id = format!("OSM-{}", v_id);
+                        let a = self.physical.add_station(&p_u_id);
+                        let b = self.physical.add_station(&p_v_id);
+                        
+                        let safe_dist = if distance <= 0.0 { 1.0 } else { distance };
+                        self.physical.graph.add_edge(a, b, (vec![*u_coords, *v_coords], safe_dist));
+                        
+                        // Add to spatial index for snapping
+                        let track_idx = self.physical.all_tracks.len();
+                        let _ = self.physical.spatial_index.add([u_coords.0, u_coords.1], track_idx);
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn load_stops(&mut self, stops: Vec<GtfsStop>) {
+        for stop in &stops {
+            let physical_id = get_logical_station_id(stop);
+            self.physical.add_station(physical_id);
             self.temporal.get_or_create_node(stop.id);
+        }
+        
+        for stop in stops {
             self.stops.insert(stop.id, stop);
         }
     }
@@ -185,9 +327,12 @@ impl NetworkManager {
         self.calendar_dates.extend(dates);
     }
 
+    pub fn load_fleet(&mut self, profiles: HashMap<i64, crate::domain::RollingStockProfile>) {
+        self.fleet.extend(profiles);
+    }
+
     pub fn finalize_temporal_graph(&mut self) -> usize {
         use petgraph::algo::astar;
-        use lasso::Key;
         use petgraph::visit::EdgeRef;
 
         // Cache paths but include a 'congestion factor' to allow dynamic alternative routing
@@ -209,8 +354,8 @@ impl NetworkManager {
                 let to_stop = self.stops.get(&to.stop_id);
 
                 if let (Some(fs), Some(ts)) = (from_stop, to_stop) {
-                    let from_abbr = fs.abbreviation.as_ref().unwrap_or(&fs.original_stop_id);
-                    let to_abbr = ts.abbreviation.as_ref().unwrap_or(&ts.original_stop_id);
+                    let from_abbr = get_logical_station_id(fs);
+                    let to_abbr = get_logical_station_id(ts);
 
                     if let (Some(&start_idx), Some(&end_idx)) = (self.physical.station_map.get(from_abbr), self.physical.station_map.get(to_abbr)) {
                         
@@ -290,24 +435,33 @@ impl NetworkManager {
                                     }
                                 } else {
                                     for _ in 0..num_segments {
-                                        segment_times.push(travel_time / num_segments as i32);
+                                        segment_times.push(travel_time / i32::try_from(num_segments).unwrap_or(1));
                                     }
                                 }
 
-                                // We don't have rolling stock yet, assume 120s base headway + gradient penalty in future
-                                let tail_clearance_s = 20; 
-                                let next_trip_idx = self.trip_id_map.len() as u32;
+                                // Phase 15: Exact Physical Composition (Rolling Stock)
+                                let profile = self.fleet.get(&from.trip_id);
+                                let train_len = profile.map_or(200.0, |p| p.length_meters);
+                                let avg_speed_ms = profile.map_or(80.0, |p| (p.max_speed_kmh / 3.6) * 0.7);
+                                let tail_clearance_s = (train_len / avg_speed_ms).round() as i32; 
+
+                                let next_trip_idx = u32::try_from(self.trip_id_map.len()).unwrap_or(0);
                                 let trip_idx = *self.trip_id_map.entry(from.trip_id).or_insert(next_trip_idx);
 
                                 for (i, window) in node_path.windows(2).enumerate() {
-                                    let u_id = &self.physical.graph[window[0]];
-                                    let v_id = &self.physical.graph[window[1]];
-                                    let track_str = if u_id < v_id { format!("{}-{}", u_id, v_id) } else { format!("{}-{}", v_id, u_id) };
-                                    
+                                    let u = window[0];
+                                    let v = window[1];
                                     let segment_time = segment_times[i];
 
-                                    let key = self.interner.get_or_intern(&track_str);
-                                    let track_idx = key.into_usize() as u32;
+                                    // Get edge index directly, fallback to a combined hash if not found
+                                    let track_idx = if let Some(edge) = self.physical.graph.find_edge(u, v) {
+                                        edge.index() as u32
+                                    } else {
+                                        let min_node = std::cmp::min(u.index(), v.index()) as u32;
+                                        let max_node = std::cmp::max(u.index(), v.index()) as u32;
+                                        // Offset by 30M to avoid collision with real edges
+                                        30_000_000 + min_node * 1000 + max_node
+                                    };
 
                                     let eos_end = current_time + segment_time;
 
@@ -319,12 +473,12 @@ impl NetworkManager {
                                     });
 
                                     // Lock the entry node (route locking)
-                                    let node_idx = self.interner.get_or_intern(u_id).into_usize() as u32;
+                                    let node_idx = u.index() as u32 + 10_000_000;
                                     self.eos_buffer.push(CompactEOS {
                                         trip_idx,
                                         track_idx: node_idx,
-                                        start_time: current_time.saturating_sub(10) as u32, // 10s pre-locking
-                                        end_time: (current_time + 10) as u32, // clear switch
+                                        start_time: current_time.saturating_sub(10) as u32,
+                                        end_time: (current_time + 10) as u32,
                                     });
 
                                     current_time = eos_end;
@@ -332,8 +486,7 @@ impl NetworkManager {
 
                                 // Lock the final node in the path
                                 if let Some(&last_node) = node_path.last() {
-                                    let last_id = &self.physical.graph[last_node];
-                                    let node_idx = self.interner.get_or_intern(last_id).into_usize() as u32;
+                                    let node_idx = last_node.index() as u32 + 10_000_000;
                                     self.eos_buffer.push(CompactEOS {
                                         trip_idx,
                                         track_idx: node_idx,
@@ -343,12 +496,10 @@ impl NetworkManager {
                                 }
 
                                 // Prevent opposing trains from entering the single-track section
-                                let macro_track_str = if from_abbr < to_abbr {
-                                    format!("MACRO-{}-{}", from_abbr, to_abbr)
-                                } else {
-                                    format!("MACRO-{}-{}", to_abbr, from_abbr)
-                                };
-                                let macro_idx = self.interner.get_or_intern(&macro_track_str).into_usize() as u32;
+                                let min_macro = std::cmp::min(start_idx.index(), end_idx.index()) as u32;
+                                let max_macro = std::cmp::max(start_idx.index(), end_idx.index()) as u32;
+                                let macro_idx = 20_000_000 + min_macro * 1000 + max_macro;
+                                
                                 self.eos_buffer.push(CompactEOS {
                                     trip_idx,
                                     track_idx: macro_idx,
@@ -425,6 +576,33 @@ impl NetworkManager {
     }
 
     #[must_use]
+    pub fn get_active_positions(&self, time: i32) -> Vec<(i64, f64, f64)> {
+        use rayon::prelude::*;
+        
+        // Parallel map over all trips to find active ones
+        self.trips
+            .par_iter()
+            .filter_map(|(&trip_id, events)| {
+                if events.is_empty() { return None; }
+                let first = events.first()?;
+                let last = events.last()?;
+                
+                // Fast rejection
+                if time < first.departure_time || time > last.arrival_time {
+                    return None;
+                }
+                
+                // Get precise position
+                if let Some((lon, lat)) = self.get_position(trip_id, time) {
+                    Some((trip_id, lon, lat))
+                } else {
+                    None
+                }
+            })
+            .collect()
+    }
+
+    #[must_use]
     pub fn get_position(&self, trip_id: i64, time: i32) -> Option<(f64, f64)> {
         let events = self.trips.get(&trip_id)?;
         if events.is_empty() { return None; }
@@ -442,7 +620,7 @@ impl NetworkManager {
 
                 if let Some(coords) = self.physical.find_path_coordinates(from_abbr, to_abbr) {
                     let progress = f64::from(time - from.departure_time) / f64::from(to.arrival_time - from.departure_time);
-                    return Some(self.interpolate_on_curve(&coords, progress));
+                    return Some(Self::interpolate_on_curve(&coords, progress));
                 }
 
                 // Fallback to KD-Tree Snapping to guarantee rail-following
@@ -456,7 +634,7 @@ impl NetworkManager {
                 if let Ok(nearest) = self.physical.spatial_index.nearest(&[lon, lat], 1, &squared_euclidean) {
                     if let Some(&(_, &track_idx)) = nearest.first() {
                         if let Some(track) = self.physical.all_tracks.get(track_idx) {
-                            return Some(self.interpolate_on_curve(&track.coordinates, progress));
+                            return Some(Self::interpolate_on_curve(&track.coordinates, progress));
                         }
                     }
                 }
@@ -474,13 +652,16 @@ impl NetworkManager {
         None
     }
 
-    fn interpolate_on_curve(&self, coords: &[(f64, f64)], progress: f64) -> (f64, f64) {
+    fn interpolate_on_curve(coords: &[(f64, f64)], progress: f64) -> (f64, f64) {
         if coords.is_empty() { return (0.0, 0.0); }
         if coords.len() == 1 { return coords[0]; }
+        if progress >= 1.0 { return coords[coords.len() - 1]; }
+        if progress <= 0.0 { return coords[0]; }
+
         let target_idx_float = progress * (coords.len() - 1) as f64;
         let idx = target_idx_float.floor() as usize;
         let local_progress = target_idx_float - idx as f64;
-        if idx >= coords.len() - 1 { return coords[coords.len() - 1]; }
+
         let p1 = coords[idx];
         let p2 = coords[idx + 1];
         (p1.0 + (p2.0 - p1.0) * local_progress, p1.1 + (p2.1 - p1.1) * local_progress)

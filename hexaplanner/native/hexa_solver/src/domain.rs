@@ -142,6 +142,33 @@ pub struct CompactEOS {
 }
 
 #[derive(Debug, Clone, NifStruct)]
+#[module = "HexaPlanner.Fleet.RollingStockProfile"]
+pub struct RollingStockProfile {
+    pub model: String,
+    pub length_meters: f64,
+    pub mass_tonnes: f64,
+    pub max_speed_kmh: f64,
+    pub acceleration_ms2: f64,
+}
+
+#[derive(Debug, Clone, NifStruct)]
+#[module = "HexaPlanner.Domain.OsmNode"]
+pub struct OsmNode {
+    pub id: i64,
+    pub lat: f64,
+    pub lon: f64,
+    pub tags: std::collections::HashMap<String, String>,
+}
+
+#[derive(Debug, Clone, NifStruct)]
+#[module = "HexaPlanner.Domain.OsmWay"]
+pub struct OsmWay {
+    pub id: i64,
+    pub nodes: Vec<i64>,
+    pub tags: std::collections::HashMap<String, String>,
+}
+
+#[derive(Debug, Clone, NifStruct)]
 #[module = "HexaPlanner.Domain.Problem"]
 pub struct Problem {
     pub id: String,

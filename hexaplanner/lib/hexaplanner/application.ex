@@ -12,8 +12,12 @@ defmodule HexaPlanner.Application do
       {Phoenix.PubSub, name: HexaPlanner.PubSub},
       HexaPlannerWeb.Endpoint,
       {Oban, Application.fetch_env!(:hexaplanner, Oban)},
+      # Start Horde
       {Horde.Registry, [name: HexaPlanner.HordeRegistry, keys: :unique]},
-      {Horde.DynamicSupervisor, [name: HexaPlanner.HordeSupervisor, strategy: :one_for_one]}
+      {Horde.DynamicSupervisor, [name: HexaPlanner.HordeSupervisor, strategy: :one_for_one]},
+
+      # Start the Digital Twin Tick Engine
+      HexaPlanner.Simulation.Engine
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

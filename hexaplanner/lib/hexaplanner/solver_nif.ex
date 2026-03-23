@@ -29,9 +29,19 @@ defmodule HexaPlanner.SolverNif do
 
   def load_calendar_dates(_resource, _dates), do: :erlang.nif_error(:nif_not_loaded)
 
+  def load_fleet(_resource, _profiles), do: :erlang.nif_error(:nif_not_loaded)
+
   def load_tracks(_resource, _tracks), do: :erlang.nif_error(:nif_not_loaded)
 
+  def load_osm(_resource, _nodes, _ways), do: :erlang.nif_error(:nif_not_loaded)
+
+  def stitch_osm_to_macro(_resource), do: :erlang.nif_error(:nif_not_loaded)
+
   def get_train_position(_resource, _trip_id, _time), do: :erlang.nif_error(:nif_not_loaded)
+
+  def get_active_positions(_resource, _time), do: :erlang.nif_error(:nif_not_loaded)
+
+  def get_all_tracks(_resource), do: :erlang.nif_error(:nif_not_loaded)
 
   def finalize_temporal_graph(_resource), do: :erlang.nif_error(:nif_not_loaded)
 

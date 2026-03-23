@@ -5,6 +5,7 @@ defmodule HexaPlanner.GTFS.Stop do
   schema "gtfs_stops" do
     field(:original_stop_id, :string)
     field(:stop_name, :string)
+    field(:abbreviation, :string)
     field(:location, Geo.PostGIS.Geometry)
     field(:location_type, :integer)
     field(:parent_station, :string)
@@ -16,6 +17,7 @@ defmodule HexaPlanner.GTFS.Stop do
     |> cast(attrs, [
       :original_stop_id,
       :stop_name,
+      :abbreviation,
       :location,
       :location_type,
       :parent_station,

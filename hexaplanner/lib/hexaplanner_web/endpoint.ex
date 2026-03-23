@@ -9,6 +9,13 @@ defmodule HexaPlannerWeb.Endpoint do
 
   socket("/live", Phoenix.LiveView.Socket, websocket: [connect_info: [session: @session_options]])
 
+  # Serve static files from priv/static with explicit app reference for Nix reliability
+  plug Plug.Static,
+    at: "/",
+    from: :hexaplanner,
+    gzip: false,
+    only: ~w(css js data favicon.ico robots.txt)
+
   plug(Plug.Parsers,
     parsers: [:urlencoded, :multipart, :json],
     pass: ["*/*"],
