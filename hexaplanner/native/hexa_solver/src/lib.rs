@@ -188,6 +188,12 @@ fn resolve_conflict_greedy(resource: ResourceArc<NetworkResource>) -> domain::Re
     manager.resolve_conflict_greedy()
 }
 
+#[rustler::nif]
+fn resolve_conflict_local_search(resource: ResourceArc<NetworkResource>) -> domain::ResolutionMetrics {
+    let mut manager = resource.manager.write().unwrap();
+    manager.resolve_conflict_local_search()
+}
+
 fn load(env: Env, _info: Term) -> bool {
     let _ = rustler::resource!(NetworkResource, env);
     true

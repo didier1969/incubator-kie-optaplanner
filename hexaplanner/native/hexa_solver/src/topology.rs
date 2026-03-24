@@ -768,6 +768,142 @@ impl NetworkManager {
             computation_time_ms: start_time_ms.elapsed().as_millis() as u32,
         }
     }
+
+    pub fn resolve_conflict_local_search(&mut self) -> crate::domain::ResolutionMetrics {
+        let start_time_ms = std::time::Instant::now();
+        
+        // 1. Rebuild STIG based on current self.trips to get baseline
+        self.finalize_temporal_graph();
+
+        // 2. Identify Blast Zone
+        let mut idx_to_trip = HashMap::new();
+        for (&trip_id, &trip_idx) in &self.trip_id_map {
+            idx_to_trip.insert(trip_idx, trip_id);
+        }
+
+        let mut track_occupancy: HashMap<u32, u32> = HashMap::new();
+        let mut impacted_trips_set = std::collections::HashSet::new();
+
+        for eos in &self.eos_buffer {
+            if let Some(&last_end) = track_occupancy.get(&eos.track_idx) {
+                if eos.start_time < last_end {
+                    if let Some(&trip_id) = idx_to_trip.get(&eos.trip_idx) {
+                        impacted_trips_set.insert(trip_id);
+                    }
+                }
+            }
+            track_occupancy.insert(eos.track_idx, eos.end_time);
+        }
+        
+        let trips_in_zone: Vec<i64> = impacted_trips_set.into_iter().collect();
+        
+        if trips_in_zone.is_empty() {
+            return crate::domain::ResolutionMetrics {
+                status: "success".to_string(),
+                trains_impacted: 0,
+                total_delay_added: 0,
+                computation_time_ms: start_time_ms.elapsed().as_millis() as u32,
+            };
+        }
+
+        // 3. Custom High-Performance Hill Climbing (Local Search)
+        // Bypassing external localsearch crate for maximum zero-copy resilience and zero dependency conflicts.
+        use rand::RngExt;
+        let mut rng = rand::rng();
+        
+        let mut best_delays: HashMap<i64, i32> = trips_in_zone.iter().map(|&id| (id, 0)).collect();
+        let mut best_score;
+        
+        // Inline evaluation function
+        let evaluate = |delays: &HashMap<i64, i32>| -> i64 {
+            let mut temp_eos = Vec::with_capacity(self.eos_buffer.len());
+            let mut total_delay_penalty = 0;
+
+            for eos in &self.eos_buffer {
+                if let Some(&trip_id) = idx_to_trip.get(&eos.trip_idx) {
+                    if trips_in_zone.contains(&trip_id) {
+                        let delay = delays.get(&trip_id).copied().unwrap_or(0);
+                        let mut new_eos = eos.clone();
+                        new_eos.start_time += delay as u32;
+                        new_eos.end_time += delay as u32;
+                        temp_eos.push(new_eos);
+                    } else {
+                        temp_eos.push(eos.clone());
+                    }
+                }
+            }
+            
+            for trip_id in &trips_in_zone {
+                total_delay_penalty += delays.get(trip_id).copied().unwrap_or(0) as i64;
+            }
+
+            temp_eos.sort_by(|a, b| a.start_time.cmp(&b.start_time));
+
+            let mut overlaps = 0;
+            let mut occupancy: HashMap<u32, u32> = HashMap::new();
+            for eos in &temp_eos {
+                if let Some(&last_end) = occupancy.get(&eos.track_idx) {
+                    if eos.start_time < last_end {
+                        overlaps += 1;
+                    }
+                }
+                occupancy.insert(eos.track_idx, eos.end_time);
+            }
+
+            (overlaps * 1_000_000) as i64 + total_delay_penalty
+        };
+        
+        best_score = evaluate(&best_delays);
+        let mut current_delays = best_delays.clone();
+
+        for _ in 0..100 {
+            if best_score == 0 { break; } // Optimal found
+            
+            let mut trial = current_delays.clone();
+            let trip_idx = rng.random_range(0..trips_in_zone.len());
+            let trip_id = trips_in_zone[trip_idx];
+            let added_delay = rng.random_range(10..=60);
+            
+            let current_delay = trial.get(&trip_id).copied().unwrap_or(0);
+            trial.insert(trip_id, current_delay + added_delay);
+            
+            let trial_score = evaluate(&trial);
+            
+            if trial_score < best_score {
+                best_delays = trial.clone();
+                best_score = trial_score;
+                current_delays = trial;
+            } else if rng.random_bool(0.1) {
+                current_delays = trial; // Escape local optima
+            }
+        }
+
+        // Apply best solution to real manager
+        let mut total_delay_added = 0;
+        for trip_id in trips_in_zone.clone() {
+            if let Some(&delay) = best_delays.get(&trip_id) {
+                if delay > 0 {
+                    total_delay_added += delay as u32;
+                    if let Some(events) = self.trips.get_mut(&trip_id) {
+                        for event in events.iter_mut() {
+                            event.arrival_time += delay;
+                            event.departure_time += delay;
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Final re-sync
+        self.finalize_temporal_graph();
+
+        crate::domain::ResolutionMetrics {
+            status: "success".to_string(),
+            trains_impacted: trips_in_zone.len(),
+            total_delay_added,
+            computation_time_ms: start_time_ms.elapsed().as_millis() as u32,
+        }
+    }
 }
 
 impl Default for NetworkManager {
@@ -801,3 +937,4 @@ mod tests {
         assert_eq!(network.station_count(), 2);
     }
 }
+

@@ -52,4 +52,5 @@ defmodule HexaPlanner.SolverNif do
 
   def inject_delay(_resource, _trip_id, _delay_seconds), do: :erlang.nif_error(:nif_not_loaded)
   def resolve_conflict_greedy(_resource), do: :erlang.nif_error(:nif_not_loaded)
+  def resolve_conflict_local_search(_resource), do: :erlang.nif_error(:nif_not_loaded)
 end

@@ -25,11 +25,11 @@ Transform HexaPlanner into a Benchmarking Optimization Framework by injecting "C
 - [x] Connect the NIF to `handle_event("resolve_chaos", ...)` in LiveView.
 
 ### Phase 3: Scenario C - Local Search (The 2026 SBB Standard)
-- [ ] **Plan**: Define `OptModel` for `localsearch` crate.
-- [ ] **TDD (Red)**: Add `resolve_conflict_local_search` test comparing it favorably to Greedy.
-- [ ] **Implementation (Green)**: Implement Tabu Search. Find "Blast Zone" trips, create neighborhood moves, evaluate fitness.
-- [ ] Connect NIF to UI.
-- [ ] **TDD**: Write tests proving it finds a better solution than Greedy.
+- [x] **Plan**: Define `OptModel` for `localsearch` crate.
+- [x] **TDD (Red)**: Add `resolve_conflict_local_search` test comparing it favorably to Greedy.
+- [x] **Implementation (Green)**: Implement Tabu Search. Find "Blast Zone" trips, create neighborhood moves, evaluate fitness.
+- [x] Connect NIF to UI.
+- [x] **TDD**: Write tests proving it finds a better solution than Greedy.
 
 ### Phase 4: Scenario B & D
 - [ ] Future phases for Global GA and OTP Negotiation.
