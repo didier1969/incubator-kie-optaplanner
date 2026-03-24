@@ -1,7 +1,7 @@
 #[salsa::query_group(ScoreStorage)]
 pub trait ScoreEngine: salsa::Database {
     #[salsa::input]
-    fn get_base_score(&self) -> i32;
+    fn get_base_score(&self) -> i64;
 
     #[salsa::input]
     fn job_assigned(&self, job_id: i64) -> bool;
@@ -9,16 +9,16 @@ pub trait ScoreEngine: salsa::Database {
     #[salsa::input]
     fn job_ids(&self) -> Vec<i64>;
 
-    fn get_total_score(&self) -> i32;
-    fn unassigned_penalty(&self, job_id: i64) -> i32;
-    fn calculate_penalties(&self) -> i32;
+    fn get_total_score(&self) -> i64;
+    fn unassigned_penalty(&self, job_id: i64) -> i64;
+    fn calculate_penalties(&self) -> i64;
 }
 
-fn get_total_score(db: &dyn ScoreEngine) -> i32 {
+fn get_total_score(db: &dyn ScoreEngine) -> i64 {
     db.get_base_score() + db.calculate_penalties()
 }
 
-fn unassigned_penalty(db: &dyn ScoreEngine, job_id: i64) -> i32 {
+fn unassigned_penalty(db: &dyn ScoreEngine, job_id: i64) -> i64 {
     if db.job_assigned(job_id) {
         0
     } else {
@@ -26,7 +26,7 @@ fn unassigned_penalty(db: &dyn ScoreEngine, job_id: i64) -> i32 {
     }
 }
 
-fn calculate_penalties(db: &dyn ScoreEngine) -> i32 {
+fn calculate_penalties(db: &dyn ScoreEngine) -> i64 {
     db.job_ids().iter().map(|&id| db.unassigned_penalty(id)).sum()
 }
 
@@ -54,6 +54,7 @@ mod tests {
     #[test]
     fn test_incremental_constraint_evaluation() {
         let mut db = ScoreDatabase::default();
+        db.set_get_base_score(0);
         db.set_job_ids(vec![1]);
         // Assume Job 1 is unassigned
         db.set_job_assigned(1, false);

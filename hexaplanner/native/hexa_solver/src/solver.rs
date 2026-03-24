@@ -5,15 +5,22 @@ use crate::topology::NetworkManager;
 
 #[must_use]
 pub fn optimize(mut current_problem: Problem, manager: &NetworkManager, iterations: i32) -> Problem {
-    let mut current_score = calculate_score(&current_problem, manager);
-    
     // Initialize Salsa Database
     let mut db = ScoreDatabase::default();
-    db.set_get_base_score(0);
+    
+    // Set all initial inputs safely
     db.set_job_ids(current_problem.jobs.iter().map(|j| j.id).collect());
     for job in &current_problem.jobs {
         db.set_job_assigned(job.id, job.start_time.is_some());
     }
+
+    // We compute the heavy STIG collisions via the naive approach for now
+    // and pass it as the "base score" to the incremental engine.
+    let base_conflict_score = calculate_score(&current_problem, manager) - db.calculate_penalties();
+    
+    db.set_get_base_score(base_conflict_score);
+
+    let mut current_score = db.get_total_score();
 
     for i in 0..iterations {
         // Create a neighbor (mutation)
@@ -23,19 +30,23 @@ pub fn optimize(mut current_problem: Problem, manager: &NetworkManager, iteratio
         if let Some(job) = neighbor.jobs.iter_mut().find(|j| j.start_time.is_none()) {
             job.start_time = Some(i64::from(i) * 10);
             
-            // Sync mutation to Salsa DB
+            // Sync mutation to Salsa DB incrementally
             db.set_job_assigned(job.id, true);
         }
 
-        // We still use calculate_score for the core loop logic to keep tests green 
-        // while we transition fully to Salsa. We compute salsa score alongside it.
-        let neighbor_score = calculate_score(&neighbor, manager);
-        let _salsa_score = db.get_total_score();
+        // Now we only pull the score incrementally from Salsa!
+        let neighbor_score = db.get_total_score();
 
         // Hill Climbing: Accept if strictly better
         if neighbor_score > current_score {
             current_problem = neighbor;
             current_score = neighbor_score;
+        } else {
+            // Revert the DB change if move is rejected
+            // Find the job that was changed (simplified here)
+            if let Some(job) = current_problem.jobs.iter().find(|j| j.start_time.is_none()) {
+                db.set_job_assigned(job.id, false);
+            }
         }
 
         // Fast exit if we reached perfect score (0 penalties)
@@ -54,7 +65,7 @@ mod tests {
     use crate::score;
 
     #[test]
-    fn test_hill_climbing_assigns_jobs() {
+    fn test_hill_climbing_assigns_jobs_with_salsa() {
         let problem = Problem {
             id: "sim_1".to_string(),
             resources: vec![],
