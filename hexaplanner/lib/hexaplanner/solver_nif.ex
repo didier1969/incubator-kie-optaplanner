@@ -36,6 +36,7 @@ defmodule HexaPlanner.SolverNif do
   def load_osm(_resource, _nodes, _ways), do: :erlang.nif_error(:nif_not_loaded)
 
   def route_micro_path(_resource, _start_id, _end_id), do: :erlang.nif_error(:nif_not_loaded)
+  def route_micro_path_with_kinematics(_resource, _start_id, _end_id, _fleet_id), do: :erlang.nif_error(:nif_not_loaded)
 
   def stitch_osm_to_macro(_resource), do: :erlang.nif_error(:nif_not_loaded)
 
