@@ -25,8 +25,8 @@ Transform HexaPlanner into a Benchmarking Optimization Framework by injecting "C
     - [x] Implement Edge Collapsing (Scenario B) to reduce graph size.
     - [x] Implement Tag-based weighting (Scenario C) for A* routing.
     - [x] Match GTFS stop points to OSM platform polygons.
-- [ ] **Refactor**: Update `app.js` to render the 150MB micro-topology via PMTiles.
-- [ ] **Validate**: Verify snakes bend perfectly on switches.
+- [x] **Refactor**: Update `app.js` to render the 150MB micro-topology via PMTiles (Tippecanoe).
+- [x] **Validate**: Verify snakes bend perfectly on switches.
 
 ## Notes
 - Scenario D is the hybrid recommendation for absolute physical fidelity.
