@@ -22,6 +22,7 @@
             clippy
             gcc
             unzip
+            tippecanoe
             (postgresql_15.withPackages (p: [ p.postgis ]))
           ];
 
