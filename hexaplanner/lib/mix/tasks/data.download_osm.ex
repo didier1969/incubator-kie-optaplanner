@@ -7,6 +7,13 @@ defmodule Mix.Tasks.Data.DownloadOsm do
 
   @impl Mix.Task
   def run(_args) do
+    # Ensure req and its dependencies are started for HTTP requests
+    Application.ensure_all_started(:telemetry)
+    Application.ensure_all_started(:finch)
+    Application.ensure_all_started(:req)
+    # Start the app to get the Req.Finch supervisor tree if necessary, or just start Finch manually.
+    Mix.Task.run("app.start")
+    
     Logger.info("Starting Phase 4 (Scénario D): OSM Micro-Topology Extraction for Switzerland (150 Mo)")
 
     # Ensure raw data directory exists
