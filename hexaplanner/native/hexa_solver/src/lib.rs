@@ -112,6 +112,25 @@ fn load_osm(resource: ResourceArc<NetworkResource>, nodes: Vec<domain::OsmNode>,
 }
 
 #[rustler::nif]
+fn route_micro_path(resource: ResourceArc<NetworkResource>, start_id: i64, end_id: i64) -> Vec<i64> {
+    let manager = resource.manager.read().unwrap();
+    use petgraph::algo::astar;
+    
+    if let (Some(&start_node), Some(&end_node)) = (manager.micro.node_map.get(&start_id), manager.micro.node_map.get(&end_id)) {
+        if let Some((_, path_nodes)) = astar(
+            &manager.micro.graph,
+            start_node,
+            |finish| finish == end_node,
+            |e| *e.weight(),
+            |_| 0.0
+        ) {
+            return path_nodes.into_iter().map(|n| manager.micro.graph[n]).collect();
+        }
+    }
+    vec![]
+}
+
+#[rustler::nif]
 fn stitch_osm_to_macro(resource: ResourceArc<NetworkResource>) -> bool {
     let mut manager = resource.manager.write().unwrap();
     manager.stitch_osm_to_macro();

@@ -1,83 +1,47 @@
 defmodule Mix.Tasks.Data.DownloadOsm do
-  @shortdoc "Downloads OpenStreetMap micro-topology (switches, rails, platforms) for major Swiss stations"
+  @shortdoc "Downloads OpenStreetMap micro-topology (switches, rails, platforms) for all of Switzerland"
   use Mix.Task
   require Logger
-  alias HexaPlanner.Repo
-  alias HexaPlanner.GTFS.Stop
-  import Ecto.Query
 
   @overpass_url "https://overpass-api.de/api/interpreter"
 
   @impl Mix.Task
   def run(_args) do
-    Mix.Task.run("app.start")
-    
-    # We will fetch OSM data for the top major stations to prevent overloading the Overpass API.
-    # We identify major stations by looking at parent stations with the most platform stops,
-    # or by specifically querying known large hubs (Zurich, Bern, Basel, Lausanne, Geneva).
-    
-    # For this Phase 12I execution, we will focus on a subset of critical hubs to build the prototype.
-    major_hubs = [
-      "Zurich HB",
-      "Bern",
-      "Basel SBB",
-      "Lausanne",
-      "Genève"
-    ]
+    Logger.info("Starting Phase 4 (Scénario D): OSM Micro-Topology Extraction for Switzerland (150 Mo)")
 
-    Logger.info("Starting Phase 12I: OSM Micro-Topology Extraction")
-    
     # Ensure raw data directory exists
     target_dir = Path.join([:code.priv_dir(:hexaplanner), "data/raw/osm"])
     File.mkdir_p!(target_dir)
 
-    Enum.each(major_hubs, fn hub_name ->
-      Logger.info("Fetching coordinates for hub: #{hub_name}")
-      # Get the parent station location
-      stop = Repo.one(from s in Stop, where: ilike(s.stop_name, ^"#{hub_name}%") and is_nil(s.location_type), limit: 1)
-      
-      if stop do
-        {lon, lat} = stop.location.coordinates
-        
-        # Define a bounding box around the station (roughly 2km x 2km)
-        # 0.01 degrees is roughly 1km
-        bbox = "#{lat - 0.015},#{lon - 0.02},#{lat + 0.015},#{lon + 0.02}"
-        
-        query = """
-        [out:json][timeout:250];
-        (
-          way["railway"~"rail|switch|crossing"](#{bbox});
-          node["railway"~"switch|crossing|railway_crossing"](#{bbox});
-          way["public_transport"="platform"](#{bbox});
-          way["railway"="platform"](#{bbox});
-        );
-        out body;
-        >;
-        out skel qt;
-        """
+    query = """
+    [out:json][timeout:900];
+    area["ISO3166-1"="CH"][admin_level=2]->.searchArea;
+    (
+      way["railway"~"rail|switch|crossing"](area.searchArea);
+      node["railway"~"switch|crossing|railway_crossing"](area.searchArea);
+      way["public_transport"="platform"](area.searchArea);
+      way["railway"="platform"](area.searchArea);
+    );
+    out body;
+    >;
+    out skel qt;
+    """
 
-        Logger.info("Downloading Overpass data for #{hub_name}...")
-        
-        case Req.post(@overpass_url, body: query, receive_timeout: 300_000) do
-          {:ok, %{status: 200, body: body}} ->
-            file_path = Path.join(target_dir, "#{String.replace(hub_name, " ", "_")}_micro.json")
-            File.write!(file_path, Jason.encode!(body))
-            Logger.info("✅ Saved OSM data for #{hub_name} to #{file_path}")
-            
-            # Sleep to respect Overpass API rate limits
-            Process.sleep(5000)
-            
-          {:ok, response} ->
-            Logger.error("Failed to fetch #{hub_name}. Status: #{response.status}")
-            
-          {:error, reason} ->
-            Logger.error("Network error fetching #{hub_name}: #{inspect(reason)}")
-        end
-      else
-        Logger.warning("Could not find stop in database for: #{hub_name}")
-      end
-    end)
-    
+    Logger.info("Downloading Overpass data... This might take a while.")
+    file_path = Path.join(target_dir, "switzerland_micro.json")
+
+    case Req.post(@overpass_url, body: query, receive_timeout: 900_000) do
+      {:ok, %{status: 200, body: body}} ->
+        File.write!(file_path, Jason.encode!(body))
+        Logger.info("✅ Saved 150Mo OSM data to #{file_path}")
+
+      {:ok, response} ->
+        Logger.error("Failed to fetch OSM data. Status: #{response.status}")
+
+      {:error, reason} ->
+        Logger.error("Network error fetching OSM data: #{inspect(reason)}")
+    end
+
     Logger.info("OSM Extraction complete. Data ready for Rust parsing.")
   end
 end
