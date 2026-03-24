@@ -1,4 +1,2 @@
-.pgdata
-hexaplanner/priv/data/raw/*.geojson
-hexaplanner/priv/data/raw/*.zip
-hexaplanner/priv/data/raw/gtfs/*
+/hexaplanner/priv/data/raw/
+/hexaplanner/priv/data/stig_snapshot.bin
