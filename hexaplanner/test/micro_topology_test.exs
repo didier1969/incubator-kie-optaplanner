@@ -31,4 +31,37 @@ defmodule HexaPlanner.MicroTopologyTest do
     # Le chemin doit passer par l'aiguillage, donc [1, 2, 4]
     assert path == [1, 2, 4]
   end
+
+  test "Scénario C : Tag-based weighting évite une voie de garage (siding) si une voie principale est dispo" do
+    resource = SolverNif.init_network()
+    alias HexaPlanner.Domain.{OsmNode, OsmWay}
+
+    # Point de départ
+    n1 = %OsmNode{id: 1, lon: 8.530, lat: 47.370}
+    # Point de fin
+    n4 = %OsmNode{id: 4, lon: 8.530, lat: 47.380}
+    
+    # Voie 1 : Courte, directe, mais "siding"
+    n2 = %OsmNode{id: 2, lon: 8.530, lat: 47.375} 
+    
+    # Voie 2 : Un long détour géographique, mais voie principale (main line)
+    n3 = %OsmNode{id: 3, lon: 8.540, lat: 47.375}
+    
+    # Dummy node to give n3 degree 3, so it doesn't get collapsed
+    n99 = %OsmNode{id: 99, lon: 8.550, lat: 47.375}
+
+    nodes = [n1, n2, n3, n4, n99]
+
+    ways = [
+      %OsmWay{id: 101, nodes: [1, 2, 4], tags: %{"railway" => "rail", "service" => "siding"}},
+      %OsmWay{id: 102, nodes: [1, 3, 4], tags: %{"railway" => "rail"}},
+      %OsmWay{id: 103, nodes: [3, 99], tags: %{"railway" => "rail"}} # Empêche le collapse de n3
+    ]
+
+    SolverNif.load_osm(resource, nodes, ways)
+    path = SolverNif.route_micro_path(resource, 1, 4)
+
+    # Grâce au multiplicateur x5 du siding, il doit préférer le grand détour (1 -> 3 -> 4)
+    assert path == [1, 3, 4]
+  end
 end

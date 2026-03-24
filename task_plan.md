@@ -2,37 +2,36 @@
 
 ## Goal
 Transform HexaPlanner into a Benchmarking Optimization Framework by injecting "Chaos" (timetable perturbations) and resolving conflicts using various strategies (Baseline, Salsa Incremental, Local Search, Global GA).
-
 ## Current Status
 - [x] Phase 17 (Zero-Copy & Vector Tiling) completed and validated.
 - [x] Phase 18 - Phase 1 (Chaos UI) completed and validated.
 - [x] Phase 18 - Phase 2 (Scenario A: Greedy Baseline) completed and validated.
-- [ ] Phase 18 - Phase 3 (Scenario C: Local Search) in progress.
+- [x] Phase 18 - Phase 3 (Scenario C: Local Search) completed and validated.
+- [x] Phase 18 - Phase 4 (Scenario D: Micro-Topology & Inference) in progress.
 
 ## Phases
 
-### Phase 1: Chaos Injection UI & Infrastructure (The Judge)
-- [x] Define the "Strategy Pattern" for Conflict Resolvers.
-- [x] Build the UI panel in LiveView to trigger a "Breakdown" event.
-- [x] Build the UI panel to select the resolution strategy.
-- [x] Build the UI dashboard to display resolution metrics.
-- [x] **TDD**: Write Elixir tests verifying the UI components.
+### Phase 1-3: Infrastructure & Baselines
+- [x] Chaos Injection UI & Infrastructure.
+- [x] Scenario A: Salsa Greedy Baseline.
+- [x] Scenario C: Local Search (Tabu/Simulated Annealing).
 
-### Phase 2: Scenario A - The "Greedy" Baseline (Rust)
-- [x] **TDD (Red)**: Write Rust/Elixir test simulating a conflict and expecting resolution.
-- [x] **Implementation (Green)**: Create a `resolve_conflict_greedy` function in Rust.
-- [x] Algorithm logic: Find overlapping `CompactEOS` in the STIG. Delay the second train by the overlap duration.
-- [x] Connect the NIF to `handle_event("resolve_chaos", ...)` in LiveView.
+### Phase 4: Scenario D - Micro-Topology & Inference (The 2026 SBB Standard)
+- [x] **Plan**: Design the hybrid OSM-GTFS inference engine.
+- [x] **Research**: Study ARNIS repository for high-fidelity Rust OSM parsing techniques.
+- [x] **TDD (Red)**: Add test case for a complex station (e.g., Zurich HB) where trains must take specific platform tracks.
+- [x] **Implementation (Green)**: 
+    - [x] Re-extract full Swiss OSM data (mainlines + yard + sidings).
+    - [x] Implement Edge Collapsing (Scenario B) to reduce graph size.
+    - [x] Implement Tag-based weighting (Scenario C) for A* routing.
+    - [x] Match GTFS stop points to OSM platform polygons.
+- [ ] **Refactor**: Update `app.js` to render the 150MB micro-topology via PMTiles.
+- [ ] **Validate**: Verify snakes bend perfectly on switches.
 
-### Phase 3: Scenario C - Local Search (The 2026 SBB Standard)
-- [x] **Plan**: Define `OptModel` for `localsearch` crate.
-- [x] **TDD (Red)**: Add `resolve_conflict_local_search` test comparing it favorably to Greedy.
-- [x] **Implementation (Green)**: Implement Tabu Search. Find "Blast Zone" trips, create neighborhood moves, evaluate fitness.
-- [x] Connect NIF to UI.
-- [x] **TDD**: Write tests proving it finds a better solution than Greedy.
+## Notes
+- Scenario D is the hybrid recommendation for absolute physical fidelity.
+- Use `rkyv` or `bincode` to ensure this 150MB topology doesn't slow down the boot sequence.
 
-### Phase 4: Scenario B & D
-- [ ] Future phases for Global GA and OTP Negotiation.
 
 ## Notes
 - Strict adherence to TDD: Failing test FIRST, then minimal implementation.

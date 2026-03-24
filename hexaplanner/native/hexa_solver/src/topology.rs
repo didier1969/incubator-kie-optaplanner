@@ -248,30 +248,90 @@ impl NetworkManager {
             self.physical.add_station(&physical_id);
         }
 
-        // Then build edges from ways
+        // Phase 18 - Scenario B: Edge Collapsing
+        // 1. Calculate node degrees
+        let mut node_degrees: HashMap<i64, usize> = HashMap::new();
+        for way in &ways {
+            for &node_id in &way.nodes {
+                *node_degrees.entry(node_id).or_insert(0) += 1;
+            }
+            // Ensure endpoints of ways are always kept
+            if let Some(&first) = way.nodes.first() {
+                *node_degrees.entry(first).or_insert(0) += 1;
+            }
+            if let Some(&last) = way.nodes.last() {
+                *node_degrees.entry(last).or_insert(0) += 1;
+            }
+        }
+
+        // 2. Build collapsed edges
         for way in ways {
             if way.nodes.len() < 2 { continue; }
-            for window in way.nodes.windows(2) {
-                let u_id = window[0];
-                let v_id = window[1];
+            
+            // Phase 18 - Scenario C: Tag-based weighting for Micro-Topology A* routing
+            let mut weight_multiplier = 1.0;
+            if let Some(service) = way.tags.get("service") {
+                if service == "siding" || service == "yard" {
+                    weight_multiplier = 5.0;
+                }
+            }
+            if let Some(railway) = way.tags.get("railway") {
+                if railway == "switch" {
+                    weight_multiplier = 1.5;
+                }
+            }
+
+            let mut last_key_node_id = way.nodes[0];
+            let mut accumulated_routing_weight = 0.0;
+            let mut accumulated_physical_distance = 0.0;
+            let mut current_segment_coords = Vec::new();
+
+            if let Some(coords) = self.micro.node_coords.get(&last_key_node_id) {
+                current_segment_coords.push(*coords);
+            }
+
+            for i in 1..way.nodes.len() {
+                let current_node_id = way.nodes[i];
+                let prev_node_id = way.nodes[i - 1];
+
+                if let (Some(prev_coords), Some(curr_coords)) = (self.micro.node_coords.get(&prev_node_id), self.micro.node_coords.get(&current_node_id)) {
+                    let dist = haversine_distance(prev_coords.0, prev_coords.1, curr_coords.0, curr_coords.1);
+                    accumulated_physical_distance += dist;
+                    accumulated_routing_weight += dist * weight_multiplier;
+                    current_segment_coords.push(*curr_coords);
+                }
+
+                let degree = *node_degrees.get(&current_node_id).unwrap_or(&0);
                 
-                if let (Some(u_idx), Some(v_idx)) = (self.micro.node_map.get(&u_id), self.micro.node_map.get(&v_id)) {
-                    if let (Some(u_coords), Some(v_coords)) = (self.micro.node_coords.get(&u_id), self.micro.node_coords.get(&v_id)) {
-                        let distance = haversine_distance(u_coords.0, u_coords.1, v_coords.0, v_coords.1);
-                        self.micro.graph.add_edge(*u_idx, *v_idx, distance);
+                // If it's a key node (intersection, or end of way), we create the edge
+                if degree > 2 || i == way.nodes.len() - 1 {
+                    if let (Some(&u_idx), Some(&v_idx)) = (self.micro.node_map.get(&last_key_node_id), self.micro.node_map.get(&current_node_id)) {
                         
-                        // Phase 12I: Inject edges into Unified Physical Network
-                        let p_u_id = format!("OSM-{}", u_id);
-                        let p_v_id = format!("OSM-{}", v_id);
+                        self.micro.graph.add_edge(u_idx, v_idx, accumulated_routing_weight);
+                        
+                        // Inject edges into Unified Physical Network
+                        let p_u_id = format!("OSM-{}", last_key_node_id);
+                        let p_v_id = format!("OSM-{}", current_node_id);
                         let a = self.physical.add_station(&p_u_id);
                         let b = self.physical.add_station(&p_v_id);
                         
-                        let safe_dist = if distance <= 0.0 { 1.0 } else { distance };
-                        self.physical.graph.add_edge(a, b, (vec![*u_coords, *v_coords], safe_dist));
+                        let safe_dist = if accumulated_physical_distance <= 0.0 { 1.0 } else { accumulated_physical_distance };
+                        self.physical.graph.add_edge(a, b, (current_segment_coords.clone(), safe_dist));
                         
                         // Add to spatial index for snapping
                         let track_idx = self.physical.all_tracks.len();
-                        let _ = self.physical.spatial_index.add([u_coords.0, u_coords.1], track_idx);
+                        for coord in &current_segment_coords {
+                            let _ = self.physical.spatial_index.add([coord.0, coord.1], track_idx);
+                        }
+                    }
+                    
+                    // Reset for next segment
+                    last_key_node_id = current_node_id;
+                    accumulated_routing_weight = 0.0;
+                    accumulated_physical_distance = 0.0;
+                    current_segment_coords.clear();
+                    if let Some(coords) = self.micro.node_coords.get(&last_key_node_id) {
+                        current_segment_coords.push(*coords);
                     }
                 }
             }
