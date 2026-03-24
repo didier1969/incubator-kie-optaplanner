@@ -31,7 +31,8 @@ defmodule HexaPlanner.GTFS.Importer do
     file_path
     |> File.stream!()
     |> GTFSParser.parse_stream()
-    |> Stream.map(fn [
+    |> Stream.map(fn 
+      [
                        stop_id,
                        stop_name,
                        stop_lat,
@@ -53,6 +54,20 @@ defmodule HexaPlanner.GTFS.Importer do
         parent_station: if(parent_station == "", do: nil, else: parent_station),
         platform_code: if(platform_code == "", do: nil, else: platform_code)
       }
+      [stop_id, stop_name, stop_lat, stop_lon] ->
+        lat = String.to_float(stop_lat)
+        lon = String.to_float(stop_lon)
+        point = %Geo.Point{coordinates: {lon, lat}, srid: 4326}
+
+        %{
+          original_stop_id: stop_id,
+          stop_name: stop_name,
+          abbreviation: Map.get(abbreviations_map, stop_id),
+          location: point,
+          location_type: nil,
+          parent_station: nil,
+          platform_code: nil
+        }
     end)
     |> Stream.chunk_every(1000)
     |> Enum.each(fn chunk ->
@@ -67,7 +82,8 @@ defmodule HexaPlanner.GTFS.Importer do
     file_path
     |> File.stream!()
     |> GTFSParser.parse_stream()
-    |> Stream.map(fn [
+    |> Stream.map(fn 
+      [
                        route_id,
                        service_id,
                        trip_id,
@@ -88,6 +104,17 @@ defmodule HexaPlanner.GTFS.Importer do
         block_id: if(block_id == "", do: nil, else: block_id),
         hints: if(hints == "", do: nil, else: hints)
       }
+      [route_id, service_id, trip_id] ->
+        %{
+          original_trip_id: trip_id,
+          route_id: route_id,
+          service_id: service_id,
+          trip_headsign: nil,
+          trip_short_name: nil,
+          direction_id: nil,
+          block_id: nil,
+          hints: nil
+        }
     end)
     |> Stream.chunk_every(5000)
     |> Enum.each(fn chunk ->
@@ -132,7 +159,8 @@ defmodule HexaPlanner.GTFS.Importer do
     file_path
     |> File.stream!()
     |> GTFSParser.parse_stream()
-    |> Stream.map(fn [
+    |> Stream.map(fn 
+      [
                        trip_id_str,
                        arrival_time,
                        departure_time,
@@ -150,6 +178,16 @@ defmodule HexaPlanner.GTFS.Importer do
         parse_integer_or_null(pickup_type),
         parse_integer_or_null(drop_off_type)
       ]
+      [trip_id_str, arrival_time, departure_time, stop_id_str, stop_sequence] ->
+        [
+          trip_id_str,
+          parse_time(arrival_time),
+          parse_time(departure_time),
+          stop_id_str,
+          String.to_integer(stop_sequence),
+          nil,
+          nil
+        ]
     end)
     # 8000 * 7 = 56000 < 65535 limit
     |> Stream.chunk_every(8000)

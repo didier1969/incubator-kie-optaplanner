@@ -4,6 +4,7 @@ defmodule HexaPlanner.SolverIntegrationTest do
   alias HexaPlanner.SolverNif
 
   test "rust nif calculates penalty for unassigned jobs" do
+    resource = SolverNif.init_network()
     problem = %Problem{
       id: "sim_1",
       resources: [],
@@ -14,10 +15,11 @@ defmodule HexaPlanner.SolverIntegrationTest do
     }
 
     # Should be -100 because 1 job is unassigned
-    assert SolverNif.evaluate_problem(problem) == -100
+    assert SolverNif.evaluate_problem(resource, problem) == -100
   end
 
   test "rust nif optimizes the problem and returns mutated state" do
+    resource = SolverNif.init_network()
     problem = %Problem{
       id: "sim_2",
       resources: [],
@@ -26,11 +28,11 @@ defmodule HexaPlanner.SolverIntegrationTest do
       ]
     }
 
-    assert SolverNif.evaluate_problem(problem) == -100
+    assert SolverNif.evaluate_problem(resource, problem) == -100
 
-    optimized_problem = SolverNif.optimize_problem(problem, 10)
+    optimized_problem = SolverNif.optimize_problem(resource, problem, 10)
 
-    assert SolverNif.evaluate_problem(optimized_problem) == 0
+    assert SolverNif.evaluate_problem(resource, optimized_problem) == 0
     # Ensure the Rust engine actually mutated the struct and sent it back
     assert hd(optimized_problem.jobs).start_time != nil
   end

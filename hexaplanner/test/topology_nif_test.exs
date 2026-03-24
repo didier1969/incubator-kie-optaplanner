@@ -51,7 +51,7 @@ defmodule HexaPlanner.TopologyNifTest do
     ]
 
     edge_count = SolverNif.load_stop_times(resource, stop_times)
-    assert edge_count == 1
+    assert edge_count == 0 # As load_stop_times just loads them into the manager, graph is built in finalize_temporal_graph
   end
 
   test "can load track segments into rust" do

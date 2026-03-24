@@ -1,5 +1,6 @@
 defmodule HexaPlanner.GTFS.Transfer do
   use Ecto.Schema
+  import Ecto.Changeset
 
   @primary_key false
   schema "gtfs_transfers" do
@@ -11,5 +12,11 @@ defmodule HexaPlanner.GTFS.Transfer do
     field :to_trip_id, :integer
     field :from_route_id, :integer
     field :to_route_id, :integer
+  end
+
+  def changeset(transfer, attrs) do
+    transfer
+    |> cast(attrs, [:from_stop_id, :to_stop_id, :transfer_type, :min_transfer_time, :from_trip_id, :to_trip_id, :from_route_id, :to_route_id])
+    |> validate_required([:from_stop_id, :to_stop_id, :transfer_type])
   end
 end
