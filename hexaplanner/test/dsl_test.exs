@@ -1,8 +1,8 @@
-defmodule HexaPlanner.DSLTest do
+defmodule HexaCore.DSLTest do
   use ExUnit.Case
 
   defmodule MyRules do
-    use HexaPlanner.DSL
+    use HexaCore.DSL
 
     defconstraint "unassigned_job" do
       match(:job, :start_time, :is_nil)

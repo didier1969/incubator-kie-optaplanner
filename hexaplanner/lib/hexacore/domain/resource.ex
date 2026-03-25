@@ -1,4 +1,4 @@
-defmodule HexaPlanner.Domain.Resource do
+defmodule HexaCore.Domain.Resource do
   @moduledoc "A physical asset in the factory/network."
   use Ecto.Schema
 

@@ -1,12 +1,12 @@
-defmodule HexaPlanner.DSL do
+defmodule HexaCore.DSL do
   @moduledoc "Macros for defining Digital Twin constraints."
-  alias HexaPlanner.DSL.Rule
+  alias HexaCore.DSL.Rule
 
   defmacro __using__(_opts) do
     quote do
-      import HexaPlanner.DSL
+      import HexaCore.DSL
       Module.register_attribute(__MODULE__, :rules, accumulate: true)
-      @before_compile HexaPlanner.DSL
+      @before_compile HexaCore.DSL
     end
   end
 

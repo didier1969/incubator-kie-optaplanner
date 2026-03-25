@@ -1,6 +1,6 @@
 defmodule HexaPlanner.SolverIntegrationTest do
   use ExUnit.Case
-  alias HexaPlanner.Domain.{Job, Problem}
+  alias HexaCore.Domain.{Job, Problem}
   alias HexaPlanner.SolverNif
 
   test "rust nif calculates penalty for unassigned jobs" do

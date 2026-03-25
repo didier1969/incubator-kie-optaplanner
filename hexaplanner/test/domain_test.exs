@@ -1,6 +1,6 @@
 defmodule HexaPlanner.DomainTest do
   use ExUnit.Case
-  alias HexaPlanner.Domain.{Job, Problem, Resource}
+  alias HexaCore.Domain.{Job, Problem, Resource}
 
   test "a problem can be modeled immutably" do
     r1 = %Resource{id: 1, name: "Machine A", capacity: 1}

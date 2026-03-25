@@ -1,4 +1,4 @@
-defmodule HexaPlanner.Domain.Job do
+defmodule HexaCore.Domain.Job do
   @moduledoc "A task to be scheduled."
   use Ecto.Schema
 

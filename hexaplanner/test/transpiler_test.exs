@@ -1,7 +1,7 @@
-defmodule HexaPlanner.TranspilerTest do
+defmodule HexaCore.TranspilerTest do
   use ExUnit.Case
-  alias HexaPlanner.DSL.Rule
-  alias HexaPlanner.Transpiler.RustGenerator
+  alias HexaCore.DSL.Rule
+  alias HexaCore.Transpiler.RustGenerator
 
   test "generates valid rust iterator code from rule struct" do
     rule = %Rule{

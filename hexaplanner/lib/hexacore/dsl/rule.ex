@@ -1,4 +1,4 @@
-defmodule HexaPlanner.DSL.Rule do
+defmodule HexaCore.DSL.Rule do
   @moduledoc "Represents a parsed business rule constraint."
   @type t :: %__MODULE__{
           name: String.t(),

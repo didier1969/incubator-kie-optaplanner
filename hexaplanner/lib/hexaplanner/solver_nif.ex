@@ -8,11 +8,11 @@ defmodule HexaPlanner.SolverNif do
   @spec add(integer(), integer()) :: integer()
   def add(_a, _b), do: :erlang.nif_error(:nif_not_loaded)
 
-  @spec evaluate_problem(reference(), HexaPlanner.Domain.Problem.t()) :: integer()
+  @spec evaluate_problem(reference(), HexaCore.Domain.Problem.t()) :: integer()
   def evaluate_problem(_resource, _problem), do: :erlang.nif_error(:nif_not_loaded)
 
-  @spec optimize_problem(reference(), HexaPlanner.Domain.Problem.t(), integer()) ::
-          HexaPlanner.Domain.Problem.t()
+  @spec optimize_problem(reference(), HexaCore.Domain.Problem.t(), integer()) ::
+          HexaCore.Domain.Problem.t()
   def optimize_problem(_resource, _problem, _iterations), do: :erlang.nif_error(:nif_not_loaded)
 
   def build_network_graph(_edges), do: :erlang.nif_error(:nif_not_loaded)

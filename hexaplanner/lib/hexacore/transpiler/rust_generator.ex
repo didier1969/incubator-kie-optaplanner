@@ -1,6 +1,6 @@
-defmodule HexaPlanner.Transpiler.RustGenerator do
+defmodule HexaCore.Transpiler.RustGenerator do
   @moduledoc "Translates DSL Rule ASTs into pure Rust code."
-  alias HexaPlanner.DSL.Rule
+  alias HexaCore.DSL.Rule
 
   @spec generate(list(Rule.t())) :: String.t()
   def generate(rules) do

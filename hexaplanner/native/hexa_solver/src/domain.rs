@@ -2,7 +2,7 @@ use rustler::NifStruct;
 use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Clone, NifStruct)]
-#[module = "HexaPlanner.Domain.Resource"]
+#[module = "HexaCore.Domain.Resource"]
 pub struct Resource {
     pub id: i64,
     pub name: String,
@@ -10,7 +10,7 @@ pub struct Resource {
 }
 
 #[derive(Debug, Clone, NifStruct)]
-#[module = "HexaPlanner.Domain.Job"]
+#[module = "HexaCore.Domain.Job"]
 pub struct Job {
     pub id: i64,
     pub duration: i64,
@@ -108,7 +108,7 @@ pub struct TrackSegment {
 }
 
 #[derive(Debug, Clone, NifStruct)]
-#[module = "HexaPlanner.Domain.EOS"]
+#[module = "HexaCore.Domain.EOS"]
 pub struct ElementaryOccupationSegment {
     pub trip_id: i64,
     pub track_id: String,
@@ -117,7 +117,7 @@ pub struct ElementaryOccupationSegment {
 }
 
 #[derive(Debug, Clone, NifStruct)]
-#[module = "HexaPlanner.Domain.Conflict"]
+#[module = "HexaCore.Domain.Conflict"]
 pub struct Conflict {
     pub trip_a: i64,
     pub trip_b: i64,
@@ -127,14 +127,14 @@ pub struct Conflict {
 }
 
 #[derive(Debug, Clone, NifStruct)]
-#[module = "HexaPlanner.Domain.ConflictSummary"]
+#[module = "HexaCore.Domain.ConflictSummary"]
 pub struct ConflictSummary {
     pub total_conflicts: usize,
     pub sample_conflicts: Vec<Conflict>,
 }
 
 #[derive(Debug, Clone, NifStruct)]
-#[module = "HexaPlanner.Domain.ResolutionMetrics"]
+#[module = "HexaCore.Domain.ResolutionMetrics"]
 pub struct ResolutionMetrics {
     pub status: String,
     pub trains_impacted: usize,
@@ -143,7 +143,7 @@ pub struct ResolutionMetrics {
 }
 
 #[derive(Debug, Clone, NifStruct, Serialize, Deserialize)]
-#[module = "HexaPlanner.Domain.CompactEOS"]
+#[module = "HexaCore.Domain.CompactEOS"]
 pub struct CompactEOS {
     pub trip_idx: u32,
     pub track_idx: u32,
@@ -179,7 +179,7 @@ pub struct OsmWay {
 }
 
 #[derive(Debug, Clone, NifStruct)]
-#[module = "HexaPlanner.Domain.Problem"]
+#[module = "HexaCore.Domain.Problem"]
 pub struct Problem {
     pub id: String,
     pub resources: Vec<Resource>,
