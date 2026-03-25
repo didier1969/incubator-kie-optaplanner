@@ -4,24 +4,24 @@ defmodule Mix.Tasks.Data.LoadRust do
   require Logger
   alias HexaPlanner.Repo
   alias HexaPlanner.GTFS.{Stop, Trip, StopTime}
-  alias HexaPlanner.SolverNif
+  alias HexaPlanner.RailwayNif
 
   @impl Mix.Task
   def run(_args) do
     Mix.Task.run("app.start")
     
     Logger.info("Initializing Rust Network Manager...")
-    resource = SolverNif.init_network()
+    resource = RailwayNif.init_network()
 
     Logger.info("Loading 100% of Stops into Rust...")
     # Now we use the abbreviation field we added to the DB
     stops = Repo.all(Stop)
-    SolverNif.load_stops(resource, stops)
+    RailwayNif.load_stops(resource, stops)
     Logger.info("✅ Stops loaded.")
 
     Logger.info("Loading 100% of Calendars & Exceptions into Rust...")
     calendars = Repo.all(HexaPlanner.GTFS.Calendar)
-    SolverNif.load_calendars(resource, calendars)
+    RailwayNif.load_calendars(resource, calendars)
 
     # Calendar dates are high volume (6M+), stream them
     Repo.transaction(fn ->
@@ -29,7 +29,7 @@ defmodule Mix.Tasks.Data.LoadRust do
       |> Repo.stream(max_rows: 50_000)
       |> Stream.chunk_every(50_000)
       |> Enum.each(fn chunk ->
-        SolverNif.load_calendar_dates(resource, chunk)
+        RailwayNif.load_calendar_dates(resource, chunk)
         IO.write("c")
       end)
     end, timeout: :infinity)
@@ -37,7 +37,7 @@ defmodule Mix.Tasks.Data.LoadRust do
 
     Logger.info("Loading 100% of Transfers into Rust...")
     transfers = Repo.all(HexaPlanner.GTFS.Transfer)
-    SolverNif.load_transfers(resource, transfers)
+    RailwayNif.load_transfers(resource, transfers)
     Logger.info("✅ Transfers loaded.")
 
     Logger.info("Inferring and Loading Fleet Profiles (Rolling Stock)...")
@@ -56,7 +56,7 @@ defmodule Mix.Tasks.Data.LoadRust do
             {trip.id, nif_profile}
           end)
           |> Map.new()
-        SolverNif.load_fleet(resource, profiles_map)
+        RailwayNif.load_fleet(resource, profiles_map)
       end)
     end, timeout: :infinity)
     Logger.info("✅ Fleet loaded.")
@@ -70,7 +70,7 @@ defmodule Mix.Tasks.Data.LoadRust do
         |> Jason.decode!()
         |> HexaPlanner.Data.Parser.extract_segments()
       
-      SolverNif.load_tracks(resource, tracks)
+      RailwayNif.load_tracks(resource, tracks)
       Logger.info("✅ Physical topology loaded.")
     else
       Logger.warning("Topology file not found at #{topology_path}. Skipping.")
@@ -84,10 +84,10 @@ defmodule Mix.Tasks.Data.LoadRust do
         {nodes, ways} = HexaPlanner.Data.OsmParser.parse_file(file)
         mapped_nodes = Enum.map(nodes, fn n -> %{n | __struct__: HexaPlanner.Domain.OsmNode} end)
         mapped_ways = Enum.map(ways, fn w -> %{w | __struct__: HexaPlanner.Domain.OsmWay} end)
-        SolverNif.load_osm(resource, mapped_nodes, mapped_ways)
+        RailwayNif.load_osm(resource, mapped_nodes, mapped_ways)
       end)
       Logger.info("Stitching OSM Micro-Topology to GeoJSON Macro-Topology...")
-      SolverNif.stitch_osm_to_macro(resource)
+      RailwayNif.stitch_osm_to_macro(resource)
       Logger.info("✅ Micro-topology loaded and stitched.")
     end
 
@@ -98,17 +98,17 @@ defmodule Mix.Tasks.Data.LoadRust do
       |> Repo.stream(max_rows: 50_000)
       |> Stream.chunk_every(50_000)
       |> Enum.each(fn chunk ->
-        SolverNif.load_stop_times(resource, chunk)
+        RailwayNif.load_stop_times(resource, chunk)
         IO.write(".")
       end)
     end, timeout: :infinity)
     
     Logger.info("\nFinalizing STIG Graph in Rust (Fusion pass)...")
-    edge_count = SolverNif.finalize_temporal_graph(resource)
+    edge_count = RailwayNif.finalize_temporal_graph(resource)
     Logger.info("✅ All data loaded. STIG contains #{edge_count} edges.")
 
     Logger.info("Detecting Spatio-Temporal Conflicts (Sweep-Line)...")
-    summary = SolverNif.detect_conflicts(resource)
+    summary = RailwayNif.detect_conflicts(resource)
     Logger.info("⚠️ Detected #{summary.total_conflicts} physical collisions (including headway violations) in the baseline schedule.")
     
     # Measure memory (approximate)

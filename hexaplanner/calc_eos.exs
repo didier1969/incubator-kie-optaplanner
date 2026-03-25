@@ -1,6 +1,6 @@
 alias HexaPlanner.Repo
 alias HexaPlanner.GTFS.{Stop, StopTime}
-alias HexaPlanner.SolverNif
+alias HexaPlanner.RailwayNif
 import Ecto.Query
 
 Mix.Task.run("app.start")

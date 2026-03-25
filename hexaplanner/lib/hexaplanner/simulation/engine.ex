@@ -2,7 +2,7 @@ defmodule HexaPlanner.Simulation.Engine do
   use GenServer
   require Logger
   alias HexaPlanner.Repo
-  alias HexaPlanner.SolverNif
+  alias HexaPlanner.RailwayNif
   alias HexaPlanner.GTFS.{Stop, Trip, StopTime}
   alias HexaPlanner.Data.Parser
   alias Phoenix.PubSub
@@ -22,7 +22,7 @@ defmodule HexaPlanner.Simulation.Engine do
 
   def init(_) do
     Logger.info("Simulation Engine initializing...")
-    resource = SolverNif.init_network()
+    resource = RailwayNif.init_network()
     
     # Background loader with progress reporting
     Task.start(fn -> perform_ignite_sequence(resource) end)
@@ -35,14 +35,14 @@ defmodule HexaPlanner.Simulation.Engine do
     
     # 1. Stops
     stops = Repo.all(Stop)
-    SolverNif.load_stops(resource, stops)
+    RailwayNif.load_stops(resource, stops)
     report_progress(10, "100,000 Station Nodes Indexed")
 
     # 2. Topology
     topology_path = Path.join([:code.priv_dir(:hexaplanner), "data/raw/2026/20260318/topology.geojson"])
     if File.exists?(topology_path) do
       tracks = topology_path |> File.read!() |> Jason.decode!() |> Parser.extract_segments()
-      SolverNif.load_tracks(resource, tracks)
+      RailwayNif.load_tracks(resource, tracks)
     end
     report_progress(25, "Physical Rail Geometry Linked (KD-Tree Active)")
 
@@ -54,9 +54,9 @@ defmodule HexaPlanner.Simulation.Engine do
         {nodes, ways} = HexaPlanner.Data.OsmParser.parse_file(file)
         mapped_nodes = Enum.map(nodes, fn n -> %{n | __struct__: HexaPlanner.Domain.OsmNode} end)
         mapped_ways = Enum.map(ways, fn w -> %{w | __struct__: HexaPlanner.Domain.OsmWay} end)
-        SolverNif.load_osm(resource, mapped_nodes, mapped_ways)
+        RailwayNif.load_osm(resource, mapped_nodes, mapped_ways)
       end)
-      SolverNif.stitch_osm_to_macro(resource)
+      RailwayNif.stitch_osm_to_macro(resource)
     end
     report_progress(40, "Micro-Topology (OSM) Stitched to Hubs")
 
@@ -65,7 +65,7 @@ defmodule HexaPlanner.Simulation.Engine do
 
     if File.exists?(snapshot_path) do
       report_progress(60, "Zero-Copy Deserialization: Thawing STIG Snapshot...")
-      case SolverNif.thaw_state(resource, snapshot_path) do
+      case RailwayNif.thaw_state(resource, snapshot_path) do
         "ok" -> 
           report_progress(95, "STIG Matrix Restored from Cold Storage.")
         {:ok, _} -> 
@@ -95,17 +95,17 @@ defmodule HexaPlanner.Simulation.Engine do
       |> Stream.chunk_every(100_000)
       |> Stream.with_index()
       |> Enum.each(fn {chunk, index} ->
-        SolverNif.load_stop_times(resource, chunk)
+        RailwayNif.load_stop_times(resource, chunk)
         prog = 40 + round((index * 100_000 / total_st) * 50)
         report_progress(prog, "Ingesting Schedule Matrix: #{prog}%")
       end)
     end, timeout: :infinity)
 
     report_progress(95, "Finalizing Spatio-Temporal Interval Graph...")
-    SolverNif.finalize_temporal_graph(resource)
+    RailwayNif.finalize_temporal_graph(resource)
 
     report_progress(98, "Zero-Copy: Freezing STIG to disk...")
-    case SolverNif.freeze_state(resource, snapshot_path) do
+    case RailwayNif.freeze_state(resource, snapshot_path) do
       "ok" -> require Logger; Logger.info("STIG state frozen to #{snapshot_path}")
       {:ok, _} -> require Logger; Logger.info("STIG state frozen to #{snapshot_path}")
       {:error, reason} -> require Logger; Logger.error("Failed to freeze STIG: #{inspect(reason)}")
@@ -137,7 +137,7 @@ defmodule HexaPlanner.Simulation.Engine do
   end
 
   def handle_info(:tick, %{status: :running, resource: resource, current_time: time} = state) do
-    positions = SolverNif.get_active_positions(resource, time)
+    positions = RailwayNif.get_active_positions(resource, time)
     PubSub.broadcast(HexaPlanner.PubSub, "simulation:switzerland", {:tick, time, positions})
     new_time = if time + @time_dilation >= 86400, do: 0, else: time + @time_dilation
     Process.send_after(self(), :tick, @tick_interval_ms)

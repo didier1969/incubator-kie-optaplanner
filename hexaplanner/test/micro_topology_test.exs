@@ -1,9 +1,9 @@
 defmodule HexaPlanner.MicroTopologyTest do
   use ExUnit.Case
-  alias HexaPlanner.SolverNif
+  alias HexaPlanner.RailwayNif
 
   test "scénario D : routing via un aiguillage sans traverser les bâtiments (Zurich HB mock)" do
-    resource = SolverNif.init_network()
+    resource = RailwayNif.init_network()
 
     alias HexaPlanner.Domain.{OsmNode, OsmWay}
 
@@ -22,18 +22,18 @@ defmodule HexaPlanner.MicroTopologyTest do
       %OsmWay{id: 103, nodes: [2, 4], tags: %{"railway" => "rail", "service" => "siding"}} # Voie vers Quai 2
     ]
 
-    count_ways = SolverNif.load_osm(resource, nodes, ways)
+    count_ways = RailwayNif.load_osm(resource, nodes, ways)
     assert count_ways == 3
 
     # On demande un chemin (pathfinding A*) de l'entrée au Quai 2
-    path = SolverNif.route_micro_path(resource, 1, 4)
+    path = RailwayNif.route_micro_path(resource, 1, 4)
 
     # Le chemin doit passer par l'aiguillage, donc [1, 2, 4]
     assert path == [1, 2, 4]
   end
 
   test "Scénario C : Tag-based weighting évite une voie de garage (siding) si une voie principale est dispo" do
-    resource = SolverNif.init_network()
+    resource = RailwayNif.init_network()
     alias HexaPlanner.Domain.{OsmNode, OsmWay}
 
     # Point de départ
@@ -58,8 +58,8 @@ defmodule HexaPlanner.MicroTopologyTest do
       %OsmWay{id: 103, nodes: [3, 99], tags: %{"railway" => "rail"}} # Empêche le collapse de n3
     ]
 
-    SolverNif.load_osm(resource, nodes, ways)
-    path = SolverNif.route_micro_path(resource, 1, 4)
+    RailwayNif.load_osm(resource, nodes, ways)
+    path = RailwayNif.route_micro_path(resource, 1, 4)
 
     # Grâce au multiplicateur x5 du siding, il doit préférer le grand détour (1 -> 3 -> 4)
     assert path == [1, 3, 4]

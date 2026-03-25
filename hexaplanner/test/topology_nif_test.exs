@@ -1,10 +1,10 @@
 defmodule HexaPlanner.TopologyNifTest do
   use ExUnit.Case
-  alias HexaPlanner.SolverNif
+  alias HexaPlanner.RailwayNif
   alias HexaPlanner.GTFS.Stop
 
   test "can initialize a network resource and load stops into rust" do
-    resource = SolverNif.init_network()
+    resource = RailwayNif.init_network()
     assert is_reference(resource)
 
     stops = [
@@ -12,12 +12,12 @@ defmodule HexaPlanner.TopologyNifTest do
       %Stop{id: 2, original_stop_id: "8503000", stop_name: "Zürich HB", abbreviation: "ZUE", location: %Geo.Point{coordinates: {8.5, 47.3}}}
     ]
 
-    count = SolverNif.load_stops(resource, stops)
+    count = RailwayNif.load_stops(resource, stops)
     assert count == 2
   end
 
   test "can load stop times and create temporal edges in rust" do
-    resource = SolverNif.init_network()
+    resource = RailwayNif.init_network()
 
     # Need stops first
     stops = [
@@ -25,7 +25,7 @@ defmodule HexaPlanner.TopologyNifTest do
       %Stop{id: 2, original_stop_id: "8503000", stop_name: "Zürich HB", abbreviation: "ZUE", location: %Geo.Point{coordinates: {8.5, 47.3}}}
     ]
 
-    SolverNif.load_stops(resource, stops)
+    RailwayNif.load_stops(resource, stops)
 
     alias HexaPlanner.GTFS.StopTime
 
@@ -50,12 +50,12 @@ defmodule HexaPlanner.TopologyNifTest do
       }
     ]
 
-    edge_count = SolverNif.load_stop_times(resource, stop_times)
+    edge_count = RailwayNif.load_stop_times(resource, stop_times)
     assert edge_count == 0 # As load_stop_times just loads them into the manager, graph is built in finalize_temporal_graph
   end
 
   test "can load track segments into rust" do
-    resource = SolverNif.init_network()
+    resource = RailwayNif.init_network()
 
     alias HexaPlanner.Data.Parser.TrackSegment
 
@@ -63,12 +63,12 @@ defmodule HexaPlanner.TopologyNifTest do
       %TrackSegment{line_id: "100", coordinates: [{7.4, 46.9}, {7.45, 46.95}, {7.5, 47.0}]}
     ]
 
-    _count = SolverNif.load_tracks(resource, tracks)
+    _count = RailwayNif.load_tracks(resource, tracks)
     assert true
   end
 
   test "can interpolate train position between stops in rust" do
-    resource = SolverNif.init_network()
+    resource = RailwayNif.init_network()
 
     # Setup network
     stops = [
@@ -76,7 +76,7 @@ defmodule HexaPlanner.TopologyNifTest do
       %Stop{id: 2, original_stop_id: "8503000", stop_name: "Zürich HB", abbreviation: "ZUE", location: %Geo.Point{coordinates: {8.5, 47.3}}}
     ]
 
-    SolverNif.load_stops(resource, stops)
+    RailwayNif.load_stops(resource, stops)
 
     alias HexaPlanner.GTFS.StopTime
 
@@ -101,10 +101,10 @@ defmodule HexaPlanner.TopologyNifTest do
       }
     ]
 
-    SolverNif.load_stop_times(resource, stop_times)
+    RailwayNif.load_stop_times(resource, stop_times)
 
     # Query middle position (t=36500)
-    {lon, lat} = SolverNif.get_train_position(resource, 100, 36500)
+    {lon, lat} = RailwayNif.get_train_position(resource, 100, 36500)
 
     # Expected middle point
     assert_in_delta lon, 7.95, 0.01
