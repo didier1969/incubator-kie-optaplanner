@@ -52,6 +52,13 @@ fn load_stops(resource: ResourceArc<NetworkResource>, stops: Vec<domain::GtfsSto
 }
 
 #[rustler::nif]
+fn load_trips(resource: ResourceArc<NetworkResource>, trips: Vec<domain::GtfsTrip>) -> usize {
+    let mut manager = resource.manager.write().unwrap();
+    manager.load_trips(trips);
+    manager.trips.len()
+}
+
+#[rustler::nif]
 fn build_network_graph(edges: Vec<(String, String, Vec<(f64, f64)>)>) -> usize {
     let mut network = topology::PhysicalNetwork::new();
     for (station_a, station_b, coords) in edges {
@@ -60,6 +67,12 @@ fn build_network_graph(edges: Vec<(String, String, Vec<(f64, f64)>)>) -> usize {
         network.add_track(node_a, node_b, coords);
     }
     network.station_count()
+}
+
+#[rustler::nif]
+fn get_conflict_summary(resource: ResourceArc<NetworkResource>) -> domain::ConflictSummary {
+    let manager = resource.manager.read().unwrap();
+    manager.detect_conflicts()
 }
 
 #[rustler::nif]

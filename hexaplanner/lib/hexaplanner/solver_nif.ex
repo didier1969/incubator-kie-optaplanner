@@ -21,7 +21,11 @@ defmodule HexaPlanner.SolverNif do
 
   def load_stops(_resource, _stops), do: :erlang.nif_error(:nif_not_loaded)
 
+  def load_trips(_resource, _trips), do: :erlang.nif_error(:nif_not_loaded)
+
   def load_stop_times(_resource, _stop_times), do: :erlang.nif_error(:nif_not_loaded)
+
+  def get_conflict_summary(_resource), do: :erlang.nif_error(:nif_not_loaded)
 
   def load_transfers(_resource, _transfers), do: :erlang.nif_error(:nif_not_loaded)
 

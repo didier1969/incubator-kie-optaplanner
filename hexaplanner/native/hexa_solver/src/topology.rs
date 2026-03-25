@@ -173,7 +173,8 @@ pub struct NetworkManager {
     pub physical: PhysicalNetwork,
     pub micro: MicroNetwork,
     pub temporal: TemporalNetwork,
-    pub trips: HashMap<i64, Vec<GtfsStopTime>>,
+    pub stop_times: HashMap<i64, Vec<GtfsStopTime>>,
+    pub trips: HashMap<i64, crate::domain::GtfsTrip>,
     pub stops: HashMap<i64, GtfsStop>,
     pub transfers: Vec<GtfsTransfer>,
     pub calendars: HashMap<String, GtfsCalendar>,
@@ -193,6 +194,7 @@ impl NetworkManager {
             physical: PhysicalNetwork::new(),
             micro: MicroNetwork::new(),
             temporal: TemporalNetwork::new(),
+            stop_times: HashMap::new(),
             trips: HashMap::new(),
             stops: HashMap::new(),
             transfers: Vec::new(),
@@ -350,6 +352,12 @@ impl NetworkManager {
         }
     }
 
+    pub fn load_trips(&mut self, trips: Vec<crate::domain::GtfsTrip>) {
+        for trip in trips {
+            self.trips.insert(trip.id, trip);
+        }
+    }
+
     pub fn load_tracks(&mut self, tracks: Vec<TrackSegment>) {
         for track in tracks {
             let start_id = track.properties.get("bp_anfang").cloned().unwrap_or_default();
@@ -371,7 +379,7 @@ impl NetworkManager {
 
     pub fn load_stop_times(&mut self, stop_times: Vec<GtfsStopTime>) {
         for st in stop_times {
-            self.trips.entry(st.trip_id).or_default().push(st);
+            self.stop_times.entry(st.trip_id).or_default().push(st);
         }
     }
 
@@ -401,7 +409,8 @@ impl NetworkManager {
         let mut path_cache: HashMap<(NodeIndex, NodeIndex), Option<Vec<NodeIndex>>> = HashMap::new();
         let mut edge_usage: HashMap<petgraph::graph::EdgeIndex, u32> = HashMap::new();
 
-        for events in self.trips.values_mut() {
+        // Then generate the standard temporal edges and EOS for all trips
+        for (trip_id, events) in &mut self.stop_times {
             events.sort_by_key(|e| e.stop_sequence);
             for pair in events.windows(2) {
                 let from = &pair[0];
@@ -422,7 +431,6 @@ impl NetworkManager {
                     if let (Some(&start_idx), Some(&end_idx)) = (self.physical.station_map.get(from_abbr), self.physical.station_map.get(to_abbr)) {
                         
                         // Phase 12H: Congestion-Aware Routing
-                        // We use a dynamic A* that considers the physical distance and current edge usage.
                         let path = path_cache.entry((start_idx, end_idx)).or_insert_with(|| {
                             astar(
                                 &self.physical.graph, 
@@ -431,7 +439,6 @@ impl NetworkManager {
                                 |e| {
                                     let base_dist = e.weight().1;
                                     let usage = edge_usage.get(&e.id()).unwrap_or(&0);
-                                    // Increase cost by 1% for every train already routed this way
                                     base_dist * (1.0 + (f64::from(*usage) * 0.01))
                                 }, 
                                 |_| 0.0
@@ -441,14 +448,12 @@ impl NetworkManager {
                         if let Some(node_path) = path {
                             let num_segments = node_path.len() - 1;
                             if num_segments > 0 {
-                                // Track usage for future routing to prevent parallel track starvation
                                 for window in node_path.windows(2) {
                                     if let Some(edge) = self.physical.graph.find_edge(window[0], window[1]) {
                                         *edge_usage.entry(edge).or_insert(0) += 1;
                                     }
                                 }
 
-                                // Calculate total path distance
                                 let mut total_dist = 0.0;
                                 let mut edge_dists = Vec::with_capacity(num_segments);
                                 for window in node_path.windows(2) {
@@ -468,11 +473,6 @@ impl NetworkManager {
 
                                 let mut current_time = from.departure_time;
                                 
-                                // Phase 12H: Kinematic Velocity Curves (v=at)
-                                // We simulate a simple velocity profile: lower speed at ends (acceleration/deceleration)
-                                // Time spent on a segment is proportional to (distance / average_velocity).
-                                // We approximate the velocity curve as an inverted parabola: v(x) = 4 * v_max * (x/D) * (1 - x/D)
-                                // To avoid div by zero, v_min = 0.1 * v_max.
                                 let mut segment_times = Vec::with_capacity(num_segments);
                                 if total_dist > 0.0 {
                                     let mut accumulated_dist = 0.0;
@@ -482,9 +482,8 @@ impl NetworkManager {
                                     for &dist in &edge_dists {
                                         let mid_x = accumulated_dist + (dist / 2.0);
                                         let normalized_x = mid_x / total_dist;
-                                        // Simple kinematic velocity envelope (parabola)
                                         let mut relative_v = 4.0 * normalized_x * (1.0 - normalized_x);
-                                        if relative_v < 0.1 { relative_v = 0.1; } // Minimum speed
+                                        if relative_v < 0.1 { relative_v = 0.1; }
                                         
                                         let raw_time = dist / relative_v;
                                         raw_times.push(raw_time);
@@ -501,27 +500,24 @@ impl NetworkManager {
                                     }
                                 }
 
-                                // Phase 15: Exact Physical Composition (Rolling Stock)
-                                let profile = self.fleet.get(&from.trip_id);
+                                let profile = self.fleet.get(trip_id);
                                 let train_len = profile.map_or(200.0, |p| p.length_meters);
                                 let avg_speed_ms = profile.map_or(80.0, |p| (p.max_speed_kmh / 3.6) * 0.7);
                                 let tail_clearance_s = (train_len / avg_speed_ms).round() as i32; 
 
                                 let next_trip_idx = u32::try_from(self.trip_id_map.len()).unwrap_or(0);
-                                let trip_idx = *self.trip_id_map.entry(from.trip_id).or_insert(next_trip_idx);
+                                let trip_idx = *self.trip_id_map.entry(*trip_id).or_insert(next_trip_idx);
 
                                 for (i, window) in node_path.windows(2).enumerate() {
                                     let u = window[0];
                                     let v = window[1];
                                     let segment_time = segment_times[i];
 
-                                    // Get edge index directly, fallback to a combined hash if not found
                                     let track_idx = if let Some(edge) = self.physical.graph.find_edge(u, v) {
                                         edge.index() as u32
                                     } else {
                                         let min_node = std::cmp::min(u.index(), v.index()) as u32;
                                         let max_node = std::cmp::max(u.index(), v.index()) as u32;
-                                        // Offset by 30M to avoid collision with real edges
                                         30_000_000 + min_node * 1000 + max_node
                                     };
 
@@ -534,7 +530,6 @@ impl NetworkManager {
                                         end_time: (eos_end + tail_clearance_s) as u32,
                                     });
 
-                                    // Lock the entry node (route locking)
                                     let node_idx = u.index() as u32 + 10_000_000;
                                     self.eos_buffer.push(CompactEOS {
                                         trip_idx,
@@ -546,7 +541,6 @@ impl NetworkManager {
                                     current_time = eos_end;
                                 }
 
-                                // Lock the final node in the path
                                 if let Some(&last_node) = node_path.last() {
                                     let node_idx = last_node.index() as u32 + 10_000_000;
                                     self.eos_buffer.push(CompactEOS {
@@ -557,7 +551,6 @@ impl NetworkManager {
                                     });
                                 }
 
-                                // Prevent opposing trains from entering the single-track section
                                 let min_macro = std::cmp::min(start_idx.index(), end_idx.index()) as u32;
                                 let max_macro = std::cmp::max(start_idx.index(), end_idx.index()) as u32;
                                 let macro_idx = 20_000_000 + min_macro * 1000 + max_macro;
@@ -568,6 +561,63 @@ impl NetworkManager {
                                     start_time: from.departure_time as u32,
                                     end_time: (to.arrival_time + tail_clearance_s) as u32,
                                 });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Phase 15: Night Rostering / Block ID Linking
+        // Group trips by block_id
+        let mut block_chains: HashMap<String, Vec<&crate::domain::GtfsTrip>> = HashMap::new();
+        for trip in self.trips.values() {
+            if let Some(block_id) = &trip.block_id {
+                block_chains.entry(block_id.clone()).or_default().push(trip);
+            }
+        }
+
+        for (_, mut chain) in block_chains {
+            if chain.len() < 2 { continue; }
+            
+            // Sort trips in this block by their start time
+            chain.sort_by_key(|t| {
+                self.stop_times.get(&t.id)
+                    .and_then(|st| st.first())
+                    .map_or(0, |st| st.departure_time)
+            });
+
+            for pair in chain.windows(2) {
+                let prev_trip = pair[0];
+                let next_trip = pair[1];
+
+                let prev_events = self.stop_times.get(&prev_trip.id);
+                let next_events = self.stop_times.get(&next_trip.id);
+
+                if let (Some(pe), Some(ne)) = (prev_events, next_events) {
+                    if let (Some(last_event), Some(first_event)) = (pe.last(), ne.first()) {
+                        
+                        // Check if they end and start at the same station (or we just park it at the last station anyway)
+                        // Create a long parking EOS
+                        let park_start = last_event.arrival_time;
+                        let park_end = first_event.departure_time;
+
+                        if park_end > park_start {
+                            if let Some(stop) = self.stops.get(&last_event.stop_id) {
+                                let abbr = get_logical_station_id(stop);
+                                if let Some(&node_idx) = self.physical.station_map.get(abbr) {
+                                    let track_idx = node_idx.index() as u32 + 10_000_000; // Node lock space
+                                    
+                                    let next_trip_idx = u32::try_from(self.trip_id_map.len()).unwrap_or(0);
+                                    let trip_idx = *self.trip_id_map.entry(prev_trip.id).or_insert(next_trip_idx);
+
+                                    self.eos_buffer.push(CompactEOS {
+                                        trip_idx,
+                                        track_idx,
+                                        start_time: park_start as u32,
+                                        end_time: park_end as u32,
+                                    });
+                                }
                             }
                         }
                     }
@@ -612,8 +662,15 @@ impl NetworkManager {
                     if sample_conflicts.len() < 100 {
                         use lasso::Key;
                         // Fast resolve for samples
-                        let track_str = if let Some(spur) = lasso::Spur::try_from_usize(track_idx as usize) {
-                            self.interner.resolve(&spur).to_string()
+                        let track_str = if track_idx >= 10_000_000 {
+                            format!("SYNTHETIC-{}", track_idx)
+                        } else if let Some(spur) = lasso::Spur::try_from_usize(track_idx as usize) {
+                            // Rodeo panics if the key is out of bounds, so we also need to ensure it's within len
+                            if spur.into_usize() < self.interner.len() {
+                                self.interner.resolve(&spur).to_string()
+                            } else {
+                                "UNKNOWN_INTERNED".to_string()
+                            }
                         } else {
                             "UNKNOWN".to_string()
                         };
@@ -642,7 +699,7 @@ impl NetworkManager {
         use rayon::prelude::*;
         
         // Parallel map over all trips to find active ones
-        self.trips
+        self.stop_times
             .par_iter()
             .filter_map(|(&trip_id, events)| {
                 if events.is_empty() { return None; }
@@ -669,7 +726,7 @@ impl NetworkManager {
 
     #[must_use]
     pub fn get_position(&self, trip_id: i64, time: i32) -> Option<(f64, f64)> {
-        let events = self.trips.get(&trip_id)?;
+        let events = self.stop_times.get(&trip_id)?;
         if events.is_empty() { return None; }
 
         for i in 0..events.len() - 1 {
@@ -741,7 +798,7 @@ impl NetworkManager {
     pub fn freeze_state(&self, path: &str) -> Result<(), String> {
         let file = File::create(path).map_err(|e| e.to_string())?;
         let writer = BufWriter::new(file);
-        let state = (&self.trips, &self.eos_buffer);
+        let state = (&self.stop_times, &self.eos_buffer);
         bincode::serialize_into(writer, &state).map_err(|e| e.to_string())?;
         Ok(())
     }
@@ -750,12 +807,12 @@ impl NetworkManager {
         let file = File::open(path).map_err(|e| e.to_string())?;
         let reader = BufReader::new(file);
         let (trips, eos_buffer): (HashMap<i64, Vec<GtfsStopTime>>, Vec<CompactEOS>) = bincode::deserialize_from(reader).map_err(|e| e.to_string())?;
-        self.trips = trips;
+        self.stop_times = trips;
         self.eos_buffer = eos_buffer;
         Ok(())
     }
     pub fn inject_delay(&mut self, trip_id: i64, delay_seconds: i32) -> Result<(), String> {
-        if let Some(events) = self.trips.get_mut(&trip_id) {
+        if let Some(events) = self.stop_times.get_mut(&trip_id) {
             for event in events.iter_mut() {
                 event.arrival_time += delay_seconds;
                 event.departure_time += delay_seconds;
@@ -782,7 +839,7 @@ impl NetworkManager {
             iterations += 1;
             if iterations > 20 { break; } // Safety escape valve
             
-            // Rebuild STIG based on current self.trips
+            // Rebuild STIG based on current self.stop_times
             self.finalize_temporal_graph();
 
             let mut track_occupancy: HashMap<u32, u32> = HashMap::new();
@@ -799,7 +856,7 @@ impl NetworkManager {
                             trains_impacted.insert(trip_id);
                             
                             // Push this trip's future schedule forward
-                            if let Some(events) = self.trips.get_mut(&trip_id) {
+                            if let Some(events) = self.stop_times.get_mut(&trip_id) {
                                 for event in events.iter_mut() {
                                     if event.arrival_time >= eos.start_time as i32 {
                                         event.arrival_time += delay as i32;
@@ -832,7 +889,7 @@ impl NetworkManager {
     pub fn resolve_conflict_local_search(&mut self) -> crate::domain::ResolutionMetrics {
         let start_time_ms = std::time::Instant::now();
         
-        // 1. Rebuild STIG based on current self.trips to get baseline
+        // 1. Rebuild STIG based on current self.stop_times to get baseline
         self.finalize_temporal_graph();
 
         // 2. Identify Blast Zone
@@ -944,7 +1001,7 @@ impl NetworkManager {
             if let Some(&delay) = best_delays.get(&trip_id) {
                 if delay > 0 {
                     total_delay_added += delay as u32;
-                    if let Some(events) = self.trips.get_mut(&trip_id) {
+                    if let Some(events) = self.stop_times.get_mut(&trip_id) {
                         for event in events.iter_mut() {
                             event.arrival_time += delay;
                             event.departure_time += delay;
