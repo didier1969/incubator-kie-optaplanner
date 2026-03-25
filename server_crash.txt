@@ -1,5 +1,5 @@
 warning: Git tree '/home/dstadel/projects/incubator-kie-optaplanner' has uncommitted changes
-HexaPlanner Dev Environment loaded.
+HexaRail Dev Environment loaded.
 Elixir Elixir 1.19.5 (compiled with Erlang/OTP 28)
 Rust cargo 1.93.0 (083ac5135 2025-12-15)
 Starting local PostgreSQL server...
@@ -8,197 +8,197 @@ pg_ctl: could not start server
 Examine the log output.
     warning: unused alias Trip
     │
-  6 │   alias HexaPlanner.GTFS.{Stop, Trip, StopTime}
+  6 │   alias HexaRail.GTFS.{Stop, Trip, StopTime}
     │   ~
     │
-    └─ lib/hexaplanner/simulation/engine.ex:6:3
+    └─ lib/hexarail/simulation/engine.ex:6:3
 
 
-20:38:48.154 [info] Running HexaPlannerWeb.Endpoint with Bandit 1.4.2 at 0.0.0.0:14326 (http)
+20:38:48.154 [info] Running HexaRailWeb.Endpoint with Bandit 1.4.2 at 0.0.0.0:14326 (http)
 
-20:38:48.162 [info] Access HexaPlannerWeb.Endpoint at http://localhost:14326
+20:38:48.162 [info] Access HexaRailWeb.Endpoint at http://localhost:14326
 
-20:38:48.228 [info] Starting Horde.RegistryImpl with name HexaPlanner.HordeRegistry
+20:38:48.228 [info] Starting Horde.RegistryImpl with name HexaRail.HordeRegistry
 
-20:38:48.251 [info] Starting Horde.DynamicSupervisorImpl with name HexaPlanner.HordeSupervisor
+20:38:48.251 [info] Starting Horde.DynamicSupervisorImpl with name HexaRail.HordeSupervisor
 
 20:38:48.253 [info] Simulation Engine initializing...
 
 20:38:48.911 [debug] QUERY OK source="gtfs_stops" db=573.8ms decode=12.1ms queue=0.9ms idle=128.2ms
 SELECT g0."id", g0."original_stop_id", g0."stop_name", g0."abbreviation", g0."location", g0."location_type", g0."parent_station", g0."platform_code" FROM "gtfs_stops" AS g0 []
-[90m↳ HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:37[0m
 
 20:38:51.135 [debug] QUERY OK db=0.3ms idle=1049.1ms
 begin []
-[90m↳ HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:66[0m
+[90m↳ HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:66[0m
 
 20:38:51.143 [debug] QUERY OK source="gtfs_stop_times" db=0.7ms
 SELECT g0."trip_id", g0."arrival_time", g0."departure_time", g0."stop_id", g0."stop_sequence", g0."pickup_type", g0."drop_off_type" FROM "gtfs_stop_times" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:68[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:68[0m
 
 20:38:51.228 [debug] QUERY OK source="gtfs_stop_times" db=80.2ms decode=3.8ms
 SELECT g0."trip_id", g0."arrival_time", g0."departure_time", g0."stop_id", g0."stop_sequence", g0."pickup_type", g0."drop_off_type" FROM "gtfs_stop_times" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:68[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:68[0m
 
 20:38:51.393 [debug] QUERY OK source="gtfs_stop_times" db=46.8ms decode=3.0ms
 SELECT g0."trip_id", g0."arrival_time", g0."departure_time", g0."stop_id", g0."stop_sequence", g0."pickup_type", g0."drop_off_type" FROM "gtfs_stop_times" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:68[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:68[0m
 
 20:38:51.597 [debug] QUERY OK source="gtfs_stop_times" db=88.9ms decode=3.2ms
 SELECT g0."trip_id", g0."arrival_time", g0."departure_time", g0."stop_id", g0."stop_sequence", g0."pickup_type", g0."drop_off_type" FROM "gtfs_stop_times" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:68[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:68[0m
 
 20:38:51.775 [debug] QUERY OK source="gtfs_stop_times" db=53.8ms decode=4.2ms
 SELECT g0."trip_id", g0."arrival_time", g0."departure_time", g0."stop_id", g0."stop_sequence", g0."pickup_type", g0."drop_off_type" FROM "gtfs_stop_times" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:68[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:68[0m
 
 20:38:52.054 [debug] QUERY OK source="gtfs_stop_times" db=95.3ms decode=3.2ms
 SELECT g0."trip_id", g0."arrival_time", g0."departure_time", g0."stop_id", g0."stop_sequence", g0."pickup_type", g0."drop_off_type" FROM "gtfs_stop_times" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:68[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:68[0m
 
 20:38:52.374 [debug] QUERY OK source="gtfs_stop_times" db=48.8ms decode=66.5ms
 SELECT g0."trip_id", g0."arrival_time", g0."departure_time", g0."stop_id", g0."stop_sequence", g0."pickup_type", g0."drop_off_type" FROM "gtfs_stop_times" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:68[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:68[0m
 
 20:38:52.587 [debug] QUERY OK source="gtfs_stop_times" db=58.3ms decode=3.2ms
 SELECT g0."trip_id", g0."arrival_time", g0."departure_time", g0."stop_id", g0."stop_sequence", g0."pickup_type", g0."drop_off_type" FROM "gtfs_stop_times" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:68[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:68[0m
 
 20:38:52.844 [debug] QUERY OK source="gtfs_stop_times" db=134.0ms decode=2.5ms
 SELECT g0."trip_id", g0."arrival_time", g0."departure_time", g0."stop_id", g0."stop_sequence", g0."pickup_type", g0."drop_off_type" FROM "gtfs_stop_times" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:68[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:68[0m
 
 20:38:53.144 [debug] QUERY OK source="gtfs_stop_times" db=211.3ms decode=2.4ms
 SELECT g0."trip_id", g0."arrival_time", g0."departure_time", g0."stop_id", g0."stop_sequence", g0."pickup_type", g0."drop_off_type" FROM "gtfs_stop_times" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:68[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:68[0m
 
 20:38:53.455 [debug] QUERY OK source="gtfs_stop_times" db=254.1ms decode=4.5ms
 SELECT g0."trip_id", g0."arrival_time", g0."departure_time", g0."stop_id", g0."stop_sequence", g0."pickup_type", g0."drop_off_type" FROM "gtfs_stop_times" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:68[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:68[0m
 
 20:38:53.598 [debug] QUERY OK source="gtfs_stop_times" db=45.5ms decode=2.9ms
 SELECT g0."trip_id", g0."arrival_time", g0."departure_time", g0."stop_id", g0."stop_sequence", g0."pickup_type", g0."drop_off_type" FROM "gtfs_stop_times" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:68[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:68[0m
 
 20:38:53.951 [debug] QUERY OK source="gtfs_stop_times" db=156.9ms decode=3.7ms
 SELECT g0."trip_id", g0."arrival_time", g0."departure_time", g0."stop_id", g0."stop_sequence", g0."pickup_type", g0."drop_off_type" FROM "gtfs_stop_times" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:68[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:68[0m
 
 20:38:54.514 [debug] QUERY OK source="gtfs_stop_times" db=474.4ms decode=2.5ms
 SELECT g0."trip_id", g0."arrival_time", g0."departure_time", g0."stop_id", g0."stop_sequence", g0."pickup_type", g0."drop_off_type" FROM "gtfs_stop_times" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:68[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:68[0m
 
 20:38:54.680 [debug] QUERY OK source="gtfs_stop_times" db=57.2ms decode=3.6ms
 SELECT g0."trip_id", g0."arrival_time", g0."departure_time", g0."stop_id", g0."stop_sequence", g0."pickup_type", g0."drop_off_type" FROM "gtfs_stop_times" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:68[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:68[0m
 
 20:38:55.134 [debug] QUERY OK source="gtfs_stop_times" db=50.8ms decode=1.9ms
 SELECT g0."trip_id", g0."arrival_time", g0."departure_time", g0."stop_id", g0."stop_sequence", g0."pickup_type", g0."drop_off_type" FROM "gtfs_stop_times" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:68[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:68[0m
 
 20:38:55.502 [debug] QUERY OK source="gtfs_stop_times" db=223.4ms decode=2.5ms
 SELECT g0."trip_id", g0."arrival_time", g0."departure_time", g0."stop_id", g0."stop_sequence", g0."pickup_type", g0."drop_off_type" FROM "gtfs_stop_times" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:68[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:68[0m
 
 20:38:55.657 [debug] QUERY OK source="gtfs_stop_times" db=46.8ms decode=2.5ms
 SELECT g0."trip_id", g0."arrival_time", g0."departure_time", g0."stop_id", g0."stop_sequence", g0."pickup_type", g0."drop_off_type" FROM "gtfs_stop_times" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:68[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:68[0m
 
 20:38:56.135 [debug] QUERY OK source="gtfs_stop_times" db=230.0ms decode=2.2ms
 SELECT g0."trip_id", g0."arrival_time", g0."departure_time", g0."stop_id", g0."stop_sequence", g0."pickup_type", g0."drop_off_type" FROM "gtfs_stop_times" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:68[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:68[0m
 
 20:38:56.530 [debug] QUERY OK source="gtfs_stop_times" db=291.6ms decode=2.7ms
 SELECT g0."trip_id", g0."arrival_time", g0."departure_time", g0."stop_id", g0."stop_sequence", g0."pickup_type", g0."drop_off_type" FROM "gtfs_stop_times" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:68[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:68[0m
 
 20:38:57.133 [debug] QUERY OK source="gtfs_stop_times" db=473.3ms decode=5.8ms
 SELECT g0."trip_id", g0."arrival_time", g0."departure_time", g0."stop_id", g0."stop_sequence", g0."pickup_type", g0."drop_off_type" FROM "gtfs_stop_times" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:68[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:68[0m
 
 20:38:57.507 [debug] QUERY OK source="gtfs_stop_times" db=280.2ms decode=3.4ms
 SELECT g0."trip_id", g0."arrival_time", g0."departure_time", g0."stop_id", g0."stop_sequence", g0."pickup_type", g0."drop_off_type" FROM "gtfs_stop_times" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:68[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:68[0m
 
 20:38:58.008 [debug] QUERY OK source="gtfs_stop_times" db=374.8ms decode=2.9ms
 SELECT g0."trip_id", g0."arrival_time", g0."departure_time", g0."stop_id", g0."stop_sequence", g0."pickup_type", g0."drop_off_type" FROM "gtfs_stop_times" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:68[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:68[0m
 
 20:38:58.437 [debug] QUERY OK source="gtfs_stop_times" db=299.7ms decode=2.6ms
 SELECT g0."trip_id", g0."arrival_time", g0."departure_time", g0."stop_id", g0."stop_sequence", g0."pickup_type", g0."drop_off_type" FROM "gtfs_stop_times" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:68[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:68[0m
 
 20:38:59.153 [debug] QUERY OK source="gtfs_stop_times" db=639.4ms decode=2.7ms
 SELECT g0."trip_id", g0."arrival_time", g0."departure_time", g0."stop_id", g0."stop_sequence", g0."pickup_type", g0."drop_off_type" FROM "gtfs_stop_times" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:68[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:68[0m
 
 20:38:59.618 [debug] QUERY OK source="gtfs_stop_times" db=319.6ms decode=2.7ms
 SELECT g0."trip_id", g0."arrival_time", g0."departure_time", g0."stop_id", g0."stop_sequence", g0."pickup_type", g0."drop_off_type" FROM "gtfs_stop_times" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:68[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:68[0m
 
 20:39:00.091 [debug] QUERY OK source="gtfs_stop_times" db=334.4ms decode=3.5ms
 SELECT g0."trip_id", g0."arrival_time", g0."departure_time", g0."stop_id", g0."stop_sequence", g0."pickup_type", g0."drop_off_type" FROM "gtfs_stop_times" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:68[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:68[0m
 
 20:39:00.585 [debug] QUERY OK source="gtfs_stop_times" db=345.1ms decode=3.0ms
 SELECT g0."trip_id", g0."arrival_time", g0."departure_time", g0."stop_id", g0."stop_sequence", g0."pickup_type", g0."drop_off_type" FROM "gtfs_stop_times" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:68[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:68[0m
 
 20:39:01.100 [debug] QUERY OK source="gtfs_stop_times" db=358.5ms decode=2.8ms
 SELECT g0."trip_id", g0."arrival_time", g0."departure_time", g0."stop_id", g0."stop_sequence", g0."pickup_type", g0."drop_off_type" FROM "gtfs_stop_times" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:68[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:68[0m
 
 20:39:02.087 [debug] QUERY OK source="gtfs_stop_times" db=847.1ms decode=3.0ms
 SELECT g0."trip_id", g0."arrival_time", g0."departure_time", g0."stop_id", g0."stop_sequence", g0."pickup_type", g0."drop_off_type" FROM "gtfs_stop_times" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:68[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:68[0m
 
 20:39:02.636 [debug] QUERY OK source="gtfs_stop_times" db=371.9ms decode=2.9ms
 SELECT g0."trip_id", g0."arrival_time", g0."departure_time", g0."stop_id", g0."stop_sequence", g0."pickup_type", g0."drop_off_type" FROM "gtfs_stop_times" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:68[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:68[0m
 
 20:39:03.292 [debug] QUERY OK source="gtfs_stop_times" db=496.0ms decode=2.7ms
 SELECT g0."trip_id", g0."arrival_time", g0."departure_time", g0."stop_id", g0."stop_sequence", g0."pickup_type", g0."drop_off_type" FROM "gtfs_stop_times" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:68[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:68[0m
 
 20:39:03.850 [debug] QUERY OK source="gtfs_stop_times" db=404.3ms decode=3.7ms
 SELECT g0."trip_id", g0."arrival_time", g0."departure_time", g0."stop_id", g0."stop_sequence", g0."pickup_type", g0."drop_off_type" FROM "gtfs_stop_times" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:68[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:68[0m
 
 20:39:04.388 [debug] QUERY OK source="gtfs_stop_times" db=455.1ms decode=3.2ms
 SELECT g0."trip_id", g0."arrival_time", g0."departure_time", g0."stop_id", g0."stop_sequence", g0."pickup_type", g0."drop_off_type" FROM "gtfs_stop_times" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:68[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:68[0m
 
 20:39:04.906 [debug] QUERY OK source="gtfs_stop_times" db=465.7ms decode=3.0ms
 SELECT g0."trip_id", g0."arrival_time", g0."departure_time", g0."stop_id", g0."stop_sequence", g0."pickup_type", g0."drop_off_type" FROM "gtfs_stop_times" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:68[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:68[0m
 
 20:39:05.036 [debug] QUERY OK source="gtfs_stop_times" db=51.6ms decode=16.2ms
 SELECT g0."trip_id", g0."arrival_time", g0."departure_time", g0."stop_id", g0."stop_sequence", g0."pickup_type", g0."drop_off_type" FROM "gtfs_stop_times" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:68[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:68[0m
 
 20:39:05.171 [debug] QUERY OK source="gtfs_stop_times" db=48.8ms decode=3.1ms
 SELECT g0."trip_id", g0."arrival_time", g0."departure_time", g0."stop_id", g0."stop_sequence", g0."pickup_type", g0."drop_off_type" FROM "gtfs_stop_times" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:68[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:68[0m
 
 20:39:05.692 [debug] QUERY OK source="gtfs_stop_times" db=460.9ms decode=3.4ms
 SELECT g0."trip_id", g0."arrival_time", g0."departure_time", g0."stop_id", g0."stop_sequence", g0."pickup_type", g0."drop_off_type" FROM "gtfs_stop_times" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:68[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:68[0m
 
 20:39:05.899 [debug] QUERY OK source="gtfs_stop_times" db=48.7ms decode=3.6ms
 SELECT g0."trip_id", g0."arrival_time", g0."departure_time", g0."stop_id", g0."stop_sequence", g0."pickup_type", g0."drop_off_type" FROM "gtfs_stop_times" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:68[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:68[0m
 
 20:39:06.446 [debug] QUERY OK source="gtfs_stop_times" db=472.7ms decode=4.8ms
 SELECT g0."trip_id", g0."arrival_time", g0."departure_time", g0."stop_id", g0."stop_sequence", g0."pickup_type", g0."drop_off_type" FROM "gtfs_stop_times" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:68[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:68[0m
 
 20:39:06.629 [debug] QUERY OK source="gtfs_stop_times" db=111.4ms decode=2.9ms
 SELECT g0."trip_id", g0."arrival_time", g0."departure_time", g0."stop_id", g0."stop_sequence", g0."pickup_type", g0."drop_off_type" FROM "gtfs_stop_times" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:68[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:68[0m
 
 20:39:06.762 [debug] QUERY OK source="gtfs_stop_times" db=46.6ms decode=2.5ms
 SELECT g0."trip_id", g0."arrival_time", g0."departure_time", g0."stop_id", g0."stop_sequence", g0."pickup_type", g0."drop_off_type" FROM "gtfs_stop_times" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexaplanner/simulation/engine.ex:68[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.perform_ignite_sequence/1, at: lib/hexarail/simulation/engine.ex:68[0m
 
 20:39:07.139 [notice] SIGTERM received - shutting down
 

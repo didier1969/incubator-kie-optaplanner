@@ -1,6 +1,6 @@
 # Technical Documentation: High-Fidelity Database Schema
 
-HexaPlanner uses PostgreSQL with PostGIS to store massive datasets with zero simplification. This document details the schema design and the optimized ingestion strategy used for the CFF/SBB reference vertical.
+HexaRail uses PostgreSQL with PostGIS to store massive datasets with zero simplification. This document details the schema design and the optimized ingestion strategy used for the CFF/SBB reference vertical.
 
 ## 🏛 Schema Architecture
 
@@ -20,7 +20,7 @@ Models the full complexity of the Swiss timetable, including school holidays, on
 
 ## 🚀 Optimized Ingestion Pipeline
 
-To handle 20M+ events without exhausting Elixir VM memory, HexaPlanner uses a **Zero-Memory SQL Resolution** strategy:
+To handle 20M+ events without exhausting Elixir VM memory, HexaRail uses a **Zero-Memory SQL Resolution** strategy:
 
 1.  **Staging:** Data is streamed from CSV into `UNLOGGED` staging tables (`_staging`). Unlogged tables bypass the Write-Ahead Log (WAL) for 3x faster insertion.
 2.  **Dictionary Sync:** Internal `ID` maps are mirrored from the main tables to unlogged dictionary tables (`_dict`).

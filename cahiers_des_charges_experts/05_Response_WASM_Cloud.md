@@ -2,9 +2,9 @@
 
 **Date :** 21 Mars 2026
 **Auteur :** Architecte Principal Cloud, WebAssembly (WASM) & Infrastructure-as-Code
-**Projet :** HexaPlanner - Jumeau Numérique pour Job Shop Scheduling et Optimisation Ferroviaire
+**Projet :** HexaRail - Jumeau Numérique pour Job Shop Scheduling et Optimisation Ferroviaire
 
-Ce document détaille l'architecture de la couche d'extensibilité, de configuration sécurisée et d'infrastructure de HexaPlanner, en s'appuyant sur l'état de l'art technologique de 2026.
+Ce document détaille l'architecture de la couche d'extensibilité, de configuration sécurisée et d'infrastructure de HexaRail, en s'appuyant sur l'état de l'art technologique de 2026.
 
 ---
 
@@ -41,7 +41,7 @@ Afin de remplacer l'historique de configuration fragile (XML/JSON), le paramétr
 
 ## 3. Infrastructure-as-Code et Reproductibilité absolue (Nix)
 
-L'écosystème HexaPlanner étant nativement polyglotte (Java GraalVM, Rust FFI, Elixir OTP), les outils standards de conteneurisation (Docker) sont insuffisants pour garantir une reproductibilité stricte de la compilation de la toolchain combinée. Nous adoptons **Nix Flakes**.
+L'écosystème HexaRail étant nativement polyglotte (Java GraalVM, Rust FFI, Elixir OTP), les outils standards de conteneurisation (Docker) sont insuffisants pour garantir une reproductibilité stricte de la compilation de la toolchain combinée. Nous adoptons **Nix Flakes**.
 
 ### 3.1 Environnement de Compilation "Bit-for-Bit"
 - **Fichier `flake.nix` :** L'intégralité des dépendances (Rust compiler, JDK GraalVM, Erlang/OTP, bibliothèques C natives pour Wasmtime) est déclarée dans un `flake.nix` à la racine du dépôt.
@@ -55,10 +55,10 @@ L'écosystème HexaPlanner étant nativement polyglotte (Java GraalVM, Rust FFI,
 
 ## 4. Edge Computing : Stratégie WASM In-Browser
 
-L'adoption de WASM ouvre une perspective stratégique majeure pour l'expérience utilisateur et l'optimisation des coûts cloud de HexaPlanner.
+L'adoption de WASM ouvre une perspective stratégique majeure pour l'expérience utilisateur et l'optimisation des coûts cloud de HexaRail.
 
 ### 4.1 Exécution Client-Side (Navigateur)
-- **Compilation Cœur Rust -> WASM :** Le moteur de scoring principal de HexaPlanner (écrit en Rust) est compilé en `.wasm` (cible `wasm32-wasip1` ou avec Wasm Threads/SIMD activés).
+- **Compilation Cœur Rust -> WASM :** Le moteur de scoring principal de HexaRail (écrit en Rust) est compilé en `.wasm` (cible `wasm32-wasip1` ou avec Wasm Threads/SIMD activés).
 - **Cas d'usage "What-If" :** Lorsqu'un planificateur ferroviaire industriel effectue des manipulations manuelles interactives sur l'UI (ex: décaler un train de 5 minutes sur le diagramme de Gantt), l'évaluation du score partiel est calculée directement dans le navigateur du client via un Web Worker.
 - **Bénéfices :**
   - **Latence Zéro :** Réponse instantanée (< 16ms) pour l'utilisateur, fluide jusqu'à 60 FPS, sans round-trip réseau vers nos serveurs.

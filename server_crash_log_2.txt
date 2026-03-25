@@ -1,5 +1,5 @@
 warning: Git tree '/home/dstadel/projects/incubator-kie-optaplanner' has uncommitted changes
-HexaPlanner Dev Environment loaded.
+HexaRail Dev Environment loaded.
 Elixir Elixir 1.19.5 (compiled with Erlang/OTP 28)
 Rust cargo 1.93.0 (083ac5135 2025-12-15)
 Starting local PostgreSQL server...
@@ -7,13 +7,13 @@ pg_ctl: another server might be running; trying to start server anyway
 pg_ctl: could not start server
 Examine the log output.
 
-06:51:28.331 [info] Running HexaPlannerWeb.Endpoint with Bandit 1.4.2 at 0.0.0.0:14326 (http)
+06:51:28.331 [info] Running HexaRailWeb.Endpoint with Bandit 1.4.2 at 0.0.0.0:14326 (http)
 
-06:51:28.340 [info] Access HexaPlannerWeb.Endpoint at http://localhost:14326
+06:51:28.340 [info] Access HexaRailWeb.Endpoint at http://localhost:14326
 
-06:51:28.412 [info] Starting Horde.RegistryImpl with name HexaPlanner.HordeRegistry
+06:51:28.412 [info] Starting Horde.RegistryImpl with name HexaRail.HordeRegistry
 
-06:51:28.446 [info] Starting Horde.DynamicSupervisorImpl with name HexaPlanner.HordeSupervisor
+06:51:28.446 [info] Starting Horde.DynamicSupervisorImpl with name HexaRail.HordeSupervisor
 
 06:51:28.449 [info] Simulation Engine starting. Data Plane loading scheduled...
 
@@ -21,637 +21,637 @@ Examine the log output.
 
 06:51:29.062 [debug] QUERY OK source="gtfs_stops" db=533.2ms decode=5.9ms queue=1.1ms idle=139.3ms
 SELECT g0."id", g0."original_stop_id", g0."stop_name", g0."abbreviation", g0."location", g0."location_type", g0."parent_station", g0."platform_code" FROM "gtfs_stops" AS g0 []
-[90m↳ HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:28[0m
+[90m↳ HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:28[0m
 
 06:51:29.411 [info] [Engine] Loading Calendars & Exceptions...
 
 06:51:29.493 [debug] QUERY OK source="gtfs_calendars" db=70.4ms decode=0.8ms queue=1.6ms idle=1099.9ms
 SELECT g0."service_id", g0."monday", g0."tuesday", g0."wednesday", g0."thursday", g0."friday", g0."saturday", g0."sunday", g0."start_date", g0."end_date" FROM "gtfs_calendars" AS g0 []
-[90m↳ HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:32[0m
+[90m↳ HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:32[0m
 
 06:51:29.585 [debug] QUERY OK db=0.2ms idle=1263.8ms
 begin []
-[90m↳ HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:35[0m
+[90m↳ HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:35[0m
 
 06:51:29.597 [debug] QUERY OK source="gtfs_calendar_dates" db=0.6ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:29.614 [debug] QUERY OK source="gtfs_calendar_dates" db=15.8ms decode=0.8ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:29.661 [debug] QUERY OK source="gtfs_calendar_dates" db=17.0ms decode=1.5ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:29.705 [debug] QUERY OK source="gtfs_calendar_dates" db=16.4ms decode=0.7ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:29.760 [debug] QUERY OK source="gtfs_calendar_dates" db=18.8ms decode=1.3ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:29.813 [debug] QUERY OK source="gtfs_calendar_dates" db=16.1ms decode=0.7ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:29.856 [debug] QUERY OK source="gtfs_calendar_dates" db=15.8ms decode=0.9ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:29.907 [debug] QUERY OK source="gtfs_calendar_dates" db=15.6ms decode=0.7ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:29.961 [debug] QUERY OK source="gtfs_calendar_dates" db=18.4ms decode=1.2ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:30.004 [debug] QUERY OK source="gtfs_calendar_dates" db=16.1ms decode=0.7ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:30.058 [debug] QUERY OK source="gtfs_calendar_dates" db=18.1ms decode=0.7ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:30.101 [debug] QUERY OK source="gtfs_calendar_dates" db=15.6ms decode=0.9ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:30.149 [debug] QUERY OK source="gtfs_calendar_dates" db=18.8ms decode=0.8ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:30.196 [debug] QUERY OK source="gtfs_calendar_dates" db=18.7ms decode=0.8ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:30.247 [debug] QUERY OK source="gtfs_calendar_dates" db=17.2ms decode=0.9ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:30.292 [debug] QUERY OK source="gtfs_calendar_dates" db=17.6ms decode=0.8ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:30.345 [debug] QUERY OK source="gtfs_calendar_dates" db=15.1ms decode=0.7ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:30.392 [debug] QUERY OK source="gtfs_calendar_dates" db=18.7ms decode=1.0ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:30.447 [debug] QUERY OK source="gtfs_calendar_dates" db=17.0ms decode=1.0ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:30.490 [debug] QUERY OK source="gtfs_calendar_dates" db=14.9ms decode=0.5ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:30.539 [debug] QUERY OK source="gtfs_calendar_dates" db=15.4ms decode=0.8ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:30.592 [debug] QUERY OK source="gtfs_calendar_dates" db=17.9ms decode=0.9ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:30.644 [debug] QUERY OK source="gtfs_calendar_dates" db=18.4ms decode=0.8ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:30.690 [debug] QUERY OK source="gtfs_calendar_dates" db=17.0ms decode=0.9ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:30.737 [debug] QUERY OK source="gtfs_calendar_dates" db=18.4ms decode=1.0ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:30.791 [debug] QUERY OK source="gtfs_calendar_dates" db=19.1ms decode=0.6ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:30.840 [debug] QUERY OK source="gtfs_calendar_dates" db=19.4ms decode=0.8ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:30.892 [debug] QUERY OK source="gtfs_calendar_dates" db=17.3ms decode=0.8ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:30.946 [debug] QUERY OK source="gtfs_calendar_dates" db=15.2ms decode=0.8ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:30.995 [debug] QUERY OK source="gtfs_calendar_dates" db=18.4ms decode=0.6ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:31.042 [debug] QUERY OK source="gtfs_calendar_dates" db=16.9ms decode=1.3ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:31.089 [debug] QUERY OK source="gtfs_calendar_dates" db=18.3ms decode=0.9ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:31.136 [debug] QUERY OK source="gtfs_calendar_dates" db=17.6ms decode=1.0ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:31.184 [debug] QUERY OK source="gtfs_calendar_dates" db=15.9ms decode=0.8ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:31.234 [debug] QUERY OK source="gtfs_calendar_dates" db=19.2ms decode=0.5ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:31.278 [debug] QUERY OK source="gtfs_calendar_dates" db=15.4ms decode=0.9ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:31.323 [debug] QUERY OK source="gtfs_calendar_dates" db=16.7ms decode=1.0ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:31.371 [debug] QUERY OK source="gtfs_calendar_dates" db=17.8ms decode=1.1ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:31.416 [debug] QUERY OK source="gtfs_calendar_dates" db=17.1ms decode=0.9ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:31.462 [debug] QUERY OK source="gtfs_calendar_dates" db=16.6ms decode=0.9ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:31.506 [debug] QUERY OK source="gtfs_calendar_dates" db=15.4ms decode=0.9ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:31.551 [debug] QUERY OK source="gtfs_calendar_dates" db=16.5ms decode=0.8ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:31.596 [debug] QUERY OK source="gtfs_calendar_dates" db=17.2ms decode=0.8ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:31.642 [debug] QUERY OK source="gtfs_calendar_dates" db=17.5ms decode=1.1ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:31.690 [debug] QUERY OK source="gtfs_calendar_dates" db=18.4ms decode=0.8ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:31.736 [debug] QUERY OK source="gtfs_calendar_dates" db=17.3ms decode=0.4ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:31.789 [debug] QUERY OK source="gtfs_calendar_dates" db=18.3ms decode=0.5ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:31.834 [debug] QUERY OK source="gtfs_calendar_dates" db=16.4ms decode=0.8ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:31.880 [debug] QUERY OK source="gtfs_calendar_dates" db=17.3ms decode=0.9ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:31.933 [debug] QUERY OK source="gtfs_calendar_dates" db=17.4ms decode=1.3ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:31.980 [debug] QUERY OK source="gtfs_calendar_dates" db=19.5ms decode=0.5ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:32.033 [debug] QUERY OK source="gtfs_calendar_dates" db=17.3ms decode=0.8ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:32.079 [debug] QUERY OK source="gtfs_calendar_dates" db=17.9ms decode=0.8ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:32.134 [debug] QUERY OK source="gtfs_calendar_dates" db=18.8ms decode=0.8ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:32.183 [debug] QUERY OK source="gtfs_calendar_dates" db=15.2ms decode=1.1ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:32.233 [debug] QUERY OK source="gtfs_calendar_dates" db=15.9ms decode=0.8ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:32.284 [debug] QUERY OK source="gtfs_calendar_dates" db=17.2ms decode=0.9ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:32.338 [debug] QUERY OK source="gtfs_calendar_dates" db=19.3ms decode=0.8ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:32.387 [debug] QUERY OK source="gtfs_calendar_dates" db=14.7ms decode=0.9ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:32.433 [debug] QUERY OK source="gtfs_calendar_dates" db=17.4ms decode=0.8ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:32.483 [debug] QUERY OK source="gtfs_calendar_dates" db=16.8ms decode=0.6ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:32.532 [debug] QUERY OK source="gtfs_calendar_dates" db=17.5ms decode=0.8ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:32.581 [debug] QUERY OK source="gtfs_calendar_dates" db=18.2ms decode=1.1ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:32.633 [debug] QUERY OK source="gtfs_calendar_dates" db=15.8ms decode=0.8ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:32.681 [debug] QUERY OK source="gtfs_calendar_dates" db=18.3ms decode=0.9ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:32.734 [debug] QUERY OK source="gtfs_calendar_dates" db=17.2ms decode=0.8ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:32.780 [debug] QUERY OK source="gtfs_calendar_dates" db=16.1ms decode=0.8ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:32.831 [debug] QUERY OK source="gtfs_calendar_dates" db=14.6ms decode=0.7ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:32.876 [debug] QUERY OK source="gtfs_calendar_dates" db=16.7ms decode=0.9ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:32.929 [debug] QUERY OK source="gtfs_calendar_dates" db=17.2ms decode=0.7ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:32.976 [debug] QUERY OK source="gtfs_calendar_dates" db=15.8ms decode=1.0ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:33.024 [debug] QUERY OK source="gtfs_calendar_dates" db=17.6ms decode=1.1ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:33.074 [debug] QUERY OK source="gtfs_calendar_dates" db=15.6ms decode=0.6ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:33.122 [debug] QUERY OK source="gtfs_calendar_dates" db=18.1ms decode=0.9ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:33.181 [debug] QUERY OK source="gtfs_calendar_dates" db=19.9ms decode=0.9ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:33.227 [debug] QUERY OK source="gtfs_calendar_dates" db=16.3ms decode=0.9ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:33.276 [debug] QUERY OK source="gtfs_calendar_dates" db=19.4ms decode=0.9ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:33.334 [debug] QUERY OK source="gtfs_calendar_dates" db=18.2ms decode=0.8ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:33.383 [debug] QUERY OK source="gtfs_calendar_dates" db=18.6ms decode=1.1ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:33.429 [debug] QUERY OK source="gtfs_calendar_dates" db=16.4ms decode=0.9ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:33.479 [debug] QUERY OK source="gtfs_calendar_dates" db=19.5ms decode=1.1ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:33.536 [debug] QUERY OK source="gtfs_calendar_dates" db=15.5ms decode=1.3ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:33.591 [debug] QUERY OK source="gtfs_calendar_dates" db=15.8ms decode=1.0ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:33.641 [debug] QUERY OK source="gtfs_calendar_dates" db=18.2ms decode=1.0ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:33.696 [debug] QUERY OK source="gtfs_calendar_dates" db=15.9ms decode=0.8ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:33.742 [debug] QUERY OK source="gtfs_calendar_dates" db=16.3ms decode=1.0ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:33.793 [debug] QUERY OK source="gtfs_calendar_dates" db=20.1ms decode=0.8ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:33.840 [debug] QUERY OK source="gtfs_calendar_dates" db=16.9ms decode=0.8ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:33.897 [debug] QUERY OK source="gtfs_calendar_dates" db=18.9ms decode=0.9ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:33.945 [debug] QUERY OK source="gtfs_calendar_dates" db=18.3ms decode=1.0ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:34.005 [debug] QUERY OK source="gtfs_calendar_dates" db=21.3ms decode=0.3ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:34.050 [debug] QUERY OK source="gtfs_calendar_dates" db=12.7ms decode=0.4ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:34.109 [debug] QUERY OK source="gtfs_calendar_dates" db=17.1ms decode=0.9ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:34.160 [debug] QUERY OK source="gtfs_calendar_dates" db=21.0ms decode=0.8ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:34.206 [debug] QUERY OK source="gtfs_calendar_dates" db=16.4ms decode=0.8ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:34.255 [debug] QUERY OK source="gtfs_calendar_dates" db=17.6ms decode=0.8ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:34.303 [debug] QUERY OK source="gtfs_calendar_dates" db=17.6ms decode=1.1ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:34.350 [debug] QUERY OK source="gtfs_calendar_dates" db=17.1ms decode=0.7ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:34.399 [debug] QUERY OK source="gtfs_calendar_dates" db=19.2ms decode=0.4ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:34.446 [debug] QUERY OK source="gtfs_calendar_dates" db=17.2ms decode=0.5ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:34.488 [debug] QUERY OK source="gtfs_calendar_dates" db=16.3ms decode=0.7ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:34.536 [debug] QUERY OK source="gtfs_calendar_dates" db=17.9ms decode=0.9ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:34.585 [debug] QUERY OK source="gtfs_calendar_dates" db=18.0ms decode=0.8ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:34.634 [debug] QUERY OK source="gtfs_calendar_dates" db=18.6ms decode=1.0ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:34.683 [debug] QUERY OK source="gtfs_calendar_dates" db=17.8ms decode=0.9ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:34.731 [debug] QUERY OK source="gtfs_calendar_dates" db=18.4ms decode=1.0ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:34.779 [debug] QUERY OK source="gtfs_calendar_dates" db=18.9ms decode=0.8ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:34.825 [debug] QUERY OK source="gtfs_calendar_dates" db=16.0ms decode=0.6ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:34.873 [debug] QUERY OK source="gtfs_calendar_dates" db=16.9ms decode=1.0ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:34.922 [debug] QUERY OK source="gtfs_calendar_dates" db=18.5ms decode=1.2ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:34.970 [debug] QUERY OK source="gtfs_calendar_dates" db=16.7ms decode=1.4ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:35.021 [debug] QUERY OK source="gtfs_calendar_dates" db=18.4ms decode=0.8ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:35.072 [debug] QUERY OK source="gtfs_calendar_dates" db=18.9ms decode=0.9ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:35.124 [debug] QUERY OK source="gtfs_calendar_dates" db=19.5ms decode=1.1ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:35.172 [debug] QUERY OK source="gtfs_calendar_dates" db=17.2ms decode=0.9ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:35.220 [debug] QUERY OK source="gtfs_calendar_dates" db=16.9ms decode=0.6ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:35.268 [debug] QUERY OK source="gtfs_calendar_dates" db=17.4ms decode=1.0ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:35.316 [debug] QUERY OK source="gtfs_calendar_dates" db=17.5ms decode=1.0ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:35.364 [debug] QUERY OK source="gtfs_calendar_dates" db=16.6ms decode=0.9ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:35.412 [debug] QUERY OK source="gtfs_calendar_dates" db=16.8ms decode=0.9ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:35.461 [debug] QUERY OK source="gtfs_calendar_dates" db=17.7ms decode=1.0ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:35.509 [debug] QUERY OK source="gtfs_calendar_dates" db=18.1ms decode=0.9ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:35.559 [debug] QUERY OK source="gtfs_calendar_dates" db=18.9ms decode=1.1ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:35.613 [debug] QUERY OK source="gtfs_calendar_dates" db=25.8ms decode=0.9ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:35.663 [debug] QUERY OK source="gtfs_calendar_dates" db=20.4ms decode=0.9ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:35.716 [debug] QUERY OK source="gtfs_calendar_dates" db=21.6ms decode=0.9ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:35.763 [debug] QUERY OK source="gtfs_calendar_dates" db=16.3ms decode=0.9ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:35.817 [debug] QUERY OK source="gtfs_calendar_dates" db=22.3ms decode=0.9ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:35.856 [debug] QUERY OK source="gtfs_calendar_dates" db=8.5ms decode=0.9ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:35.874 [debug] QUERY OK source="gtfs_calendar_dates" db=0.2ms
 SELECT g0."service_id", g0."date", g0."exception_type" FROM "gtfs_calendar_dates" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:37[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:37[0m
 
 06:51:35.885 [debug] QUERY OK db=0.3ms
 commit []
-[90m↳ HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:35[0m
+[90m↳ HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:35[0m
 
 06:51:35.885 [info] [Engine] Loading Transfers...
 
 06:51:36.192 [debug] QUERY OK source="gtfs_transfers" db=292.9ms decode=9.4ms queue=0.6ms idle=1644.0ms
 SELECT g0."from_stop_id", g0."to_stop_id", g0."transfer_type", g0."min_transfer_time", g0."from_trip_id", g0."to_trip_id", g0."from_route_id", g0."to_route_id" FROM "gtfs_transfers" AS g0 []
-[90m↳ HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:43[0m
+[90m↳ HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:43[0m
 
 06:51:36.555 [info] [Engine] Loading Fleet Profiles...
 
 06:51:36.556 [debug] QUERY OK db=0.1ms idle=1310.2ms
 begin []
-[90m↳ HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:47[0m
+[90m↳ HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:47[0m
 
 06:51:36.561 [debug] QUERY OK source="gtfs_trips" db=1.0ms
 SELECT g0."id", g0."original_trip_id", g0."route_id", g0."service_id", g0."trip_headsign", g0."trip_short_name", g0."direction_id", g0."block_id", g0."hints" FROM "gtfs_trips" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:49[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:49[0m
 
 06:51:36.789 [debug] QUERY OK source="gtfs_trips" db=226.0ms decode=2.0ms
 SELECT g0."id", g0."original_trip_id", g0."route_id", g0."service_id", g0."trip_headsign", g0."trip_short_name", g0."direction_id", g0."block_id", g0."hints" FROM "gtfs_trips" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:49[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:49[0m
 
 06:51:37.730 [debug] QUERY OK source="gtfs_trips" db=224.5ms decode=1.3ms
 SELECT g0."id", g0."original_trip_id", g0."route_id", g0."service_id", g0."trip_headsign", g0."trip_short_name", g0."direction_id", g0."block_id", g0."hints" FROM "gtfs_trips" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:49[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:49[0m
 
 06:51:38.478 [debug] QUERY OK source="gtfs_trips" db=131.0ms decode=4.0ms
 SELECT g0."id", g0."original_trip_id", g0."route_id", g0."service_id", g0."trip_headsign", g0."trip_short_name", g0."direction_id", g0."block_id", g0."hints" FROM "gtfs_trips" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:49[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:49[0m
 
 06:51:39.337 [debug] QUERY OK source="gtfs_trips" db=147.8ms decode=4.3ms
 SELECT g0."id", g0."original_trip_id", g0."route_id", g0."service_id", g0."trip_headsign", g0."trip_short_name", g0."direction_id", g0."block_id", g0."hints" FROM "gtfs_trips" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:49[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:49[0m
 
 06:51:40.164 [debug] QUERY OK source="gtfs_trips" db=168.7ms decode=3.5ms
 SELECT g0."id", g0."original_trip_id", g0."route_id", g0."service_id", g0."trip_headsign", g0."trip_short_name", g0."direction_id", g0."block_id", g0."hints" FROM "gtfs_trips" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:49[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:49[0m
 
 06:51:40.944 [debug] QUERY OK source="gtfs_trips" db=157.9ms decode=2.1ms
 SELECT g0."id", g0."original_trip_id", g0."route_id", g0."service_id", g0."trip_headsign", g0."trip_short_name", g0."direction_id", g0."block_id", g0."hints" FROM "gtfs_trips" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:49[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:49[0m
 
 06:51:41.708 [debug] QUERY OK source="gtfs_trips" db=224.2ms decode=0.8ms
 SELECT g0."id", g0."original_trip_id", g0."route_id", g0."service_id", g0."trip_headsign", g0."trip_short_name", g0."direction_id", g0."block_id", g0."hints" FROM "gtfs_trips" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:49[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:49[0m
 
 06:51:42.382 [debug] QUERY OK source="gtfs_trips" db=168.9ms decode=25.1ms
 SELECT g0."id", g0."original_trip_id", g0."route_id", g0."service_id", g0."trip_headsign", g0."trip_short_name", g0."direction_id", g0."block_id", g0."hints" FROM "gtfs_trips" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:49[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:49[0m
 
 06:51:43.008 [debug] QUERY OK source="gtfs_trips" db=125.1ms decode=0.7ms
 SELECT g0."id", g0."original_trip_id", g0."route_id", g0."service_id", g0."trip_headsign", g0."trip_short_name", g0."direction_id", g0."block_id", g0."hints" FROM "gtfs_trips" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:49[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:49[0m
 
 06:51:43.733 [debug] QUERY OK source="gtfs_trips" db=246.5ms decode=0.9ms
 SELECT g0."id", g0."original_trip_id", g0."route_id", g0."service_id", g0."trip_headsign", g0."trip_short_name", g0."direction_id", g0."block_id", g0."hints" FROM "gtfs_trips" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:49[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:49[0m
 
 06:51:44.514 [debug] QUERY OK source="gtfs_trips" db=211.2ms decode=2.0ms
 SELECT g0."id", g0."original_trip_id", g0."route_id", g0."service_id", g0."trip_headsign", g0."trip_short_name", g0."direction_id", g0."block_id", g0."hints" FROM "gtfs_trips" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:49[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:49[0m
 
 06:51:45.161 [debug] QUERY OK source="gtfs_trips" db=157.2ms decode=1.6ms
 SELECT g0."id", g0."original_trip_id", g0."route_id", g0."service_id", g0."trip_headsign", g0."trip_short_name", g0."direction_id", g0."block_id", g0."hints" FROM "gtfs_trips" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:49[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:49[0m
 
 06:51:45.896 [debug] QUERY OK source="gtfs_trips" db=233.2ms decode=0.9ms
 SELECT g0."id", g0."original_trip_id", g0."route_id", g0."service_id", g0."trip_headsign", g0."trip_short_name", g0."direction_id", g0."block_id", g0."hints" FROM "gtfs_trips" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:49[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:49[0m
 
 06:51:46.608 [debug] QUERY OK source="gtfs_trips" db=227.0ms decode=1.9ms
 SELECT g0."id", g0."original_trip_id", g0."route_id", g0."service_id", g0."trip_headsign", g0."trip_short_name", g0."direction_id", g0."block_id", g0."hints" FROM "gtfs_trips" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:49[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:49[0m
 
 06:51:47.315 [debug] QUERY OK source="gtfs_trips" db=174.6ms decode=24.1ms
 SELECT g0."id", g0."original_trip_id", g0."route_id", g0."service_id", g0."trip_headsign", g0."trip_short_name", g0."direction_id", g0."block_id", g0."hints" FROM "gtfs_trips" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:49[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:49[0m
 
 06:51:48.043 [debug] QUERY OK source="gtfs_trips" db=182.4ms decode=1.6ms
 SELECT g0."id", g0."original_trip_id", g0."route_id", g0."service_id", g0."trip_headsign", g0."trip_short_name", g0."direction_id", g0."block_id", g0."hints" FROM "gtfs_trips" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:49[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:49[0m
 
 06:51:48.699 [debug] QUERY OK source="gtfs_trips" db=149.6ms decode=0.8ms
 SELECT g0."id", g0."original_trip_id", g0."route_id", g0."service_id", g0."trip_headsign", g0."trip_short_name", g0."direction_id", g0."block_id", g0."hints" FROM "gtfs_trips" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:49[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:49[0m
 
 06:51:49.428 [debug] QUERY OK source="gtfs_trips" db=189.7ms decode=22.5ms
 SELECT g0."id", g0."original_trip_id", g0."route_id", g0."service_id", g0."trip_headsign", g0."trip_short_name", g0."direction_id", g0."block_id", g0."hints" FROM "gtfs_trips" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:49[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:49[0m
 
 06:51:50.054 [debug] QUERY OK source="gtfs_trips" db=61.5ms decode=1.2ms
 SELECT g0."id", g0."original_trip_id", g0."route_id", g0."service_id", g0."trip_headsign", g0."trip_short_name", g0."direction_id", g0."block_id", g0."hints" FROM "gtfs_trips" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:49[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:49[0m
 
 06:51:51.057 [debug] QUERY OK source="gtfs_trips" db=229.6ms decode=1.7ms
 SELECT g0."id", g0."original_trip_id", g0."route_id", g0."service_id", g0."trip_headsign", g0."trip_short_name", g0."direction_id", g0."block_id", g0."hints" FROM "gtfs_trips" AS g0 []
-[90m↳ anonymous fn/1 in HexaPlanner.Simulation.Engine.handle_continue/2, at: lib/hexaplanner/simulation/engine.ex:49[0m
+[90m↳ anonymous fn/1 in HexaRail.Simulation.Engine.handle_continue/2, at: lib/hexarail/simulation/engine.ex:49[0m
 
 06:51:51.165 [notice] SIGTERM received - shutting down
 

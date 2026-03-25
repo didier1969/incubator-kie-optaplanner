@@ -2,7 +2,7 @@
 
 **À l'attention de :** Directeur/Directrice DevOps, Cloud Infrastructure & FinOps  
 **Date :** 21 Mars 2026  
-**Projet :** HexaPlanner - Jumeau Numérique Industriel  
+**Projet :** HexaRail - Jumeau Numérique Industriel  
 **Objectif :** Concevoir l'usine logicielle (Software Factory) polyglotte et l'optimisation des coûts d'infrastructure de test.
 
 ## Contexte

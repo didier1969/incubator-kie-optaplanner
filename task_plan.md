@@ -1,7 +1,7 @@
-# Task Plan: HexaPlanner Phase 18 (Chaos Engineering & Metaheuristics)
+# Task Plan: HexaRail Phase 18 (Chaos Engineering & Metaheuristics)
 
 ## Goal
-Transform HexaPlanner into a Benchmarking Optimization Framework by injecting "Chaos" (timetable perturbations) and resolving conflicts using various strategies (Baseline, Salsa Incremental, Local Search, Global GA).
+Transform HexaRail into a Benchmarking Optimization Framework by injecting "Chaos" (timetable perturbations) and resolving conflicts using various strategies (Baseline, Salsa Incremental, Local Search, Global GA).
 ## Current Status
 - [x] Phase 17 (Zero-Copy & Vector Tiling) completed and validated.
 - [x] Phase 18 - Phase 1 (Chaos UI) completed and validated.

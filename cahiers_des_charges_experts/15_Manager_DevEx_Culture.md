@@ -2,7 +2,7 @@
 
 **À l'attention de :** Staff Engineer / Developer Experience (DevEx) Director  
 **Date :** 21 Mars 2026  
-**Projet :** HexaPlanner - Jumeau Numérique Industriel  
+**Projet :** HexaRail - Jumeau Numérique Industriel  
 **Objectif :** Garantir que ce monstre technologique reste un plaisir à développer et maintenir pour les équipes.
 
 ## Contexte

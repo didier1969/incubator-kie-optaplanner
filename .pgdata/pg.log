@@ -1,0 +1,21 @@
+2026-03-25 22:11:58.859 CET [31165] LOG:  starting PostgreSQL 15.17 on x86_64-pc-linux-gnu, compiled by clang version 21.1.8, 64-bit
+2026-03-25 22:11:58.859 CET [31165] LOG:  could not bind IPv4 address "127.0.0.1": Address already in use
+2026-03-25 22:11:58.859 CET [31165] HINT:  Is another postmaster already running on port 15432? If not, wait a few seconds and retry.
+2026-03-25 22:11:58.859 CET [31165] WARNING:  could not create listen socket for "localhost"
+2026-03-25 22:11:58.859 CET [31165] FATAL:  could not create any TCP/IP sockets
+2026-03-25 22:11:58.864 CET [31165] LOG:  database system is shut down
+2026-03-25 22:12:42.416 CET [1124] LOG:  starting PostgreSQL 15.17 on x86_64-pc-linux-gnu, compiled by clang version 21.1.8, 64-bit
+2026-03-25 22:12:42.417 CET [1124] LOG:  listening on IPv4 address "127.0.0.1", port 15432
+2026-03-25 22:12:42.424 CET [1124] LOG:  listening on Unix socket "/home/dstadel/projects/incubator-kie-optaplanner/.pgdata/.s.PGSQL.15432"
+2026-03-25 22:12:42.436 CET [1127] LOG:  database system was shut down at 2026-03-25 22:11:57 CET
+2026-03-25 22:12:42.446 CET [1124] LOG:  database system is ready to accept connections
+2026-03-25 22:12:42.513 CET [1135] FATAL:  lock file "postmaster.pid" already exists
+2026-03-25 22:12:42.513 CET [1135] HINT:  Is another postmaster (PID 1124) running in data directory "/home/dstadel/projects/incubator-kie-optaplanner/.pgdata"?
+2026-03-25 22:13:21.666 CET [1499] FATAL:  lock file "postmaster.pid" already exists
+2026-03-25 22:13:21.666 CET [1499] HINT:  Is another postmaster (PID 1124) running in data directory "/home/dstadel/projects/incubator-kie-optaplanner/.pgdata"?
+2026-03-25 22:13:24.508 CET [1594] LOG:  could not send data to client: Broken pipe
+2026-03-25 22:13:24.508 CET [1594] FATAL:  connection to client lost
+2026-03-25 22:13:30.184 CET [3327] FATAL:  lock file "postmaster.pid" already exists
+2026-03-25 22:13:30.184 CET [3327] HINT:  Is another postmaster (PID 1124) running in data directory "/home/dstadel/projects/incubator-kie-optaplanner/.pgdata"?
+2026-03-25 22:17:42.536 CET [1125] LOG:  checkpoint starting: time
+2026-03-25 22:22:12.860 CET [1125] LOG:  checkpoint complete: wrote 4019 buffers (24.5%); 0 WAL file(s) added, 0 removed, 2 recycled; write=269.471 s, sync=0.823 s, total=270.325 s; sync files=835, longest=0.009 s, average=0.001 s; distance=28756 kB, estimate=28756 kB

@@ -1,12 +1,12 @@
-# Manuel des Standards de Code et Bonnes Pratiques : Projet HexaPlanner
+# Manuel des Standards de Code et Bonnes Pratiques : Projet HexaRail
 
 **Auteur :** Staff Engineer / Expert(e) en Qualité Logicielle
 **Date :** 21 Mars 2026
-**Projet :** HexaPlanner - Jumeau Numérique Industriel
+**Projet :** HexaRail - Jumeau Numérique Industriel
 
 ## 1. Philosophie Générale (Clean Architecture & Maintenabilité)
 
-Dans le cadre de HexaPlanner, la fiabilité mathématique, la performance d'exécution et la résilience sont primordiales. La dette technique n'est pas tolérée. Ce manuel définit nos standards impitoyables. 
+Dans le cadre de HexaRail, la fiabilité mathématique, la performance d'exécution et la résilience sont primordiales. La dette technique n'est pas tolérée. Ce manuel définit nos standards impitoyables. 
 
 **La règle d'or :** Aucun code ne rejoint la branche principale (`main`) s'il contrevient à ces principes, s'il déclenche le moindre avertissement lors de l'analyse statique, ou s'il introduit une régression dans la couverture de tests.
 
@@ -59,7 +59,7 @@ La Continuous Integration (CI) est le gardien impartial du projet. Aucune Pull R
     *   Exécution : `mix format --check-formatted`, `mix credo --strict`, et `mix dialyzer`.
     *   Règle : `mix format` est obligatoire. Credo en mode strict ne doit remonter aucun avertissement de style ou de refactoring. Dialyzer doit valider tous les *typespecs* (`@spec` et `@type`) sans exception ; ceux-ci sont d'ailleurs obligatoires pour toute fonction ou module public.
 *   ** (SonarQube, ErrorProne & Spotless) :**
-    *   Exécution : Maven avec le plugin Spotless pour le formatage, ErrorProne branché sur le compilateur, et analyse SonarQube avec le profil "HexaPlanner Strict".
+    *   Exécution : Maven avec le plugin Spotless pour le formatage, ErrorProne branché sur le compilateur, et analyse SonarQube avec le profil "HexaRail Strict".
     *   Règle : Le pipeline échoue au moindre *warning* de compilation (ErrorProne). La Quality Gate SonarQube bloque la PR au premier *Code Smell*, Bug, ou Vulnérabilité.
 
 ---

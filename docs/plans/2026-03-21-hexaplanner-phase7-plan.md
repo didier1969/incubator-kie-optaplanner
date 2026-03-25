@@ -1,4 +1,4 @@
-# HexaPlanner Phase 7 Implementation Plan: Incremental Score Engine (Rust/Salsa)
+# HexaRail Phase 7 Implementation Plan: Incremental Score Engine (Rust/Salsa)
 
 > **For Claude/Gemini:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
@@ -13,10 +13,10 @@
 ### Task 1: Add Incremental Computation Dependencies
 
 **Files:**
-- Modify: `hexaplanner/native/hexa_solver/Cargo.toml`
+- Modify: `hexarail/native/hexa_solver/Cargo.toml`
 
 **Step 1: Write the failing check**
-Run: `cargo tree --manifest-path hexaplanner/native/hexa_solver/Cargo.toml | grep salsa`
+Run: `cargo tree --manifest-path hexarail/native/hexa_solver/Cargo.toml | grep salsa`
 Expected: FAIL (No salsa dependency)
 
 **Step 2: Write minimal implementation**
@@ -27,12 +27,12 @@ salsa = "0.16.1"
 ```
 
 **Step 3: Run check to verify it passes**
-Run: `nix develop -c bash -c "cd hexaplanner/native/hexa_solver && cargo update && cargo tree | grep salsa"`
+Run: `nix develop -c bash -c "cd hexarail/native/hexa_solver && cargo update && cargo tree | grep salsa"`
 Expected: PASS
 
 **Step 4: Commit**
 ```bash
-git add hexaplanner/native/hexa_solver/Cargo.toml hexaplanner/native/hexa_solver/Cargo.lock
+git add hexarail/native/hexa_solver/Cargo.toml hexarail/native/hexa_solver/Cargo.lock
 git commit -m "chore(deps): add salsa for incremental score computation"
 ```
 
@@ -41,12 +41,12 @@ git commit -m "chore(deps): add salsa for incremental score computation"
 ### Task 2: Scaffold the Salsa Database and Query Group
 
 **Files:**
-- Create: `hexaplanner/native/hexa_solver/src/incremental_score.rs`
-- Modify: `hexaplanner/native/hexa_solver/src/lib.rs`
-- Modify: `hexaplanner/native/hexa_solver/src/domain.rs`
+- Create: `hexarail/native/hexa_solver/src/incremental_score.rs`
+- Modify: `hexarail/native/hexa_solver/src/lib.rs`
+- Modify: `hexarail/native/hexa_solver/src/domain.rs`
 
 **Step 1: Write the failing test**
-Create `hexaplanner/native/hexa_solver/src/incremental_score.rs` with a basic test:
+Create `hexarail/native/hexa_solver/src/incremental_score.rs` with a basic test:
 ```rust
 #[cfg(test)]
 mod tests {
@@ -61,7 +61,7 @@ mod tests {
 ```
 
 **Step 2: Run test to verify it fails**
-Run: `nix develop -c bash -c "cd hexaplanner/native/hexa_solver && cargo test incremental_score"`
+Run: `nix develop -c bash -c "cd hexarail/native/hexa_solver && cargo test incremental_score"`
 Expected: FAIL (Cannot find `ScoreDatabase`)
 
 **Step 3: Write minimal implementation**
@@ -102,12 +102,12 @@ Modify the test to set the input before asserting:
         assert_eq!(db.get_total_score(), 10);
     }
 ```
-Run: `nix develop -c bash -c "cd hexaplanner/native/hexa_solver && cargo test incremental_score"`
+Run: `nix develop -c bash -c "cd hexarail/native/hexa_solver && cargo test incremental_score"`
 Expected: PASS
 
 **Step 5: Commit**
 ```bash
-git add hexaplanner/native/hexa_solver/src/
+git add hexarail/native/hexa_solver/src/
 git commit -m "feat(rust): scaffold salsa database for incremental scoring"
 ```
 
@@ -116,7 +116,7 @@ git commit -m "feat(rust): scaffold salsa database for incremental scoring"
 ### Task 3: Model Constraints as Incremental Queries
 
 **Files:**
-- Modify: `hexaplanner/native/hexa_solver/src/incremental_score.rs`
+- Modify: `hexarail/native/hexa_solver/src/incremental_score.rs`
 
 **Step 1: Write the failing test**
 Add a test simulating a task assignment change to see if only the affected constraint updates.
@@ -135,7 +135,7 @@ Add a test simulating a task assignment change to see if only the affected const
 ```
 
 **Step 2: Run test to verify it fails**
-Run: `nix develop -c bash -c "cd hexaplanner/native/hexa_solver && cargo test incremental_constraint"`
+Run: `nix develop -c bash -c "cd hexarail/native/hexa_solver && cargo test incremental_constraint"`
 Expected: FAIL
 
 **Step 3: Write minimal implementation**
@@ -165,12 +165,12 @@ fn calculate_penalties(db: &dyn ScoreEngine) -> i32 {
 ```
 
 **Step 4: Run test to verify it passes**
-Run: `nix develop -c bash -c "cd hexaplanner/native/hexa_solver && cargo test incremental_constraint"`
+Run: `nix develop -c bash -c "cd hexarail/native/hexa_solver && cargo test incremental_constraint"`
 Expected: PASS
 
 **Step 5: Commit**
 ```bash
-git add hexaplanner/native/hexa_solver/src/
+git add hexarail/native/hexa_solver/src/
 git commit -m "feat(rust): model first constraint as a salsa query"
 ```
 
@@ -179,7 +179,7 @@ git commit -m "feat(rust): model first constraint as a salsa query"
 ### Task 4: Connect the Salsa Engine to the Optimization Loop
 
 **Files:**
-- Modify: `hexaplanner/native/hexa_solver/src/solver.rs`
+- Modify: `hexarail/native/hexa_solver/src/solver.rs`
 
 **Step 1: Write the failing check**
 Currently, `solver.rs` uses the non-incremental `evaluate_problem` from `score.rs`. We need to switch it to use the `ScoreDatabase`.
@@ -190,11 +190,11 @@ Update the hill climbing loop in `solver.rs` to instantiate the `ScoreDatabase`,
 *(Due to the complexity of adapting the existing code to the Salsa paradigm, the first step is to just instantiate it and use it for the initial score, verifying it compiles and runs without regressions).*
 
 **Step 3: Run check to verify it passes**
-Run: `nix develop -c bash -c "cd hexaplanner/native/hexa_solver && cargo test solver"`
+Run: `nix develop -c bash -c "cd hexarail/native/hexa_solver && cargo test solver"`
 Expected: PASS
 
 **Step 4: Commit**
 ```bash
-git add hexaplanner/native/hexa_solver/src/
+git add hexarail/native/hexa_solver/src/
 git commit -m "feat(rust): integrate salsa incremental engine into solver loop"
 ```

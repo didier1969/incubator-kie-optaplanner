@@ -1,4 +1,4 @@
-# HexaPlanner Phase 5 Implementation Plan: The Metaprogramming DSL (Elixir -> Rust)
+# HexaRail Phase 5 Implementation Plan: The Metaprogramming DSL (Elixir -> Rust)
 
 > **For Claude/Gemini:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
@@ -13,19 +13,19 @@
 ### Task 1: Create the Elixir DSL Front-End
 
 **Files:**
-- Create: `hexaplanner/lib/hexaplanner/dsl/rule.ex`
-- Create: `hexaplanner/lib/hexaplanner/dsl.ex`
-- Test: `hexaplanner/test/dsl_test.exs`
+- Create: `hexarail/lib/hexarail/dsl/rule.ex`
+- Create: `hexarail/lib/hexarail/dsl.ex`
+- Test: `hexarail/test/dsl_test.exs`
 
 **Step 1: Write the failing test**
 
 ```elixir
-# hexaplanner/test/dsl_test.exs
-defmodule HexaPlanner.DSLTest do
+# hexarail/test/dsl_test.exs
+defmodule HexaRail.DSLTest do
   use ExUnit.Case
 
   defmodule MyRules do
-    use HexaPlanner.DSL
+    use HexaRail.DSL
 
     defconstraint "unassigned_job" do
       match(:job, :start_time, :is_nil)
@@ -50,14 +50,14 @@ end
 
 **Step 2: Run test to verify it fails**
 
-Run: `nix develop -c bash -c "cd hexaplanner && mix test test/dsl_test.exs"`
-Expected: FAIL (Undefined module HexaPlanner.DSL)
+Run: `nix develop -c bash -c "cd hexarail && mix test test/dsl_test.exs"`
+Expected: FAIL (Undefined module HexaRail.DSL)
 
 **Step 3: Write minimal implementation**
 
-1. Create `hexaplanner/lib/hexaplanner/dsl/rule.ex`:
+1. Create `hexarail/lib/hexarail/dsl/rule.ex`:
 ```elixir
-defmodule HexaPlanner.DSL.Rule do
+defmodule HexaRail.DSL.Rule do
   @moduledoc "Represents a parsed business rule constraint."
   @type t :: %__MODULE__{
           name: String.t(),
@@ -71,17 +71,17 @@ defmodule HexaPlanner.DSL.Rule do
 end
 ```
 
-2. Create `hexaplanner/lib/hexaplanner/dsl.ex`:
+2. Create `hexarail/lib/hexarail/dsl.ex`:
 ```elixir
-defmodule HexaPlanner.DSL do
+defmodule HexaRail.DSL do
   @moduledoc "Macros for defining Digital Twin constraints."
-  alias HexaPlanner.DSL.Rule
+  alias HexaRail.DSL.Rule
 
   defmacro __using__(_opts) do
     quote do
-      import HexaPlanner.DSL
+      import HexaRail.DSL
       Module.register_attribute(__MODULE__, :rules, accumulate: true)
-      @before_compile HexaPlanner.DSL
+      @before_compile HexaRail.DSL
     end
   end
 
@@ -114,13 +114,13 @@ end
 
 **Step 4: Run test to verify it passes**
 
-Run: `nix develop -c bash -c "cd hexaplanner && mix test test/dsl_test.exs"`
+Run: `nix develop -c bash -c "cd hexarail && mix test test/dsl_test.exs"`
 Expected: PASS
 
 **Step 5: Commit**
 
 ```bash
-git add hexaplanner/
+git add hexarail/
 git commit -m "feat(dsl): implement elixir macros to parse constraints into ast"
 ```
 
@@ -129,17 +129,17 @@ git commit -m "feat(dsl): implement elixir macros to parse constraints into ast"
 ### Task 2: Implement the Rust Transpiler
 
 **Files:**
-- Create: `hexaplanner/lib/hexaplanner/transpiler/rust_generator.ex`
-- Test: `hexaplanner/test/transpiler_test.exs`
+- Create: `hexarail/lib/hexarail/transpiler/rust_generator.ex`
+- Test: `hexarail/test/transpiler_test.exs`
 
 **Step 1: Write the failing test**
 
 ```elixir
-# hexaplanner/test/transpiler_test.exs
-defmodule HexaPlanner.TranspilerTest do
+# hexarail/test/transpiler_test.exs
+defmodule HexaRail.TranspilerTest do
   use ExUnit.Case
-  alias HexaPlanner.DSL.Rule
-  alias HexaPlanner.Transpiler.RustGenerator
+  alias HexaRail.DSL.Rule
+  alias HexaRail.Transpiler.RustGenerator
 
   test "generates valid rust iterator code from rule struct" do
     rule = %Rule{
@@ -163,16 +163,16 @@ end
 
 **Step 2: Run test to verify it fails**
 
-Run: `nix develop -c bash -c "cd hexaplanner && mix test test/transpiler_test.exs"`
+Run: `nix develop -c bash -c "cd hexarail && mix test test/transpiler_test.exs"`
 Expected: FAIL (Undefined module)
 
 **Step 3: Write minimal implementation**
 
-Create `hexaplanner/lib/hexaplanner/transpiler/rust_generator.ex`:
+Create `hexarail/lib/hexarail/transpiler/rust_generator.ex`:
 ```elixir
-defmodule HexaPlanner.Transpiler.RustGenerator do
+defmodule HexaRail.Transpiler.RustGenerator do
   @moduledoc "Translates DSL Rule ASTs into pure Rust code."
-  alias HexaPlanner.DSL.Rule
+  alias HexaRail.DSL.Rule
 
   @spec generate(list(Rule.t())) :: String.t()
   def generate(rules) do
@@ -212,13 +212,13 @@ end
 
 **Step 4: Run test to verify it passes**
 
-Run: `nix develop -c bash -c "cd hexaplanner && mix test test/transpiler_test.exs"`
+Run: `nix develop -c bash -c "cd hexarail && mix test test/transpiler_test.exs"`
 Expected: PASS
 
 **Step 5: Commit**
 
 ```bash
-git add hexaplanner/
+git add hexarail/
 git commit -m "feat(transpiler): implement elixir to rust code generator for constraints"
 ```
 
@@ -227,25 +227,25 @@ git commit -m "feat(transpiler): implement elixir to rust code generator for con
 ### Task 3: The File Emitter and Quality Gates
 
 **Files:**
-- Create: `hexaplanner/lib/hexaplanner/transpiler/emitter.ex`
+- Create: `hexarail/lib/hexarail/transpiler/emitter.ex`
 
 **Step 1: Write the failing check**
 
 We need to ensure the emitter writes the file to the correct Rust directory.
-Run: `nix develop -c bash -c "cd hexaplanner && mix run -e 'HexaPlanner.Transpiler.Emitter.emit([])'"`
+Run: `nix develop -c bash -c "cd hexarail && mix run -e 'HexaRail.Transpiler.Emitter.emit([])'"`
 Expected: FAIL (Undefined module)
 
 **Step 2: Write minimal implementation**
 
-Create `hexaplanner/lib/hexaplanner/transpiler/emitter.ex`:
+Create `hexarail/lib/hexarail/transpiler/emitter.ex`:
 ```elixir
-defmodule HexaPlanner.Transpiler.Emitter do
+defmodule HexaRail.Transpiler.Emitter do
   @moduledoc "Writes the generated Rust code to the native file system."
-  alias HexaPlanner.Transpiler.RustGenerator
+  alias HexaRail.Transpiler.RustGenerator
 
   @target_path "native/hexa_solver/src/generated_score.rs"
 
-  @spec emit(list(HexaPlanner.DSL.Rule.t())) :: :ok
+  @spec emit(list(HexaRail.DSL.Rule.t())) :: :ok
   def emit(rules) do
     rust_code = RustGenerator.generate(rules)
     File.write!(@target_path, rust_code)
@@ -256,15 +256,15 @@ end
 
 **Step 3: Run check to verify it passes**
 
-Run: `nix develop -c bash -c "cd hexaplanner && mix run -e 'HexaPlanner.Transpiler.Emitter.emit([])'"`
-Verify file exists: `cat hexaplanner/native/hexa_solver/src/generated_score.rs`
+Run: `nix develop -c bash -c "cd hexarail && mix run -e 'HexaRail.Transpiler.Emitter.emit([])'"`
+Verify file exists: `cat hexarail/native/hexa_solver/src/generated_score.rs`
 Expected: PASS (File contains AUTO-GENERATED header).
 
-Run Quality Gates: `nix develop -c bash -c "cd hexaplanner && mix credo --strict && mix dialyzer"`
+Run Quality Gates: `nix develop -c bash -c "cd hexarail && mix credo --strict && mix dialyzer"`
 
 **Step 4: Commit**
 
 ```bash
-git add hexaplanner/
+git add hexarail/
 git commit -m "feat(transpiler): implement file emitter to write generated rust code"
 ```

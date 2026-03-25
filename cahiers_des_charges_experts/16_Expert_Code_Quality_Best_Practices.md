@@ -2,7 +2,7 @@
 
 **À l'attention de :** Staff Engineer / Expert(e) en Qualité Logicielle (Clean Architecture)  
 **Date :** 21 Mars 2026  
-**Projet :** HexaPlanner - Jumeau Numérique Industriel  
+**Projet :** HexaRail - Jumeau Numérique Industriel  
 **Objectif :** Définir les standards de codage impitoyables pour garantir la maintenabilité d'une architecture combinant Rust, Java et Elixir.
 
 ## Contexte

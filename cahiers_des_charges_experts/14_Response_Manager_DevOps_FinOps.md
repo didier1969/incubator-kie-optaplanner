@@ -2,9 +2,9 @@
 
 **De :** Directeur DevOps, Cloud Infrastructure & FinOps  
 **Date :** 21 Mars 2026  
-**Projet :** HexaPlanner - Jumeau Numérique Industriel
+**Projet :** HexaRail - Jumeau Numérique Industriel
 
-En tant que Directeur DevOps et FinOps, l'objectif est de concilier une vélocité de développement maximale (Developer Experience - DX) avec une maîtrise stricte des coûts d'infrastructure. Le projet HexaPlanner combine des technologies extrêmement exigeantes en ressources (GraalVM, Rust, IA sur GPU). Une approche naïve de CI/CD nous conduirait à une explosion des coûts et des temps de build inacceptables. Voici la stratégie et l'architecture cible.
+En tant que Directeur DevOps et FinOps, l'objectif est de concilier une vélocité de développement maximale (Developer Experience - DX) avec une maîtrise stricte des coûts d'infrastructure. Le projet HexaRail combine des technologies extrêmement exigeantes en ressources (GraalVM, Rust, IA sur GPU). Une approche naïve de CI/CD nous conduirait à une explosion des coûts et des temps de build inacceptables. Voici la stratégie et l'architecture cible.
 
 ## 1. Usine Logicielle Polyglotte (Build Incrémental et Distribué)
 

@@ -1,4 +1,4 @@
-# HexaPlanner Phase 6 Implementation Plan: The Phoenix LiveView Dashboard
+# HexaRail Phase 6 Implementation Plan: The Phoenix LiveView Dashboard
 
 > **For Claude/Gemini:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
@@ -15,21 +15,21 @@
 Since our project was initially generated as a standard supervisor app (`mix new --sup`), we will inject Phoenix into it to avoid a complex umbrella restructuring for this MVP.
 
 **Files:**
-- Modify: `hexaplanner/mix.exs`
-- Create: `hexaplanner/lib/hexaplanner_web/endpoint.ex`
-- Create: `hexaplanner/lib/hexaplanner_web/router.ex`
-- Modify: `hexaplanner/lib/hexaplanner/application.ex`
-- Modify: `hexaplanner/config/config.exs`
-- Modify: `hexaplanner/config/dev.exs`
+- Modify: `hexarail/mix.exs`
+- Create: `hexarail/lib/hexarail_web/endpoint.ex`
+- Create: `hexarail/lib/hexarail_web/router.ex`
+- Modify: `hexarail/lib/hexarail/application.ex`
+- Modify: `hexarail/config/config.exs`
+- Modify: `hexarail/config/dev.exs`
 
 **Step 1: Write the failing check**
 
-Run: `nix develop -c bash -c "cd hexaplanner && mix phx.routes"`
+Run: `nix develop -c bash -c "cd hexarail && mix phx.routes"`
 Expected: FAIL (Phoenix not installed or router missing)
 
 **Step 2: Write minimal implementation**
 
-1. Add Phoenix dependencies to `hexaplanner/mix.exs`:
+1. Add Phoenix dependencies to `hexarail/mix.exs`:
 ```elixir
 {:phoenix, "== 1.7.11"},
 {:phoenix_html, "== 4.1.1"},
@@ -40,44 +40,44 @@ Expected: FAIL (Phoenix not installed or router missing)
 2. Download deps: `mix deps.get`
 3. Configure Phoenix in `config/config.exs`:
 ```elixir
-config :hexaplanner, HexaPlannerWeb.Endpoint,
+config :hexarail, HexaRailWeb.Endpoint,
   url: [host: "localhost"],
   adapter: Bandit.PhoenixAdapter,
   render_errors: [
-    formats: [html: HexaPlannerWeb.ErrorHTML, json: HexaPlannerWeb.ErrorJSON],
+    formats: [html: HexaRailWeb.ErrorHTML, json: HexaRailWeb.ErrorJSON],
     layout: false
   ],
-  pubsub_server: HexaPlanner.PubSub,
+  pubsub_server: HexaRail.PubSub,
   live_view: [signing_salt: "HEXAPLANNER_SALT_VERY_SECURE"]
 
 config :phoenix, :json_library, Jason
 ```
 4. Configure dev endpoint in `config/dev.exs`:
 ```elixir
-config :hexaplanner, HexaPlannerWeb.Endpoint,
+config :hexarail, HexaRailWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4000],
   check_origin: false,
   code_reloader: true,
   debug_errors: true,
   secret_key_base: "DEV_SECRET_KEY_BASE_HEXAPLANNER"
 ```
-5. Create `lib/hexaplanner_web/endpoint.ex`:
+5. Create `lib/hexarail_web/endpoint.ex`:
 ```elixir
-defmodule HexaPlannerWeb.Endpoint do
-  use Phoenix.Endpoint, otp_app: :hexaplanner
+defmodule HexaRailWeb.Endpoint do
+  use Phoenix.Endpoint, otp_app: :hexarail
 
   socket "/live", Phoenix.LiveView.Socket, websocket: [connect_info: [session: @session_options]]
 
   plug Plug.Parsers, parsers: [:urlencoded, :multipart, :json], pass: ["*/*"], json_decoder: Phoenix.json_library()
   plug Plug.MethodOverride
   plug Plug.Head
-  plug Plug.Session, store: :cookie, key: "_hexaplanner_key", signing_salt: "HEXA_SALT"
-  plug HexaPlannerWeb.Router
+  plug Plug.Session, store: :cookie, key: "_hexarail_key", signing_salt: "HEXA_SALT"
+  plug HexaRailWeb.Router
 end
 ```
-6. Create `lib/hexaplanner_web/router.ex`:
+6. Create `lib/hexarail_web/router.ex`:
 ```elixir
-defmodule HexaPlannerWeb.Router do
+defmodule HexaRailWeb.Router do
   use Phoenix.Router
   import Phoenix.LiveView.Router
 
@@ -85,31 +85,31 @@ defmodule HexaPlannerWeb.Router do
     plug :accepts, ["html"]
     plug :fetch_session
     plug :fetch_live_flash
-    plug :put_root_layout, html: {HexaPlannerWeb.Layouts, :root}
+    plug :put_root_layout, html: {HexaRailWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
   end
 
-  scope "/", HexaPlannerWeb do
+  scope "/", HexaRailWeb do
     pipe_through :browser
   end
 end
 ```
-7. Start it in `lib/hexaplanner/application.ex` (add these to children):
+7. Start it in `lib/hexarail/application.ex` (add these to children):
 ```elixir
-{Phoenix.PubSub, name: HexaPlanner.PubSub},
-HexaPlannerWeb.Endpoint
+{Phoenix.PubSub, name: HexaRail.PubSub},
+HexaRailWeb.Endpoint
 ```
 
 **Step 3: Run check to verify it passes**
 
-Run: `nix develop -c bash -c "cd hexaplanner && mix phx.routes"`
+Run: `nix develop -c bash -c "cd hexarail && mix phx.routes"`
 Expected: PASS (It will show no routes, but the command succeeds, proving Phoenix is alive).
 
 **Step 4: Commit**
 
 ```bash
-git add hexaplanner/
+git add hexarail/
 git commit -m "feat(ui): integrate phoenix and bandit into control plane"
 ```
 
@@ -118,51 +118,51 @@ git commit -m "feat(ui): integrate phoenix and bandit into control plane"
 ### Task 2: Create the HTML Layouts and Error Handlers
 
 **Files:**
-- Create: `hexaplanner/lib/hexaplanner_web/components/layouts/root.html.hex`
-- Create: `hexaplanner/lib/hexaplanner_web/components/layouts.ex`
-- Create: `hexaplanner/lib/hexaplanner_web/controllers/error_html.ex`
-- Create: `hexaplanner/lib/hexaplanner_web/controllers/error_json.ex`
+- Create: `hexarail/lib/hexarail_web/components/layouts/root.html.hex`
+- Create: `hexarail/lib/hexarail_web/components/layouts.ex`
+- Create: `hexarail/lib/hexarail_web/controllers/error_html.ex`
+- Create: `hexarail/lib/hexarail_web/controllers/error_json.ex`
 
 **Step 1: Write the failing check**
 
 The application won't compile completely until layouts and error modules defined in `config.exs` exist.
-Run: `nix develop -c bash -c "cd hexaplanner && mix compile"`
+Run: `nix develop -c bash -c "cd hexarail && mix compile"`
 Expected: FAIL (Missing ErrorHTML, Layouts)
 
 **Step 2: Write minimal implementation**
 
-1. `lib/hexaplanner_web/controllers/error_html.ex`:
+1. `lib/hexarail_web/controllers/error_html.ex`:
 ```elixir
-defmodule HexaPlannerWeb.ErrorHTML do
+defmodule HexaRailWeb.ErrorHTML do
   use Phoenix.Component
   def render(template, _assigns) do
     Phoenix.Controller.status_message_from_template(template)
   end
 end
 ```
-2. `lib/hexaplanner_web/controllers/error_json.ex`:
+2. `lib/hexarail_web/controllers/error_json.ex`:
 ```elixir
-defmodule HexaPlannerWeb.ErrorJSON do
+defmodule HexaRailWeb.ErrorJSON do
   def render(template, _assigns) do
     %{errors: %{detail: Phoenix.Controller.status_message_from_template(template)}}
   end
 end
 ```
-3. `lib/hexaplanner_web/components/layouts.ex`:
+3. `lib/hexarail_web/components/layouts.ex`:
 ```elixir
-defmodule HexaPlannerWeb.Layouts do
+defmodule HexaRailWeb.Layouts do
   use Phoenix.Component
   embed_templates "layouts/*"
 end
 ```
-4. `lib/hexaplanner_web/components/layouts/root.html.hex`:
+4. `lib/hexarail_web/components/layouts/root.html.hex`:
 ```html
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>HexaPlanner Digital Twin</title>
+    <title>HexaRail Digital Twin</title>
     <!-- Minimal CDN Tailwind for the MVP -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- LiveView Client JS logic (simplified for MVP) -->
@@ -183,13 +183,13 @@ end
 
 **Step 3: Run check to verify it passes**
 
-Run: `nix develop -c bash -c "cd hexaplanner && mix compile"`
+Run: `nix develop -c bash -c "cd hexarail && mix compile"`
 Expected: PASS
 
 **Step 4: Commit**
 
 ```bash
-git add hexaplanner/
+git add hexarail/
 git commit -m "feat(ui): add core phoenix layouts and error handlers"
 ```
 
@@ -198,25 +198,25 @@ git commit -m "feat(ui): add core phoenix layouts and error handlers"
 ### Task 3: The LiveView Dashboard & Rust Optimization Trigger
 
 **Files:**
-- Create: `hexaplanner/lib/hexaplanner_web/live/twin_live.ex`
-- Modify: `hexaplanner/lib/hexaplanner_web/router.ex`
+- Create: `hexarail/lib/hexarail_web/live/twin_live.ex`
+- Modify: `hexarail/lib/hexarail_web/router.ex`
 
 **Step 1: Write the failing check**
 
-Run: `nix develop -c bash -c "cd hexaplanner && curl -s http://localhost:4000/"` (We need to start the server in background or use a test).
+Run: `nix develop -c bash -c "cd hexarail && curl -s http://localhost:4000/"` (We need to start the server in background or use a test).
 For simplicity, we'll write a Phoenix route test:
-Create `hexaplanner/test/hexaplanner_web/live/twin_live_test.exs`:
+Create `hexarail/test/hexarail_web/live/twin_live_test.exs`:
 ```elixir
-defmodule HexaPlannerWeb.TwinLiveTest do
+defmodule HexaRailWeb.TwinLiveTest do
   use ExUnit.Case
   import Phoenix.ConnTest
   import Phoenix.LiveViewTest
-  @endpoint HexaPlannerWeb.Endpoint
+  @endpoint HexaRailWeb.Endpoint
 
   test "disconnected and connected render", %{conn: conn} do
     {:ok, page_live, disconnected_html} = live(conn, "/")
-    assert disconnected_html =~ "HexaPlanner Mission Control"
-    assert render(page_live) =~ "HexaPlanner Mission Control"
+    assert disconnected_html =~ "HexaRail Mission Control"
+    assert render(page_live) =~ "HexaRail Mission Control"
   end
 end
 ```
@@ -224,20 +224,20 @@ Run test. Expected: FAIL (No route)
 
 **Step 2: Write minimal implementation**
 
-1. Update `lib/hexaplanner_web/router.ex` to serve the LiveView:
+1. Update `lib/hexarail_web/router.ex` to serve the LiveView:
 ```elixir
-  scope "/", HexaPlannerWeb do
+  scope "/", HexaRailWeb do
     pipe_through :browser
     live "/", TwinLive
   end
 ```
 
-2. Create `lib/hexaplanner_web/live/twin_live.ex`:
+2. Create `lib/hexarail_web/live/twin_live.ex`:
 ```elixir
-defmodule HexaPlannerWeb.TwinLive do
+defmodule HexaRailWeb.TwinLive do
   use Phoenix.LiveView
-  alias HexaPlanner.Domain.{Problem, Job}
-  alias HexaPlanner.SolverNif
+  alias HexaRail.Domain.{Problem, Job}
+  alias HexaRail.SolverNif
 
   def mount(_params, _session, socket) do
     # Initialize a dummy Digital Twin state
@@ -266,7 +266,7 @@ defmodule HexaPlannerWeb.TwinLive do
     ~H"""
     <div class="p-8 max-w-5xl mx-auto">
       <header class="flex justify-between items-center mb-8 border-b border-gray-700 pb-4">
-        <h1 class="text-3xl font-bold text-emerald-400">HexaPlanner Mission Control</h1>
+        <h1 class="text-3xl font-bold text-emerald-400">HexaRail Mission Control</h1>
         <div class="text-xl">
           Score: <span class={if @score < 0, do: "text-red-500", else: "text-emerald-500"}><%= @score %></span>
         </div>
@@ -313,14 +313,14 @@ end
 
 **Step 3: Run check to verify it passes**
 
-Run: `nix develop -c bash -c "cd hexaplanner && mix test test/hexaplanner_web/live/twin_live_test.exs"`
+Run: `nix develop -c bash -c "cd hexarail && mix test test/hexarail_web/live/twin_live_test.exs"`
 Expected: PASS
 
-Run Quality Gates: `nix develop -c bash -c "cd hexaplanner && mix credo --strict"`
+Run Quality Gates: `nix develop -c bash -c "cd hexarail && mix credo --strict"`
 
 **Step 4: Commit**
 
 ```bash
-git add hexaplanner/
+git add hexarail/
 git commit -m "feat(ui): implement real-time liveview dashboard connected to rust optimizer"
 ```

@@ -1,5 +1,5 @@
 # Stratégie Globale d'Assurance Qualité (QA) et Test Automation
-**Projet :** HexaPlanner - Jumeau Numérique Industriel
+**Projet :** HexaRail - Jumeau Numérique Industriel
 **Date :** 21 Mars 2026
 **Auteur :** Directeur/Directrice de l'Assurance Qualité (QA) & Test Automation
 
@@ -70,4 +70,4 @@ Les pipelines seront structurés en 3 strates de feedback :
    - Chaos Engineering sur l'infrastructure de calcul distribué (simulation de perte de nœuds réseau) pour valider la tolérance aux pannes du moteur asynchrone.
 
 ## Conclusion
-Notre responsabilité en tant que QA Director n'est pas seulement de traquer les NullPointerExceptions, mais de protéger la "vérité mathématique" du moteur d'IA. En combinant la reproductibilité par Seed, l'assertion de score mathématique implacable et le Continuous Benchmarking statistique, nous garantissons aux industriels que HexaPlanner reste prévisible, incorruptible et hyper-performant.
+Notre responsabilité en tant que QA Director n'est pas seulement de traquer les NullPointerExceptions, mais de protéger la "vérité mathématique" du moteur d'IA. En combinant la reproductibilité par Seed, l'assertion de score mathématique implacable et le Continuous Benchmarking statistique, nous garantissons aux industriels que HexaRail reste prévisible, incorruptible et hyper-performant.

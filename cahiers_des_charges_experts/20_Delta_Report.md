@@ -1,9 +1,9 @@
-# Delta Report : Transition from OptaPlanner to HexaPlanner
+# Delta Report : Transition from OptaPlanner to HexaRail
 
-This report outlines the rigorous architectural delta required to transform the existing OptaPlanner codebase into the target vision of **HexaPlanner**, a highly resilient, polyglot, and high-performance industrial digital twin.
+This report outlines the rigorous architectural delta required to transform the existing OptaPlanner codebase into the target vision of **HexaRail**, a highly resilient, polyglot, and high-performance industrial digital twin.
 
 ## 1. WHAT WE KEEP
-The following components from the existing repository align with the HexaPlanner vision and will be isolated and maintained:
+The following components from the existing repository align with the HexaRail vision and will be isolated and maintained:
 
 *   **Constraint Streams API (`optaplanner-constraint-streams-common`)**: The declarative API for defining constraints remains the foundation of our business logic modeling. It provides an excellent, intuitive abstraction for complex constraints.
 *   **Bavet Incremental Score Engine (`optaplanner-constraint-streams-bavet`)**: The Bavet implementation is retained as the core "Score Data Plane". It will be decapitated from the rest of the solver, optimized for Ahead-Of-Time (AOT) compilation via @CEntryPoint Native Image, and exposed via C-FFI.
@@ -20,7 +20,7 @@ The following legacy components are dead-ends, incompatible with the new hybrid 
 *   **Easy/Incremental Java Score Calculators**: Deprecated in favor of a strictly Constraint Streams/Bavet approach to guarantee incremental performance and PGO (Profile-Guided Optimization) compatibility.
 
 ## 3. WHAT WE CREATE FROM SCRATCH
-To achieve the HexaPlanner vision, the following subsystems must be built from the ground up:
+To achieve the HexaRail vision, the following subsystems must be built from the ground up:
 
 *   **Hybrid Search Engine (Rust SIMD & CP-SAT)**: A high-performance brain written in Rust (2024 edition) utilizing Data-Oriented Design (SoA, Arena allocation). It will implement Adaptive Large Neighborhood Search (ALNS) accelerated by explicit SIMD (AVX-512) and use C++ FFI (`cxx`) to interact with Google OR-Tools (CP-SAT) for exact sub-problem recreation.
 *   **Control Plane and Orchestration (Elixir/OTP)**: A distributed orchestration layer built on Elixir 1.19.5. It will use the Actor Model (`GenServer`) to handle multi-tenant simulation sessions, state forking ("What-If" scenarios), and fault isolation ("Let it crash" philosophy). Phoenix LiveView will serve real-time updates.

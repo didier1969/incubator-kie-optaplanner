@@ -2,11 +2,11 @@
 
 **À l'attention de :** Directeur/Directrice de Programme (Mega-Projects) & Enterprise Architect  
 **Date :** 21 Mars 2026  
-**Projet :** HexaPlanner - Jumeau Numérique Industriel (Refonte de l'Héritage OptaPlanner)  
+**Projet :** HexaRail - Jumeau Numérique Industriel (Refonte de l'Héritage OptaPlanner)  
 **Objectif :** Définir la gouvernance, la stratégie de découpage et la gestion des risques pour ce chantier massif de transformation technologique.
 
 ## Contexte
-Nous lançons le développement de HexaPlanner, un produit hybride (/Rust/Elixir) visant l'état de l'art mondial en optimisation, en nous basant sur le cœur "abandonné" d'OptaPlanner. Ce projet est complexe : il implique de l'IA (RL), du système distribué, des FFI complexes et des refontes profondes, tout en devant s'interfacer avec les SI legacy de nos futurs clients industriels.
+Nous lançons le développement de HexaRail, un produit hybride (/Rust/Elixir) visant l'état de l'art mondial en optimisation, en nous basant sur le cœur "abandonné" d'OptaPlanner. Ce projet est complexe : il implique de l'IA (RL), du système distribué, des FFI complexes et des refontes profondes, tout en devant s'interfacer avec les SI legacy de nos futurs clients industriels.
 
 ## Ce que nous attendons de votre Guideline
 

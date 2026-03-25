@@ -2,7 +2,7 @@
 
 **Auteur :** Expert Principal Rust, Calcul Haute Performance (SIMD) et CP
 **Date :** 21 Mars 2026
-**Projet :** HexaPlanner - Jumeau Numérique pour Job Shop Scheduling et Optimisation Ferroviaire
+**Projet :** HexaRail - Jumeau Numérique pour Job Shop Scheduling et Optimisation Ferroviaire
 
 ---
 
@@ -97,7 +97,7 @@ Pour échanger les données avec OptaPlanner (qui réside sur la JVM), l'utilisa
 3. Les appels de fonctions se font via des Downcall/Upcall Method Handles pour minimiser la latence de franchissement du pont.
 
 ### 4.2 Vers Elixir / BEAM (Rustler NIFs)
-L'orchestrateur système, reposant sur Erlang/OTP, gère les aspects distribués et la haute disponibilité de HexaPlanner.
+L'orchestrateur système, reposant sur Erlang/OTP, gère les aspects distribués et la haute disponibilité de HexaRail.
 - L'intégration se fait via la crate **`rustler`**.
 - La fonction de recherche principale (ALNS Loop) est taguée comme un **Dirty NIF (CPU Bound)** (`#[rustler::nif(schedule = "DirtyCpu")]`). Cela permet au moteur Rust de monopoliser un thread OS dédié aux calculs intenses sans jamais bloquer ou affamer les schedulers de la VM BEAM d'Elixir.
 - L'échange d'informations (statistiques, meilleure solution courante) se fait via des envois de messages asynchrones (Message Passing) depuis Rust vers le PID du processus Elixir superviseur.

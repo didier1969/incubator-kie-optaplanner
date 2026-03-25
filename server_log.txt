@@ -1,5 +1,5 @@
 warning: Git tree '/home/dstadel/projects/incubator-kie-optaplanner' has uncommitted changes
-HexaPlanner Dev Environment loaded.
+HexaRail Dev Environment loaded.
 Elixir Elixir 1.19.5 (compiled with Erlang/OTP 28)
 Rust cargo 1.93.0 (083ac5135 2025-12-15)
 Starting local PostgreSQL server...
@@ -7,10 +7,10 @@ pg_ctl: another server might be running; trying to start server anyway
 pg_ctl: could not start server
 Examine the log output.
 
-23:47:18.393 [error] Running HexaPlannerWeb.Endpoint with Bandit 1.4.2 at http failed, port 15000 already in use
+23:47:18.393 [error] Running HexaRailWeb.Endpoint with Bandit 1.4.2 at http failed, port 15000 already in use
 
-23:47:18.397 [notice] Application hexaplanner exited: HexaPlanner.Application.start(:normal, []) returned an error: shutdown: failed to start child: HexaPlannerWeb.Endpoint
-    ** (EXIT) shutdown: failed to start child: {HexaPlannerWeb.Endpoint, :http}
+23:47:18.397 [notice] Application hexarail exited: HexaRail.Application.start(:normal, []) returned an error: shutdown: failed to start child: HexaRailWeb.Endpoint
+    ** (EXIT) shutdown: failed to start child: {HexaRailWeb.Endpoint, :http}
         ** (EXIT) shutdown: failed to start child: :listener
             ** (EXIT) :eaddrinuse
 
@@ -87,7 +87,7 @@ Examine the log output.
 23:47:18.450 [notice] Application hpax exited: :stopped
 
 23:47:18.450 [notice] Application castore exited: :stopped
-** (Mix) Could not start application hexaplanner: HexaPlanner.Application.start(:normal, []) returned an error: shutdown: failed to start child: HexaPlannerWeb.Endpoint
-    ** (EXIT) shutdown: failed to start child: {HexaPlannerWeb.Endpoint, :http}
+** (Mix) Could not start application hexarail: HexaRail.Application.start(:normal, []) returned an error: shutdown: failed to start child: HexaRailWeb.Endpoint
+    ** (EXIT) shutdown: failed to start child: {HexaRailWeb.Endpoint, :http}
         ** (EXIT) shutdown: failed to start child: :listener
             ** (EXIT) :eaddrinuse

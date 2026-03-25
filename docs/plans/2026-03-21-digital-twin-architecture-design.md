@@ -1,4 +1,4 @@
-# Design Document: Jumeau Numérique Industriel (HexaPlanner)
+# Design Document: Jumeau Numérique Industriel (HexaRail)
 
 **Date:** 2026-03-21
 **Auteur:** Nexus Lead Architect

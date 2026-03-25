@@ -1,5 +1,5 @@
 {
-  description = "HexaPlanner Development Environment";
+  description = "HexaRail Development Environment";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -27,7 +27,7 @@
           ];
 
           shellHook = ''
-            echo "HexaPlanner Dev Environment loaded."
+            echo "HexaRail Dev Environment loaded."
             echo "Elixir $(elixir --version | grep Elixir)"
             echo "Rust $(cargo --version)"
             

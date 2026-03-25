@@ -3,7 +3,7 @@
 **À l'attention de :** Architecte Principal(e) Cloud, WebAssembly (WASM) & Infrastructure-as-Code  
 **Date :** 21 Mars 2026  
 **Référentiel Technologique :** État de l'art Février 2026 (WASM multi-cœurs, Extism/Wasmtime, Nix Flakes, Dhall)  
-**Projet :** HexaPlanner - Jumeau Numérique pour Job Shop Scheduling et Optimisation Ferroviaire
+**Projet :** HexaRail - Jumeau Numérique pour Job Shop Scheduling et Optimisation Ferroviaire
 
 ## Contexte et Vision Stratégique
 Notre produit SaaS sera utilisé par des ingénieurs industriels qui possèdent des règles métiers extrêmement pointues (ex: "Si le train transporte du matériel inflammable et que la température extérieure dépasse 30°C, ajouter un délai de sécurité de 5 min au setup"). 

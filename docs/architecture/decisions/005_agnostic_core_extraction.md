@@ -1,7 +1,7 @@
 # ADR 005: Extraction of the Agnostic Core (Framework vs Vertical)
 
 ## Context
-Initialement conçu comme un "Jumeau Numérique SBB" (HexaPlanner), le système a fini par coupler fortement la mécanique d'optimisation mathématique (A*, Salsa Incremental, Metaheuristiques) avec les règles du domaine ferroviaire (GTFS, Rolling Stock, OSM).
+Initialement conçu comme un "Jumeau Numérique SBB" (HexaRail), le système a fini par coupler fortement la mécanique d'optimisation mathématique (A*, Salsa Incremental, Metaheuristiques) avec les règles du domaine ferroviaire (GTFS, Rolling Stock, OSM).
 Cette adhérence empêche l'utilisation du moteur pour d'autres verticaux (Logistique routière, Planification de personnel, Supply Chain industrielle). Conformément à la directive d'architecture, la codebase entre dans une phase de stabilisation et de scission (Separation of Concerns).
 
 ## Decision
@@ -14,8 +14,8 @@ Nous séparons la base de code en deux couches logiques et physiques :
       - Le moteur incrémental `salsa` évalue des `Constraints` abstraites, sans connaître la notion de "train" ou de "gare".
       - Les métaheuristiques (`localsearch`, `metaheuristics-nature`) opèrent sur un espace de recherche abstrait (`Problem` et `Job`).
 
-2. **`HexaPlanner` (The Railway Vertical) :**
-   - **Elixir :** Ingestion métier (`gtfs`, `rolling_stock`, `data/osm`), et Interface utilisateur (`HexaPlannerWeb`).
+2. **`HexaRail` (The Railway Vertical) :**
+   - **Elixir :** Ingestion métier (`gtfs`, `rolling_stock`, `data/osm`), et Interface utilisateur (`HexaRailWeb`).
    - **Rust (Extensions) :** Le vertical ferroviaire implémente les Traits du `HexaCore`. La `NetworkManager` devient `RailwayManager`, injectant ses fonctions de coûts cinématiques spécifiques (Phase 5) en tant que *plug-ins* dans l'A* de `HexaCore`.
 
 ## Consequences

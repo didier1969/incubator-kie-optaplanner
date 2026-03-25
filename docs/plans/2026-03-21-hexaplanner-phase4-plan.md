@@ -1,4 +1,4 @@
-# HexaPlanner Phase 4 Implementation Plan: The Rust Heuristic Engine
+# HexaRail Phase 4 Implementation Plan: The Rust Heuristic Engine
 
 > **For Claude/Gemini:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
@@ -15,12 +15,12 @@
 To perform Local Search, Rust needs to clone the state to test new moves without destroying the current best known state.
 
 **Files:**
-- Modify: `hexaplanner/native/hexa_solver/src/domain.rs`
+- Modify: `hexarail/native/hexa_solver/src/domain.rs`
 
 **Step 1: Write the failing test**
 
 ```rust
-// hexaplanner/native/hexa_solver/src/domain.rs
+// hexarail/native/hexa_solver/src/domain.rs
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -36,18 +36,18 @@ mod tests {
 
 **Step 2: Run test to verify it fails**
 
-Run: `nix develop -c bash -c "cd hexaplanner/native/hexa_solver && cargo test"`
+Run: `nix develop -c bash -c "cd hexarail/native/hexa_solver && cargo test"`
 Expected: FAIL (method `clone` not found for `Job`)
 
 **Step 3: Write minimal implementation**
 
-Update `hexaplanner/native/hexa_solver/src/domain.rs` to derive `Clone` for all structs:
+Update `hexarail/native/hexa_solver/src/domain.rs` to derive `Clone` for all structs:
 
 ```rust
 use rustler::NifStruct;
 
 #[derive(Debug, Clone, NifStruct)]
-#[module = "HexaPlanner.Domain.Resource"]
+#[module = "HexaRail.Domain.Resource"]
 pub struct Resource {
     pub id: i64,
     pub name: String,
@@ -55,7 +55,7 @@ pub struct Resource {
 }
 
 #[derive(Debug, Clone, NifStruct)]
-#[module = "HexaPlanner.Domain.Job"]
+#[module = "HexaRail.Domain.Job"]
 pub struct Job {
     pub id: i64,
     pub duration: i64,
@@ -64,7 +64,7 @@ pub struct Job {
 }
 
 #[derive(Debug, Clone, NifStruct)]
-#[module = "HexaPlanner.Domain.Problem"]
+#[module = "HexaRail.Domain.Problem"]
 pub struct Problem {
     pub id: String,
     pub resources: Vec<Resource>,
@@ -74,13 +74,13 @@ pub struct Problem {
 
 **Step 4: Run test to verify it passes**
 
-Run: `nix develop -c bash -c "cd hexaplanner/native/hexa_solver && cargo test && cargo clippy -- -D warnings"`
+Run: `nix develop -c bash -c "cd hexarail/native/hexa_solver && cargo test && cargo clippy -- -D warnings"`
 Expected: PASS
 
 **Step 5: Commit**
 
 ```bash
-git add hexaplanner/native/hexa_solver/
+git add hexarail/native/hexa_solver/
 git commit -m "feat(domain): derive clone for rust entities to support local search mutations"
 ```
 
@@ -89,13 +89,13 @@ git commit -m "feat(domain): derive clone for rust entities to support local sea
 ### Task 2: Implement the Hill Climbing Solver Loop in Rust
 
 **Files:**
-- Create: `hexaplanner/native/hexa_solver/src/solver.rs`
-- Modify: `hexaplanner/native/hexa_solver/src/lib.rs`
+- Create: `hexarail/native/hexa_solver/src/solver.rs`
+- Modify: `hexarail/native/hexa_solver/src/lib.rs`
 
 **Step 1: Write the failing test**
 
 ```rust
-// hexaplanner/native/hexa_solver/src/solver.rs
+// hexarail/native/hexa_solver/src/solver.rs
 use crate::domain::{Job, Problem};
 
 #[cfg(test)]
@@ -125,12 +125,12 @@ mod tests {
 
 **Step 2: Run test to verify it fails**
 
-Run: `nix develop -c bash -c "cd hexaplanner/native/hexa_solver && cargo test"`
+Run: `nix develop -c bash -c "cd hexarail/native/hexa_solver && cargo test"`
 Expected: FAIL (Function `optimize` not found)
 
 **Step 3: Write minimal implementation**
 
-1. Create `hexaplanner/native/hexa_solver/src/solver.rs`:
+1. Create `hexarail/native/hexa_solver/src/solver.rs`:
 ```rust
 use crate::domain::Problem;
 use crate::score::calculate_score;
@@ -166,7 +166,7 @@ pub fn optimize(mut current_problem: Problem, iterations: i32) -> Problem {
 }
 ```
 
-2. Expose it via NIF in `hexaplanner/native/hexa_solver/src/lib.rs`:
+2. Expose it via NIF in `hexarail/native/hexa_solver/src/lib.rs`:
 ```rust
 #![deny(warnings)]
 #![deny(clippy::all)]
@@ -191,18 +191,18 @@ fn add(a: i64, b: i64) -> i64 {
     a + b
 }
 
-rustler::init!("Elixir.HexaPlanner.SolverNif", [add, evaluate_problem, optimize_problem]);
+rustler::init!("Elixir.HexaRail.SolverNif", [add, evaluate_problem, optimize_problem]);
 ```
 
 **Step 4: Run test to verify it passes**
 
-Run: `nix develop -c bash -c "cd hexaplanner/native/hexa_solver && cargo test && cargo clippy -- -D warnings"`
+Run: `nix develop -c bash -c "cd hexarail/native/hexa_solver && cargo test && cargo clippy -- -D warnings"`
 Expected: PASS
 
 **Step 5: Commit**
 
 ```bash
-git add hexaplanner/native/hexa_solver/
+git add hexarail/native/hexa_solver/
 git commit -m "feat(solver): implement native rust hill climbing algorithm for problem optimization"
 ```
 
@@ -211,13 +211,13 @@ git commit -m "feat(solver): implement native rust hill climbing algorithm for p
 ### Task 3: Bridge the Optimizer back to Elixir
 
 **Files:**
-- Modify: `hexaplanner/lib/hexaplanner/solver_nif.ex`
-- Modify: `hexaplanner/test/solver_integration_test.exs`
+- Modify: `hexarail/lib/hexarail/solver_nif.ex`
+- Modify: `hexarail/test/solver_integration_test.exs`
 
 **Step 1: Write the failing test**
 
 ```elixir
-# In hexaplanner/test/solver_integration_test.exs, add:
+# In hexarail/test/solver_integration_test.exs, add:
   test "rust nif optimizes the problem and returns mutated state" do
     problem = %Problem{
       id: "sim_2",
@@ -239,37 +239,37 @@ git commit -m "feat(solver): implement native rust hill climbing algorithm for p
 
 **Step 2: Run test to verify it fails**
 
-Run: `nix develop -c bash -c "cd hexaplanner && mix test test/solver_integration_test.exs"`
+Run: `nix develop -c bash -c "cd hexarail && mix test test/solver_integration_test.exs"`
 Expected: FAIL (Undefined function `optimize_problem/2`)
 
 **Step 3: Write minimal implementation**
 
-Update `hexaplanner/lib/hexaplanner/solver_nif.ex`:
+Update `hexarail/lib/hexarail/solver_nif.ex`:
 ```elixir
-defmodule HexaPlanner.SolverNif do
+defmodule HexaRail.SolverNif do
   @moduledoc false
-  use Rustler, otp_app: :hexaplanner, crate: "hexa_solver"
+  use Rustler, otp_app: :hexarail, crate: "hexa_solver"
 
   def add(_a, _b), do: :erlang.nif_error(:nif_not_loaded)
   
-  @spec evaluate_problem(HexaPlanner.Domain.Problem.t()) :: integer()
+  @spec evaluate_problem(HexaRail.Domain.Problem.t()) :: integer()
   def evaluate_problem(_problem), do: :erlang.nif_error(:nif_not_loaded)
 
-  @spec optimize_problem(HexaPlanner.Domain.Problem.t(), integer()) :: HexaPlanner.Domain.Problem.t()
+  @spec optimize_problem(HexaRail.Domain.Problem.t(), integer()) :: HexaRail.Domain.Problem.t()
   def optimize_problem(_problem, _iterations), do: :erlang.nif_error(:nif_not_loaded)
 end
 ```
 
 **Step 4: Run test to verify it passes**
 
-Run: `nix develop -c bash -c "cd hexaplanner && mix test test/solver_integration_test.exs"`
+Run: `nix develop -c bash -c "cd hexarail && mix test test/solver_integration_test.exs"`
 Expected: PASS
 
-Run Quality Gates: `nix develop -c bash -c "cd hexaplanner && mix credo --strict && mix dialyzer"`
+Run Quality Gates: `nix develop -c bash -c "cd hexarail && mix credo --strict && mix dialyzer"`
 
 **Step 5: Commit**
 
 ```bash
-git add hexaplanner/
+git add hexarail/
 git commit -m "feat(bridge): expose rust optimization loop to elixir control plane"
 ```

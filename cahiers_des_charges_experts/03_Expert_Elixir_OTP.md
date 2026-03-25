@@ -3,7 +3,7 @@
 **À l'attention de :** Architecte Principal(e) Elixir, Erlang/OTP et Systèmes Distribués  
 **Date :** 21 Mars 2026  
 **Référentiel Technologique :** État de l'art Février 2026 (Elixir 1.19.5, OTP 28, Actor Model, Event Sourcing)  
-**Projet :** HexaPlanner - Jumeau Numérique pour Job Shop Scheduling et Optimisation Ferroviaire
+**Projet :** HexaRail - Jumeau Numérique pour Job Shop Scheduling et Optimisation Ferroviaire
 
 ## Contexte et Vision Stratégique
 Le moteur industriel moderne n'est pas un script batch exécuté la nuit : c'est un Jumeau Numérique interactif. Les planificateurs (chemins de fer, usines lourdes) ont besoin de faire du "Continuous Planning" et de générer simultanément des dizaines de scénarios "What-If" (Pannes, retards, commandes urgentes) sans compromettre la stabilité du système principal.

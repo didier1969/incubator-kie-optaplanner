@@ -1,7 +1,7 @@
-# Politique de Sécurité Applicative et DevSecOps - HexaPlanner
+# Politique de Sécurité Applicative et DevSecOps - HexaRail
 
 **De :** Chief Information Security Officer (CISO) & Head of DevSecOps
-**À :** Équipes d'Ingénierie, Architecture, et Produit HexaPlanner
+**À :** Équipes d'Ingénierie, Architecture, et Produit HexaRail
 **Date :** 21 Mars 2026
 **Sujet :** Stratégie AppSec, Secure by Design & Threat Modeling pour l'Architecture Hybride
 
@@ -9,7 +9,7 @@
 
 ## 1. Introduction & Postulat de Base (Zero Trust)
 
-Le système HexaPlanner traite des données relevant du secret industriel (plans de réseaux de transport, stratégies d'usines, données financières). Notre postulat de sécurité est clair : **l'environnement d'exécution est intrinsèquement hostile, les dépendances externes sont non fiables, et aucun acteur (humain ou machine) ne bénéficie d'une confiance par défaut.** Le paradigme "Secure by Design" n'est pas une option, c'est la condition *sine qua non* de la mise en production.
+Le système HexaRail traite des données relevant du secret industriel (plans de réseaux de transport, stratégies d'usines, données financières). Notre postulat de sécurité est clair : **l'environnement d'exécution est intrinsèquement hostile, les dépendances externes sont non fiables, et aucun acteur (humain ou machine) ne bénéficie d'une confiance par défaut.** Le paradigme "Secure by Design" n'est pas une option, c'est la condition *sine qua non* de la mise en production.
 
 Ce document dicte les barrières de sécurité obligatoires (guardrails) couvrant le runtime, la chaîne d'approvisionnement (Supply Chain), le pipeline DevSecOps et la gestion des accès.
 
@@ -93,4 +93,4 @@ Pour garantir la résilience du moteur face à des entrées malformées :
 *( ) CTO*
 *( ) Lead Architect*
 
-*La sécurité n'est pas un frein, c'est l'accélérateur qui nous permettra de vendre HexaPlanner aux industries les plus critiques au monde.*
+*La sécurité n'est pas un frein, c'est l'accélérateur qui nous permettra de vendre HexaRail aux industries les plus critiques au monde.*

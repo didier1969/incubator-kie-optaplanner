@@ -1,4 +1,4 @@
-# HexaPlanner Phase 3 Implementation Plan: The Rust Data Plane
+# HexaRail Phase 3 Implementation Plan: The Rust Data Plane
 
 > **For Claude/Gemini:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
@@ -13,13 +13,13 @@
 ### Task 1: Replicate Domain Entities in Rust
 
 **Files:**
-- Modify: `hexaplanner/native/hexa_solver/src/lib.rs`
-- Create: `hexaplanner/native/hexa_solver/src/domain.rs`
+- Modify: `hexarail/native/hexa_solver/src/lib.rs`
+- Create: `hexarail/native/hexa_solver/src/domain.rs`
 
 **Step 1: Write the failing test (Rust side)**
 
 ```rust
-// hexaplanner/native/hexa_solver/src/domain.rs
+// hexarail/native/hexa_solver/src/domain.rs
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -37,17 +37,17 @@ mod tests {
 
 **Step 2: Run test to verify it fails**
 
-Run: `nix develop -c bash -c "cd hexaplanner/native/hexa_solver && cargo test"`
+Run: `nix develop -c bash -c "cd hexarail/native/hexa_solver && cargo test"`
 Expected: FAIL (Undefined structs)
 
 **Step 3: Write minimal implementation**
 
-1. Create `hexaplanner/native/hexa_solver/src/domain.rs` with strict Rustler mapping:
+1. Create `hexarail/native/hexa_solver/src/domain.rs` with strict Rustler mapping:
 ```rust
 use rustler::NifStruct;
 
 #[derive(Debug, NifStruct)]
-#[module = "HexaPlanner.Domain.Resource"]
+#[module = "HexaRail.Domain.Resource"]
 pub struct Resource {
     pub id: i64,
     pub name: String,
@@ -55,7 +55,7 @@ pub struct Resource {
 }
 
 #[derive(Debug, NifStruct)]
-#[module = "HexaPlanner.Domain.Job"]
+#[module = "HexaRail.Domain.Job"]
 pub struct Job {
     pub id: i64,
     pub duration: i64,
@@ -64,14 +64,14 @@ pub struct Job {
 }
 
 #[derive(Debug, NifStruct)]
-#[module = "HexaPlanner.Domain.Problem"]
+#[module = "HexaRail.Domain.Problem"]
 pub struct Problem {
     pub id: String,
     pub resources: Vec<Resource>,
     pub jobs: Vec<Job>,
 }
 ```
-2. Link the module in `hexaplanner/native/hexa_solver/src/lib.rs`:
+2. Link the module in `hexarail/native/hexa_solver/src/lib.rs`:
 ```rust
 #![deny(warnings)]
 #![deny(clippy::all)]
@@ -84,18 +84,18 @@ fn add(a: i64, b: i64) -> i64 {
     a + b
 }
 
-rustler::init!("Elixir.HexaPlanner.SolverNif", [add]);
+rustler::init!("Elixir.HexaRail.SolverNif", [add]);
 ```
 
 **Step 4: Run test to verify it passes**
 
-Run: `nix develop -c bash -c "cd hexaplanner/native/hexa_solver && cargo test && cargo clippy -- -D warnings"`
+Run: `nix develop -c bash -c "cd hexarail/native/hexa_solver && cargo test && cargo clippy -- -D warnings"`
 Expected: PASS
 
 **Step 5: Commit**
 
 ```bash
-git add hexaplanner/native/hexa_solver/
+git add hexarail/native/hexa_solver/
 git commit -m "feat(domain): replicate immutable digital twin domain entities in rust"
 ```
 
@@ -104,13 +104,13 @@ git commit -m "feat(domain): replicate immutable digital twin domain entities in
 ### Task 2: Implement the Rust Score Calculator (First Constraint)
 
 **Files:**
-- Create: `hexaplanner/native/hexa_solver/src/score.rs`
-- Modify: `hexaplanner/native/hexa_solver/src/lib.rs`
+- Create: `hexarail/native/hexa_solver/src/score.rs`
+- Modify: `hexarail/native/hexa_solver/src/lib.rs`
 
 **Step 1: Write the failing test**
 
 ```rust
-// hexaplanner/native/hexa_solver/src/score.rs
+// hexarail/native/hexa_solver/src/score.rs
 use crate::domain::{Job, Problem, Resource};
 
 #[cfg(test)]
@@ -130,12 +130,12 @@ mod tests {
 
 **Step 2: Run test to verify it fails**
 
-Run: `nix develop -c bash -c "cd hexaplanner/native/hexa_solver && cargo test"`
+Run: `nix develop -c bash -c "cd hexarail/native/hexa_solver && cargo test"`
 Expected: FAIL (Function `calculate_score` not found)
 
 **Step 3: Write minimal implementation**
 
-1. Create `hexaplanner/native/hexa_solver/src/score.rs`:
+1. Create `hexarail/native/hexa_solver/src/score.rs`:
 ```rust
 use crate::domain::Problem;
 
@@ -153,7 +153,7 @@ pub fn calculate_score(problem: &Problem) -> i64 {
     score
 }
 ```
-2. Expose it in `hexaplanner/native/hexa_solver/src/lib.rs`:
+2. Expose it in `hexarail/native/hexa_solver/src/lib.rs`:
 ```rust
 #![deny(warnings)]
 #![deny(clippy::all)]
@@ -172,18 +172,18 @@ fn add(a: i64, b: i64) -> i64 {
     a + b
 }
 
-rustler::init!("Elixir.HexaPlanner.SolverNif", [add, evaluate_problem]);
+rustler::init!("Elixir.HexaRail.SolverNif", [add, evaluate_problem]);
 ```
 
 **Step 4: Run test to verify it passes**
 
-Run: `nix develop -c bash -c "cd hexaplanner/native/hexa_solver && cargo test && cargo clippy -- -D warnings"`
+Run: `nix develop -c bash -c "cd hexarail/native/hexa_solver && cargo test && cargo clippy -- -D warnings"`
 Expected: PASS
 
 **Step 5: Commit**
 
 ```bash
-git add hexaplanner/native/hexa_solver/
+git add hexarail/native/hexa_solver/
 git commit -m "feat(solver): implement base score calculation in pure rust"
 ```
 
@@ -192,17 +192,17 @@ git commit -m "feat(solver): implement base score calculation in pure rust"
 ### Task 3: Bridge the Scoring Engine to Elixir
 
 **Files:**
-- Modify: `hexaplanner/lib/hexaplanner/solver_nif.ex`
-- Create: `hexaplanner/test/solver_integration_test.exs`
+- Modify: `hexarail/lib/hexarail/solver_nif.ex`
+- Create: `hexarail/test/solver_integration_test.exs`
 
 **Step 1: Write the failing test**
 
 ```elixir
-# hexaplanner/test/solver_integration_test.exs
-defmodule HexaPlanner.SolverIntegrationTest do
+# hexarail/test/solver_integration_test.exs
+defmodule HexaRail.SolverIntegrationTest do
   use ExUnit.Case
-  alias HexaPlanner.Domain.{Problem, Job}
-  alias HexaPlanner.SolverNif
+  alias HexaRail.Domain.{Problem, Job}
+  alias HexaRail.SolverNif
 
   test "rust nif calculates penalty for unassigned jobs" do
     problem = %Problem{
@@ -222,34 +222,34 @@ end
 
 **Step 2: Run test to verify it fails**
 
-Run: `nix develop -c bash -c "cd hexaplanner && mix test test/solver_integration_test.exs"`
+Run: `nix develop -c bash -c "cd hexarail && mix test test/solver_integration_test.exs"`
 Expected: FAIL (Undefined function `evaluate_problem/1`)
 
 **Step 3: Write minimal implementation**
 
-1. Update `hexaplanner/lib/hexaplanner/solver_nif.ex`:
+1. Update `hexarail/lib/hexarail/solver_nif.ex`:
 ```elixir
-defmodule HexaPlanner.SolverNif do
+defmodule HexaRail.SolverNif do
   @moduledoc false
-  use Rustler, otp_app: :hexaplanner, crate: "hexa_solver"
+  use Rustler, otp_app: :hexarail, crate: "hexa_solver"
 
   def add(_a, _b), do: :erlang.nif_error(:nif_not_loaded)
   
-  @spec evaluate_problem(HexaPlanner.Domain.Problem.t()) :: integer()
+  @spec evaluate_problem(HexaRail.Domain.Problem.t()) :: integer()
   def evaluate_problem(_problem), do: :erlang.nif_error(:nif_not_loaded)
 end
 ```
 
 **Step 4: Run test to verify it passes**
 
-Run: `nix develop -c bash -c "cd hexaplanner && mix test test/solver_integration_test.exs"`
+Run: `nix develop -c bash -c "cd hexarail && mix test test/solver_integration_test.exs"`
 Expected: PASS
 
-Run Quality Gates: `nix develop -c bash -c "cd hexaplanner && mix credo --strict && mix dialyzer"`
+Run Quality Gates: `nix develop -c bash -c "cd hexarail && mix credo --strict && mix dialyzer"`
 
 **Step 5: Commit**
 
 ```bash
-git add hexaplanner/
+git add hexarail/
 git commit -m "feat(bridge): connect elixir domain structures to rust scoring engine"
 ```

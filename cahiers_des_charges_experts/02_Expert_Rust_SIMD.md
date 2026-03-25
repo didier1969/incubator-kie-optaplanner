@@ -3,7 +3,7 @@
 **À l'attention de :** Expert(e) Principal(e) Rust, Calcul Haute Performance (SIMD) et Programmation par Contraintes (CP)  
 **Date :** 21 Mars 2026  
 **Référentiel Technologique :** État de l'art Février 2026 (Rust Édition 2024, std::simd, C-FFI, CP-SAT)  
-**Projet :** HexaPlanner - Jumeau Numérique pour Job Shop Scheduling et Optimisation Ferroviaire
+**Projet :** HexaRail - Jumeau Numérique pour Job Shop Scheduling et Optimisation Ferroviaire
 
 ## Contexte et Vision Stratégique
 Le système de recherche locale natif d'OptaPlanner s'effondre face aux problèmes de type Job Shop Scheduling (JSSP) complexes, notamment ceux incluant des temps de préparation liés à la séquence (Setup times) et des dépendances strictes en cascade. Un simple mouvement aléatoire invalide l'ensemble du planning.

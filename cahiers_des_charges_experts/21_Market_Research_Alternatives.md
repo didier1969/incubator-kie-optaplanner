@@ -1,7 +1,7 @@
-# HexaPlanner: Market Research & Open-Source Alternatives (Buy vs. Build)
+# HexaRail: Market Research & Open-Source Alternatives (Buy vs. Build)
 
 ## Executive Summary
-This document provides an evaluation of state-of-the-art open-source components, libraries, and frameworks that could replace or complement parts of the current OptaPlanner implementation for our new HexaPlanner hybrid architecture (Rust//Elixir). The research covers four strategic areas: Rust ALNS frameworks, CP/SAT solvers, WASM sandboxing engines, and Graph Neural Network (GNN) libraries.
+This document provides an evaluation of state-of-the-art open-source components, libraries, and frameworks that could replace or complement parts of the current OptaPlanner implementation for our new HexaRail hybrid architecture (Rust//Elixir). The research covers four strategic areas: Rust ALNS frameworks, CP/SAT solvers, WASM sandboxing engines, and Graph Neural Network (GNN) libraries.
 
 ## 1. Rust ALNS (Adaptive Large Neighborhood Search) Frameworks
 
@@ -59,7 +59,7 @@ GNNs are increasingly used for "Neural Combinatorial Optimization," augmenting o
 *   **Buy (Integrate):** For integrating AI-driven heuristics, we should leverage **PyTorch Geometric (PyG)** (via Rust bindings like `tch-rs` or via Python microservices) due to its dominance in recent Neural Combinatorial Optimization research (e.g., RL4CO). Building custom GNN primitives from scratch is not recommended.
 
 ## Conclusion & Architectural Recommendations
-For the HexaPlanner hybrid architecture:
+For the HexaRail hybrid architecture:
 1.  **ALNS:** **Build** a custom, highly parallel ALNS framework in Rust using `rayon` and core algorithmic crates.
 2.  **CP/SAT:** **Integrate** Google OR-Tools (via FFI) for raw performance, or explore pure Rust solvers like Pumpkin for a C++-free stack.
 3.  **WASM Plugins:** **Integrate** Extism to enable seamless, cross-language (Rust//Elixir) execution of custom scoring rules and constraints.

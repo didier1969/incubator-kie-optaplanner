@@ -2,10 +2,10 @@
 
 **De :** Directeur de Programme & Enterprise Architect
 **Date :** 21 Mars 2026
-**Projet :** HexaPlanner - Jumeau Numérique Industriel
+**Projet :** HexaRail - Jumeau Numérique Industriel
 **Objet :** Plan de Gouvernance Macroscopique, Topologie des Équipes et Matrice des Risques
 
-En tant que Directeur de Programme et Architecte d'Entreprise, voici le plan directeur pour piloter le projet HexaPlanner et maîtriser son extrême complexité technologique et fonctionnelle. La réussite de ce chantier massif repose sur une gestion des risques agressive, un découpage incrémental validé en continu, et une structure organisationnelle strictement alignée sur l'architecture cible (Loi de Conway).
+En tant que Directeur de Programme et Architecte d'Entreprise, voici le plan directeur pour piloter le projet HexaRail et maîtriser son extrême complexité technologique et fonctionnelle. La réussite de ce chantier massif repose sur une gestion des risques agressive, un découpage incrémental validé en continu, et une structure organisationnelle strictement alignée sur l'architecture cible (Loi de Conway).
 
 ---
 
@@ -37,7 +37,7 @@ Pour éviter l'effet tunnel inhérent aux refontes massives (qui plus est sur un
 
 ## 2. Topologie des Équipes (Conway's Law en Action)
 
-L'architecture distribuée et hybride de HexaPlanner exige une organisation modulaire avec des frontières de communication très strictes. Nous appliquerons les principes de *Team Topologies*.
+L'architecture distribuée et hybride de HexaRail exige une organisation modulaire avec des frontières de communication très strictes. Nous appliquerons les principes de *Team Topologies*.
 
 ### 2.1 Équipes "Stream-Aligned" (Orientées Flux de Valeur)
 

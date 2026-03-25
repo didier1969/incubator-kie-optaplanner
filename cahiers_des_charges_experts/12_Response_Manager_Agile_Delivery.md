@@ -1,10 +1,10 @@
-# Manuel Opératoire Agile & Stratégie de Delivery : HexaPlanner
+# Manuel Opératoire Agile & Stratégie de Delivery : HexaRail
 
 **De :** Senior Agile Delivery Manager / Expert(e) Agile
 **Date :** 21 Mars 2026
-**Projet :** HexaPlanner - Jumeau Numérique Industriel
+**Projet :** HexaRail - Jumeau Numérique Industriel
 
-Ce manuel opératoire définit le framework de livraison à l'échelle pour le projet HexaPlanner. Il adresse spécifiquement la complexité liée à la diversité des cycles d'ingénierie (IA, Rust, , Elixir) en s'appuyant sur des principes pragmatiques de flux de valeur, de gestion des dépendances par contrats, et de pilotage par la donnée.
+Ce manuel opératoire définit le framework de livraison à l'échelle pour le projet HexaRail. Il adresse spécifiquement la complexité liée à la diversité des cycles d'ingénierie (IA, Rust, , Elixir) en s'appuyant sur des principes pragmatiques de flux de valeur, de gestion des dépendances par contrats, et de pilotage par la donnée.
 
 ---
 
@@ -72,4 +72,4 @@ Au-delà de la CI/CD, nous devons mesurer l'écoulement de la valeur à travers 
 *   **Critère d'arrêt de l'IA (Timeboxing) :** La recherche IA est encadrée par un budget temps. Si un modèle n'atteint pas le seuil de précision désiré dans le temps imparti, la version sous-optimale (ou une heuristique classique) est intégrée en production pour débloquer le produit, pendant que l'IA continue son itération suivante en tâche de fond.
 
 ---
-**Conclusion :** La réussite de HexaPlanner ne résidera pas seulement dans l'excellence individuelle du code Rust ou IA, mais dans la fluidité de l'intégration continue entre ces domaines. L'utilisation stricte de contrats (API-First), le découplage des cycles (Dual-Track) et l'obsession de réduire la taille des lots de déploiement (DORA) sont les fondements de ce delivery.
+**Conclusion :** La réussite de HexaRail ne résidera pas seulement dans l'excellence individuelle du code Rust ou IA, mais dans la fluidité de l'intégration continue entre ces domaines. L'utilisation stricte de contrats (API-First), le découplage des cycles (Dual-Track) et l'obsession de réduire la taille des lots de déploiement (DORA) sont les fondements de ce delivery.

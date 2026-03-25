@@ -2,11 +2,11 @@
 
 **À l'attention de :** Directeur/Directrice de l'Ingénierie IA & Agentic Workflows  
 **Date :** 21 Mars 2026  
-**Projet :** HexaPlanner - Jumeau Numérique Industriel  
+**Projet :** HexaRail - Jumeau Numérique Industriel  
 **Objectif :** Intégrer l'usage massif et systémique des modèles de langage (LLM) et des agents IA dans le cycle de vie du développement logiciel (SDLC).
 
 ## Contexte
-En 2026, coder manuellement chaque ligne est un anti-pattern de productivité. Nous devons multiplier par 10 la vélocité de notre équipe d'ingénieurs en intégrant les LLMs au cœur même de la fabrication de HexaPlanner, depuis la rédaction de tests jusqu'au refactoring de l'héritage OptaPlanner.
+En 2026, coder manuellement chaque ligne est un anti-pattern de productivité. Nous devons multiplier par 10 la vélocité de notre équipe d'ingénieurs en intégrant les LLMs au cœur même de la fabrication de HexaRail, depuis la rédaction de tests jusqu'au refactoring de l'héritage OptaPlanner.
 
 ## Ce que nous attendons de votre Guideline
 

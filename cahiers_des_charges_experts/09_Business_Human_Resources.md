@@ -2,7 +2,7 @@
 
 **À l'attention de :** Directeur/Directrice des Ressources Humaines & Opérations Syndicales  
 **Date :** 21 Mars 2026  
-**Projet :** HexaPlanner - Jumeau Numérique Industriel  
+**Projet :** HexaRail - Jumeau Numérique Industriel  
 **Objectif :** Définition des exigences fonctionnelles cibles (Business Requirements), indépendamment de l'existant.
 
 ## Contexte

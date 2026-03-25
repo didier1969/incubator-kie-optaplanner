@@ -1,7 +1,7 @@
 # Manuel de Developer Experience (DevEx) & Culture d'Ingénierie
 
 **Auteur :** Staff Engineer / Developer Experience (DevEx) Director
-**Projet :** HexaPlanner - Jumeau Numérique Industriel
+**Projet :** HexaRail - Jumeau Numérique Industriel
 **Date :** 21 Mars 2026
 
 ---
@@ -85,4 +85,4 @@ Un nouveau développeur doit être productif (faire un commit en production) **e
 - **Jour 5 : Premier Déploiement.** Pousser la Pull Request, voir les GitHub Actions faire les vérifications de sécurité, le linting, et les tests automatisés, puis merger en production via GitOps.
 
 ### Conclusion
-La complexité inhérente au métier (HexaPlanner) et à l'architecture polyglotte est assumée. Cependant, notre plateforme DevEx agit comme un bouclier. Si un développeur doit comprendre comment compiler du Rust pour changer un bouton en Elixir, le système a échoué. Notre obsession est la vélocité et le confort mental de l'ingénieur.
+La complexité inhérente au métier (HexaRail) et à l'architecture polyglotte est assumée. Cependant, notre plateforme DevEx agit comme un bouclier. Si un développeur doit comprendre comment compiler du Rust pour changer un bouton en Elixir, le système a échoué. Notre obsession est la vélocité et le confort mental de l'ingénieur.

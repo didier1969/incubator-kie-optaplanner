@@ -1,5 +1,5 @@
 warning: Git tree '/home/dstadel/projects/incubator-kie-optaplanner' has uncommitted changes
-HexaPlanner Dev Environment loaded.
+HexaRail Dev Environment loaded.
 Elixir Elixir 1.19.5 (compiled with Erlang/OTP 28)
 Rust cargo 1.93.0 (083ac5135 2025-12-15)
 Starting local PostgreSQL server...
@@ -7,7 +7,7 @@ pg_ctl: another server might be running; trying to start server anyway
 pg_ctl: could not start server
 Examine the log output.
 [NEXUS] Starting System Initialization...
-[NEXUS] Hunting for dangling HexaPlanner processes...
+[NEXUS] Hunting for dangling HexaRail processes...
 [NEXUS] No dangling processes found.
 [NEXUS] Compiling System...
 Resolving Hex dependencies...
@@ -59,7 +59,7 @@ Unchanged:
 All dependencies have been fetched
 Compiling 1 file (.ex)
 Compiling crate hexa_solver in release mode (native/hexa_solver)
-   Compiling hexa_solver v0.1.0 (/home/dstadel/projects/incubator-kie-optaplanner/hexaplanner/native/hexa_solver)
+   Compiling hexa_solver v0.1.0 (/home/dstadel/projects/incubator-kie-optaplanner/hexarail/native/hexa_solver)
 error: unused import: `lasso::Key`
    --> src/topology.rs:312:13
     |
@@ -75,14 +75,14 @@ note: the lint level is defined here
 
 error: could not compile `hexa_solver` (lib) due to 1 previous error
 
-== Compilation error in file lib/hexaplanner/solver_nif.ex ==
+== Compilation error in file lib/hexarail/solver_nif.ex ==
 ** (RuntimeError) Rust NIF compile error (rustc exit code 101)
     (rustler 0.35.0) lib/rustler/compiler.ex:36: Rustler.Compiler.compile_crate/3
-    lib/hexaplanner/solver_nif.ex:6: (module)
+    lib/hexarail/solver_nif.ex:6: (module)
 [NEXUS] Igniting Tick Engine on Port 14326...
 Compiling 1 file (.ex)
 Compiling crate hexa_solver in release mode (native/hexa_solver)
-   Compiling hexa_solver v0.1.0 (/home/dstadel/projects/incubator-kie-optaplanner/hexaplanner/native/hexa_solver)
+   Compiling hexa_solver v0.1.0 (/home/dstadel/projects/incubator-kie-optaplanner/hexarail/native/hexa_solver)
 error: unused import: `lasso::Key`
    --> src/topology.rs:312:13
     |
@@ -98,7 +98,7 @@ note: the lint level is defined here
 
 error: could not compile `hexa_solver` (lib) due to 1 previous error
 
-== Compilation error in file lib/hexaplanner/solver_nif.ex ==
+== Compilation error in file lib/hexarail/solver_nif.ex ==
 ** (RuntimeError) Rust NIF compile error (rustc exit code 101)
     (rustler 0.35.0) lib/rustler/compiler.ex:36: Rustler.Compiler.compile_crate/3
-    lib/hexaplanner/solver_nif.ex:6: (module)
+    lib/hexarail/solver_nif.ex:6: (module)

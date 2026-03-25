@@ -1,6 +1,6 @@
 # Architecture : Sous-système Apprentissage par Renforcement (Neuro-Symbolique)
 
-**À l'attention de :** Direction de l'Ingénierie, Équipe d'Optimisation de HexaPlanner  
+**À l'attention de :** Direction de l'Ingénierie, Équipe d'Optimisation de HexaRail  
 **Auteur :** Architecte IA Principal, Expert RL & Accélération GPU  
 **Date :** 21 Mars 2026  
 **Référentiel Technologique :** État de l'art 2026 (RL Combinatoire, GNN Dynamiques, CUDA 12.8, JAX/Candle, Inférence par Lots Zero-Copy)
@@ -77,4 +77,4 @@ pub async fn infer_meta_actions_batch(
 }
 ```
 
-Ce paradigme assure au solveur HexaPlanner une réactivité sub-milliseconde tout en bénéficiant de l'intuition topologique des réseaux de neurones profonds de 2026.
+Ce paradigme assure au solveur HexaRail une réactivité sub-milliseconde tout en bénéficiant de l'intuition topologique des réseaux de neurones profonds de 2026.

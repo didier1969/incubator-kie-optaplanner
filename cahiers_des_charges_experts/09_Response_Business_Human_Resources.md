@@ -1,11 +1,11 @@
 # Cahier des Charges Fonctionnel : Optimisation des Ressources Humaines & Opérations
 
 **De :** Direction des Ressources Humaines & Opérations Syndicales (DRH-OS)
-**Pour :** Équipe Projet HexaPlanner
+**Pour :** Équipe Projet HexaRail
 **Date :** 21 Mars 2026
 **Objet :** Exigences fonctionnelles cibles pour la gestion RH complexe et le Shift Rostering
 
-En tant que Directeur des Ressources Humaines pour les Opérations Industrielles, je vous soumets par la présente le cahier des charges détaillant nos exigences impératives pour le module RH du HexaPlanner. Notre objectif n'est pas seulement de "placer des noms dans des cases", mais de garantir la continuité opérationnelle tout en respectant scrupuleusement le cadre légal, la sécurité de nos collaborateurs et le climat social. Un algorithme d'optimisation qui ne prend pas en compte l'humain est voué à l'échec sur le terrain.
+En tant que Directeur des Ressources Humaines pour les Opérations Industrielles, je vous soumets par la présente le cahier des charges détaillant nos exigences impératives pour le module RH du HexaRail. Notre objectif n'est pas seulement de "placer des noms dans des cases", mais de garantir la continuité opérationnelle tout en respectant scrupuleusement le cadre légal, la sécurité de nos collaborateurs et le climat social. Un algorithme d'optimisation qui ne prend pas en compte l'humain est voué à l'échec sur le terrain.
 
 Voici les exigences fonctionnelles (Business Requirements) réparties en trois axes majeurs.
 
@@ -68,4 +68,4 @@ Le système doit instantanément recalculer le planning et proposer 3 scénarios
 
 ---
 **Conclusion :**
-L'outil HexaPlanner ne doit pas être une "boîte noire". Le planificateur RH doit comprendre pourquoi le système a pris une décision. L'explicabilité des choix (notamment sur l'équité) est le seul moyen de garantir l'acceptation de l'outil par les partenaires sociaux et les syndicats. Je me tiens à votre disposition pour la phase de test des règles d'équité (UAT).
+L'outil HexaRail ne doit pas être une "boîte noire". Le planificateur RH doit comprendre pourquoi le système a pris une décision. L'explicabilité des choix (notamment sur l'équité) est le seul moyen de garantir l'acceptation de l'outil par les partenaires sociaux et les syndicats. Je me tiens à votre disposition pour la phase de test des règles d'équité (UAT).

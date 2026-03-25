@@ -2,10 +2,10 @@
 
 **De :** Directeur de l'Ingénierie IA & Agentic Workflows
 **Date :** 21 Mars 2026
-**Projet :** HexaPlanner - Jumeau Numérique Industriel
+**Projet :** HexaRail - Jumeau Numérique Industriel
 **Statut :** Framework de Référence (Standard d'Entreprise)
 
-Ce document définit le framework opérationnel pour l'intégration systématique et sécurisée des Modèles de Langage (LLM) et des agents autonomes dans le cycle de développement logiciel (SDLC) de HexaPlanner. Notre objectif est de décupler la productivité tout en élevant nos standards de qualité et de sécurité grâce à une approche de type *Zero-Trust AI Code*.
+Ce document définit le framework opérationnel pour l'intégration systématique et sécurisée des Modèles de Langage (LLM) et des agents autonomes dans le cycle de développement logiciel (SDLC) de HexaRail. Notre objectif est de décupler la productivité tout en élevant nos standards de qualité et de sécurité grâce à une approche de type *Zero-Trust AI Code*.
 
 ---
 
@@ -14,7 +14,7 @@ Ce document définit le framework opérationnel pour l'intégration systématiqu
 ### Standardisation de l'Outillage IDE
 Chaque ingénieur doit utiliser un environnement augmenté, intégrant l'IA directement dans sa boucle de développement (Inner Loop) :
 - **Outils Recommandés :** Déploiement obligatoire d'éditeurs "AI-First" (ex: Cursor) ou de plugins avancés (GitHub Copilot Enterprise) couplés à des agents CLI locaux (ex: Gemini CLI, Claude Code).
-- **Intégration Contextuelle (MCP) :** Utilisation du protocole MCP (Model Context Protocol) pour fournir aux assistants locaux un accès sécurisé aux bases de connaissances internes, schémas de base de données, et règles d'architecture spécifiques à HexaPlanner.
+- **Intégration Contextuelle (MCP) :** Utilisation du protocole MCP (Model Context Protocol) pour fournir aux assistants locaux un accès sécurisé aux bases de connaissances internes, schémas de base de données, et règles d'architecture spécifiques à HexaRail.
 
 ### Le Principe "Zero-Trust AI Code"
 L'IA propose, l'Humain dispose.

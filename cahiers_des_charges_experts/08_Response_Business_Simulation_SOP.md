@@ -1,8 +1,8 @@
-# Cahier des Charges - Exigences Fonctionnelles : HexaPlanner - Jumeau Numérique Industriel (S&OP)
+# Cahier des Charges - Exigences Fonctionnelles : HexaRail - Jumeau Numérique Industriel (S&OP)
 
 **De :** Expert Senior S&OP et Jumeaux Numériques
 **Date :** 21 Mars 2026
-**Projet :** HexaPlanner - Jumeau Numérique Industriel
+**Projet :** HexaRail - Jumeau Numérique Industriel
 
 ---
 
@@ -84,4 +84,4 @@ La planification est un consensus entre le Commerce (qui veut tout livrer tout d
 
 ---
 **Conclusion :**
-Le Jumeau Numérique HexaPlanner ne doit pas être un simple optimiseur mathématique abstrait. Il doit agir comme un environnement "Sandbox" d'aide à la décision, hautement collaboratif, qui comprend et respecte la dure réalité du plancher de production (inertie, coûts de changement, limites humaines). L'IA est ici un copilote, le management humain reste le pilote.
+Le Jumeau Numérique HexaRail ne doit pas être un simple optimiseur mathématique abstrait. Il doit agir comme un environnement "Sandbox" d'aide à la décision, hautement collaboratif, qui comprend et respecte la dure réalité du plancher de production (inertie, coûts de changement, limites humaines). L'IA est ici un copilote, le management humain reste le pilote.

@@ -2,7 +2,7 @@
 
 **De :** Directeur/Directrice des Opérations Industrielles et Supply Chain
 **Date :** 22 Mars 2026
-**À :** Équipe Projet HexaPlanner
+**À :** Équipe Projet HexaRail
 **Sujet :** Spécifications des Exigences Fonctionnelles Cibles pour le Jumeau Numérique Industriel
 
 ---

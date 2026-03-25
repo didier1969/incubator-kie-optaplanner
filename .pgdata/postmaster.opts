@@ -1,0 +1,1 @@
+/nix/store/hdy4mjx2mgg5538silqqsb5izsjycn0n-postgresql-and-plugins-15.17/bin/postgres "-p" "15432" "-c" "unix_socket_directories=/home/dstadel/projects/incubator-kie-optaplanner/.pgdata"

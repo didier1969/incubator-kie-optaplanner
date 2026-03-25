@@ -1,22 +1,22 @@
-# Document d'Architecture : Control Plane et Orchestration HexaPlanner
+# Document d'Architecture : Control Plane et Orchestration HexaRail
 
 **Auteur :** Architecte Principal(e) Elixir & Systèmes Distribués
 **Date :** 21 Mars 2026
 **Cible Technologique :** Elixir 1.19.5, OTP 28, Rustler 0.35+
 
 ## 1. Vision et Principes Fondamentaux
-En 2026, la plateforme HexaPlanner exploite pleinement les avancées d'Elixir 1.19.5 et OTP 28, notamment le système de typage graduel fort intégré au compilateur, l'optimisation extrême du JIT pour les messages inter-processus et les capacités natives de tracing distribué. Le système est modélisé comme un essaim d'acteurs indépendants, offrant une résilience absolue ("Let it crash") et une réactivité temps-réel exceptionnelle via Phoenix LiveView.
+En 2026, la plateforme HexaRail exploite pleinement les avancées d'Elixir 1.19.5 et OTP 28, notamment le système de typage graduel fort intégré au compilateur, l'optimisation extrême du JIT pour les messages inter-processus et les capacités natives de tracing distribué. Le système est modélisé comme un essaim d'acteurs indépendants, offrant une résilience absolue ("Let it crash") et une réactivité temps-réel exceptionnelle via Phoenix LiveView.
 
 ## 2. Architecture Multi-Processus et Arbre de Supervision (Actor Model)
 
 Le cœur de l'orchestration repose sur des arbres de supervision dynamiques (`DynamicSupervisor`) combinés à des registres distribués (Horde ou :pg) pour router les messages vers les bons acteurs, quel que soit le nœud où ils résident.
 
 ```elixir
-HexaPlanner.Application
-├── HexaPlanner.PubSub (Phoenix.PubSub pour LiveView)
-├── HexaPlanner.EventStore.Supervisor (Accès au log immuable)
-├── HexaPlanner.ClusterSupervisor (Gestion de la topologie via libcluster)
-└── HexaPlanner.Simulation.Supervisor
+HexaRail.Application
+├── HexaRail.PubSub (Phoenix.PubSub pour LiveView)
+├── HexaRail.EventStore.Supervisor (Accès au log immuable)
+├── HexaRail.ClusterSupervisor (Gestion de la topologie via libcluster)
+└── HexaRail.Simulation.Supervisor
     ├── SimulationSession (GenServer - État global de la session utilisateur)
     │   ├── Scénario "Principal" (GenServer - Baseline)
     │   ├── Scénario "What-If A" (GenServer - Panne Machine 3)

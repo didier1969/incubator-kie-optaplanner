@@ -1,8 +1,8 @@
-# Spécifications Fonctionnelles Métier : Moteur d'Optimisation Ferroviaire (HexaPlanner)
+# Spécifications Fonctionnelles Métier : Moteur d'Optimisation Ferroviaire (HexaRail)
 
 **Auteur :** Expert Principal en Opérations Ferroviaires et Transit
 **Date :** 21 Mars 2026
-**Objet :** Exigences Fonctionnelles Cibles (Business Requirements) pour HexaPlanner
+**Objet :** Exigences Fonctionnelles Cibles (Business Requirements) pour HexaRail
 
 ## Introduction
 Ce document définit les exigences fonctionnelles fondamentales pour un système d'ordonnancement et de planification ferroviaire de classe mondiale. En tant qu'opérateur ferroviaire national (type SBB/CFF, SNCF, DB), notre objectif est d'optimiser l'utilisation du réseau et du matériel tout en garantissant un niveau de sécurité absolu et une résilience maximale face aux aléas d'exploitation. Le système doit gérer simultanément des **règles dures (Hard Constraints)**, qui sont non négociables (physique, sécurité, lois), et des **règles souples (Soft Constraints)**, qui définissent la qualité de service et les objectifs d'optimisation.
@@ -95,4 +95,4 @@ Le matériel roulant ne fonctionne pas sans personnel qualifié. La planificatio
 
 ---
 **Conclusion :** 
-Le moteur HexaPlanner doit fondamentalement séparer le graphe de l'infrastructure physique du graphe des missions commerciales, et faire le lien via les ressources contraintes (trains, personnel, créneaux horaires/sillons). L'aptitude à réévaluer instantanément les correspondances et la législation des équipes lors d'un incident fera la différence entre un planificateur théorique et un véritable jumeau numérique opérationnel.
+Le moteur HexaRail doit fondamentalement séparer le graphe de l'infrastructure physique du graphe des missions commerciales, et faire le lien via les ressources contraintes (trains, personnel, créneaux horaires/sillons). L'aptitude à réévaluer instantanément les correspondances et la législation des équipes lors d'un incident fera la différence entre un planificateur théorique et un véritable jumeau numérique opérationnel.

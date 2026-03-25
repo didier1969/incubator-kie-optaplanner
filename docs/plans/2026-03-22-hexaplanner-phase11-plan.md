@@ -1,4 +1,4 @@
-# HexaPlanner Phase 11 Implementation Plan: Ingestion GTFS Temps & Vitesse
+# HexaRail Phase 11 Implementation Plan: Ingestion GTFS Temps & Vitesse
 
 > **For Claude/Gemini:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
@@ -13,9 +13,9 @@
 ### Task 1: Create GTFS Ecto Schemas
 
 **Files:**
-- Create: `hexaplanner/lib/hexaplanner/gtfs/trip.ex`
-- Create: `hexaplanner/lib/hexaplanner/gtfs/stop_time.ex`
-- Create: `hexaplanner/lib/hexaplanner/gtfs/transfer.ex`
+- Create: `hexarail/lib/hexarail/gtfs/trip.ex`
+- Create: `hexarail/lib/hexarail/gtfs/stop_time.ex`
+- Create: `hexarail/lib/hexarail/gtfs/transfer.ex`
 
 **Step 1: Write the failing tests**
 Create schemas tests validating required fields.
@@ -35,7 +35,7 @@ Define Ecto Schemas mapping directly to the official GTFS spec:
 ### Task 2: Create Database Migrations
 
 **Files:**
-- Create: `hexaplanner/priv/repo/migrations/*_create_gtfs_tables.exs`
+- Create: `hexarail/priv/repo/migrations/*_create_gtfs_tables.exs`
 
 **Step 1: Write the failing check**
 `mix ecto.migrate` status check
@@ -52,7 +52,7 @@ Generate migrations for `gtfs_trips`, `gtfs_stop_times`, `gtfs_transfers` with a
 ### Task 3: Stream and Bulk Insert GTFS Files
 
 **Files:**
-- Modify: `hexaplanner/lib/hexaplanner/gtfs/importer.ex`
+- Modify: `hexarail/lib/hexarail/gtfs/importer.ex`
 
 **Step 1: Write the failing test**
 Unit test importing a mock `stop_times.txt`.

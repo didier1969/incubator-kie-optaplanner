@@ -1,12 +1,12 @@
-# HexaPlanner: Universal Digital Twin & Optimization Framework
+# HexaRail: Universal Digital Twin & Optimization Framework
 
-HexaPlanner is an industrial-grade, high-performance framework designed to model, simulate, and optimize complex systems in real-time. Built to replace legacy Java-based optimization engines, it leverages the Elixir/OTP control plane for resilience and the Rust data plane for computational speed.
+HexaRail is an industrial-grade, high-performance framework designed to model, simulate, and optimize complex systems in real-time. Built to replace legacy Java-based optimization engines, it leverages the Elixir/OTP control plane for resilience and the Rust data plane for computational speed.
 
 ## 🌌 The Vision: Optimization without Compromise
-Most optimization systems simplify reality to fit mathematical models. HexaPlanner reverses this paradigm: it models reality with 100% fidelity, ensuring that optimizations are actionable in the real world.
+Most optimization systems simplify reality to fit mathematical models. HexaRail reverses this paradigm: it models reality with 100% fidelity, ensuring that optimizations are actionable in the real world.
 
 ### The "CFF/SBB" Vertical (Showcase)
-As a primary validator of its scale and precision, HexaPlanner currently hosts a full-scale Digital Twin of the **Swiss Federal Railways (CFF/SBB)** network. 
+As a primary validator of its scale and precision, HexaRail currently hosts a full-scale Digital Twin of the **Swiss Federal Railways (CFF/SBB)** network. 
 *   **Scale:** 1.19M+ trips, 19M+ stop events, 96k locations.
 *   **Purpose:** Prove that if the framework can handle the entire Swiss railway network with zero simplification, it can optimize any industrial domain (Manufacturing, Logistics, Healthcare).
 
@@ -26,7 +26,7 @@ As a primary validator of its scale and precision, HexaPlanner currently hosts a
 ### 1. Initialize Environment
 ```bash
 nix develop
-cd hexaplanner
+cd hexarail
 mix deps.get
 mix ecto.setup
 ```

@@ -1,9 +1,9 @@
-# Master Architecture Document: HexaPlanner Framework
+# Master Architecture Document: HexaRail Framework
 
 ## 1. Executive Summary & Vision
-HexaPlanner is a universal, high-fidelity Digital Twin and Optimization Framework. Its mission is to provide an agostic, ultra-performant infrastructure capable of modeling, simulating, and optimizing complex systems at any scale. 
+HexaRail is a universal, high-fidelity Digital Twin and Optimization Framework. Its mission is to provide an agostic, ultra-performant infrastructure capable of modeling, simulating, and optimizing complex systems at any scale. 
 
-The framework is built on a "Zero Simplification" mandate: it models the real world with 100% fidelity, ensuring that calculated optimizations are physically and temporally actionable. As a primary technical validator and showcase, HexaPlanner currently implements the entirety of the Swiss Federal Railways (CFF/SBB) network—representing the highest level of logistical complexity—to prove the engine's capability to handle millions of interdependent events in real-time.
+The framework is built on a "Zero Simplification" mandate: it models the real world with 100% fidelity, ensuring that calculated optimizations are physically and temporally actionable. As a primary technical validator and showcase, HexaRail currently implements the entirety of the Swiss Federal Railways (CFF/SBB) network—representing the highest level of logistical complexity—to prove the engine's capability to handle millions of interdependent events in real-time.
 
 The system utilizes a state-of-the-art polyglot architecture: an Elixir/OTP Control Plane for resilient orchestration and a Rust Data Plane for high-speed incremental computation (Salsa) and spatial analysis (Petgraph).
 

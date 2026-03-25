@@ -1,7 +1,7 @@
 # Réponse de l'Expert Métier : Explicabilité (XAI) et Aide à la Décision
 
 **De :** Expert(e) Senior en XAI, Business Intelligence & Change Management  
-**À l'attention de :** Équipe Projet HexaPlanner  
+**À l'attention de :** Équipe Projet HexaRail  
 **Date :** 21 Mars 2026  
 **Sujet :** Exigences fonctionnelles cibles pour la transparence, l'interaction Homme-Machine et le pilotage de la performance
 
@@ -68,8 +68,8 @@ Pour définir la robustesse et la qualité d'un planning produit, le tableau de 
 
 ## Conclusion & Change Management
 
-L'intégration de la XAI dans HexaPlanner doit s'accompagner d'un plan de conduite du changement :
+L'intégration de la XAI dans HexaRail doit s'accompagner d'un plan de conduite du changement :
 - **Formation par le jeu :** Utiliser le mode "What-If" en formation pour que les planificateurs essaient de "battre l'IA", réalisant ainsi par eux-mêmes l'équilibre subtil trouvé par le moteur.
 - **Feedback Loop :** Intégrer un bouton "Signaler une aberration" (Pouce rouge) sur les choix de l'IA, permettant aux experts métier d'enrichir la base de règles (capture des contraintes tacites non modélisées).
 
-Un système explicable, interactif et centré sur l'humain garantira non seulement l'adoption, mais transformera HexaPlanner en un véritable avantage concurrentiel durable.
+Un système explicable, interactif et centré sur l'humain garantira non seulement l'adoption, mais transformera HexaRail en un véritable avantage concurrentiel durable.

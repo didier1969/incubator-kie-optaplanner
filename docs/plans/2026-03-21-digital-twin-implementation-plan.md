@@ -1,4 +1,4 @@
-# HexaPlanner Phase 1 Implementation Plan
+# HexaRail Phase 1 Implementation Plan
 
 > **For Claude/Gemini:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
@@ -27,7 +27,7 @@ Expected: FAIL (No flake.nix found)
 1. Create a `flake.nix` file that locks specific versions of Erlang, Elixir, and Rust (Cargo) using nixpkgs from early 2026 (or a stable channel). This guarantees all developers use the exact same compilers.
 ```nix
 {
-  description = "HexaPlanner Development Environment";
+  description = "HexaRail Development Environment";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -53,7 +53,7 @@ Expected: FAIL (No flake.nix found)
           ];
 
           shellHook = ''
-            echo "HexaPlanner Dev Environment loaded."
+            echo "HexaRail Dev Environment loaded."
             echo "Elixir $(elixir --version | grep Elixir)"
             echo "Rust $(cargo --version)"
           '';
@@ -84,20 +84,20 @@ git commit -m "chore(env): enforce reproducible compiler environment via nix fla
 ### Task 1: Scaffold the Elixir Control Plane
 
 **Files:**
-- Create: `hexaplanner/mix.exs`
-- Create: `hexaplanner/lib/hexaplanner.ex`
-- Test: `hexaplanner/test/hexaplanner_test.exs`
+- Create: `hexarail/mix.exs`
+- Create: `hexarail/lib/hexarail.ex`
+- Test: `hexarail/test/hexarail_test.exs`
 
 **Step 1: Write the failing test (Behavior Check)**
 
 ```elixir
-# hexaplanner/test/hexaplanner_test.exs
-defmodule HexaPlannerTest do
+# hexarail/test/hexarail_test.exs
+defmodule HexaRailTest do
   use ExUnit.Case
-  doctest HexaPlanner
+  doctest HexaRail
 
   test "control plane application starts" do
-    assert {:ok, _pid} = Application.ensure_all_started(:hexaplanner)
+    assert {:ok, _pid} = Application.ensure_all_started(:hexarail)
   end
 end
 ```
@@ -111,19 +111,19 @@ Expected: FAIL (No mix.exs found)
 
 Run the mix generator to scaffold the application:
 ```bash
-mix new hexaplanner --sup
+mix new hexarail --sup
 ```
-Ensure the `mix.exs` and `lib/hexaplanner.ex` exist.
+Ensure the `mix.exs` and `lib/hexarail.ex` exist.
 
 **Step 4: Run test to verify it passes**
 
-Run: `cd hexaplanner && mix test`
+Run: `cd hexarail && mix test`
 Expected: PASS
 
 **Step 5: Commit**
 
 ```bash
-git add hexaplanner/
+git add hexarail/
 git commit -m "chore(nexus): scaffold base elixir control plane application"
 ```
 
@@ -132,29 +132,29 @@ git commit -m "chore(nexus): scaffold base elixir control plane application"
 ### Task 2: Integrate Rustler and Scaffold the Pure Rust Data Plane
 
 **Files:**
-- Modify: `hexaplanner/mix.exs`
-- Create: `hexaplanner/native/hexa_solver/Cargo.toml`
-- Create: `hexaplanner/native/hexa_solver/src/lib.rs`
-- Create: `hexaplanner/lib/hexaplanner/solver_nif.ex`
-- Test: `hexaplanner/test/solver_nif_test.exs`
+- Modify: `hexarail/mix.exs`
+- Create: `hexarail/native/hexa_solver/Cargo.toml`
+- Create: `hexarail/native/hexa_solver/src/lib.rs`
+- Create: `hexarail/lib/hexarail/solver_nif.ex`
+- Test: `hexarail/test/solver_nif_test.exs`
 
 **Step 1: Write the failing test**
 
 ```elixir
-# hexaplanner/test/solver_nif_test.exs
-defmodule HexaPlanner.SolverNifTest do
+# hexarail/test/solver_nif_test.exs
+defmodule HexaRail.SolverNifTest do
   use ExUnit.Case
 
   test "rustler bridge can add two numbers via pure rust solver" do
-    assert HexaPlanner.SolverNif.add(2, 3) == 5
+    assert HexaRail.SolverNif.add(2, 3) == 5
   end
 end
 ```
 
 **Step 2: Run test to verify it fails**
 
-Run: `cd hexaplanner && mix test test/solver_nif_test.exs`
-Expected: FAIL (Undefined module HexaPlanner.SolverNif)
+Run: `cd hexarail && mix test test/solver_nif_test.exs`
+Expected: FAIL (Undefined module HexaRail.SolverNif)
 
 **Step 3: Write minimal implementation**
 
@@ -164,11 +164,11 @@ Expected: FAIL (Undefined module HexaPlanner.SolverNif)
 {:rustler, "== 0.35.0"}
 ```
 2. Download deps: `mix deps.get`
-3. Generate Rustler NIF: `mix rustler.new --name hexa_solver --module HexaPlanner.SolverNif`
-4. Update `lib/hexaplanner/solver_nif.ex` to load the NIF:
+3. Generate Rustler NIF: `mix rustler.new --name hexa_solver --module HexaRail.SolverNif`
+4. Update `lib/hexarail/solver_nif.ex` to load the NIF:
 ```elixir
-defmodule HexaPlanner.SolverNif do
-  use Rustler, otp_app: :hexaplanner, crate: "hexa_solver"
+defmodule HexaRail.SolverNif do
+  use Rustler, otp_app: :hexarail, crate: "hexa_solver"
 
   # When your NIF is loaded, it will override this function.
   def add(_a, _b), do: :erlang.nif_error(:nif_not_loaded)
@@ -181,7 +181,7 @@ fn add(a: i64, b: i64) -> i64 {
     a + b
 }
 
-rustler::init!("Elixir.HexaPlanner.SolverNif", [add]);
+rustler::init!("Elixir.HexaRail.SolverNif", [add]);
 ```
 6. Add optimization dependencies to `Cargo.toml` (e.g. `rayon`, `localsearch`, genetic algorithms). Strict versioning is mandated:
 ```toml
@@ -194,13 +194,13 @@ metaheuristics-nature = "=0.16.0" # For Genetic Algorithms & Swarm
 
 **Step 4: Run test to verify it passes**
 
-Run: `cd hexaplanner && mix test test/solver_nif_test.exs`
+Run: `cd hexarail && mix test test/solver_nif_test.exs`
 Expected: PASS (Rust compiles, NIF loads, test passes)
 
 **Step 5: Commit**
 
 ```bash
-git add hexaplanner/
+git add hexarail/
 git commit -m "feat(nexus): integrate rustler and establish pure elixir-rust bridge for multi-stage solver"
 ```
 
@@ -209,26 +209,26 @@ git commit -m "feat(nexus): integrate rustler and establish pure elixir-rust bri
 ### Task 3: Integrate Ecosystem Standards (Oban & Horde)
 
 **Files:**
-- Modify: `hexaplanner/mix.exs`
-- Modify: `hexaplanner/lib/hexaplanner/application.ex`
+- Modify: `hexarail/mix.exs`
+- Modify: `hexarail/lib/hexarail/application.ex`
 
 **Step 1: Write the failing test**
 
 ```elixir
-# hexaplanner/test/infrastructure_test.exs
-defmodule HexaPlanner.InfrastructureTest do
+# hexarail/test/infrastructure_test.exs
+defmodule HexaRail.InfrastructureTest do
   use ExUnit.Case
 
   test "Horde is running in the supervision tree" do
-    assert Process.whereis(HexaPlanner.HordeRegistry) != nil
-    assert Process.whereis(HexaPlanner.HordeSupervisor) != nil
+    assert Process.whereis(HexaRail.HordeRegistry) != nil
+    assert Process.whereis(HexaRail.HordeSupervisor) != nil
   end
 end
 ```
 
 **Step 2: Run test to verify it fails**
 
-Run: `cd hexaplanner && mix test test/infrastructure_test.exs`
+Run: `cd hexarail && mix test test/infrastructure_test.exs`
 Expected: FAIL (Undefined modules)
 
 **Step 3: Write minimal implementation**
@@ -240,28 +240,28 @@ Expected: FAIL (Undefined modules)
 {:horde, "== 0.9.0"}
 ```
 2. Download deps: `mix deps.get`
-3. Update `lib/hexaplanner/application.ex` to start the supervisors:
+3. Update `lib/hexarail/application.ex` to start the supervisors:
 ```elixir
 def start(_type, _args) do
   children = [
-    {Horde.Registry, [name: HexaPlanner.HordeRegistry, keys: :unique]},
-    {Horde.DynamicSupervisor, [name: HexaPlanner.HordeSupervisor, strategy: :one_for_one]}
+    {Horde.Registry, [name: HexaRail.HordeRegistry, keys: :unique]},
+    {Horde.DynamicSupervisor, [name: HexaRail.HordeSupervisor, strategy: :one_for_one]}
     # Oban will be added to the children here in the DB setup phase.
   ]
-  opts = [strategy: :one_for_one, name: HexaPlanner.Supervisor]
+  opts = [strategy: :one_for_one, name: HexaRail.Supervisor]
   Supervisor.start_link(children, opts)
 end
 ```
 
 **Step 4: Run test to verify it passes**
 
-Run: `cd hexaplanner && mix test test/infrastructure_test.exs`
+Run: `cd hexarail && mix test test/infrastructure_test.exs`
 *(Note: Oban requires Ecto/Repo setup which will be done in a subsequent DB phase, but the dependencies are now locked in).*
 
 **Step 5: Commit**
 
 ```bash
-git add hexaplanner/
+git add hexarail/
 git commit -m "feat(nexus): add horde and oban following the ecosystem reuse principle"
 ```
 
@@ -270,14 +270,14 @@ git commit -m "feat(nexus): add horde and oban following the ecosystem reuse pri
 ### Task 4: Enforce Zero-Tolerance Quality Gates (Linters & Static Analysis)
 
 **Files:**
-- Modify: `hexaplanner/mix.exs`
-- Create: `hexaplanner/.credo.exs`
-- Create: `hexaplanner/native/hexa_solver/rustfmt.toml`
+- Modify: `hexarail/mix.exs`
+- Create: `hexarail/.credo.exs`
+- Create: `hexarail/native/hexa_solver/rustfmt.toml`
 
 **Step 1: Write the failing check (Quality Gate)**
 
 We expect the default generated Elixir code to lack type specifications (specs) or trigger strict linter rules.
-Run: `cd hexaplanner && mix credo --strict` and `cargo clippy --manifest-path native/hexa_solver/Cargo.toml -- -D warnings`
+Run: `cd hexarail && mix credo --strict` and `cargo clippy --manifest-path native/hexa_solver/Cargo.toml -- -D warnings`
 
 **Step 2: Write minimal implementation (Configuration)**
 
@@ -299,16 +299,16 @@ Run: `cd hexaplanner && mix credo --strict` and `cargo clippy --manifest-path na
 
 **Step 3: Fix any generated warnings**
 
-Ensure all generated files (like `hexaplanner.ex` and `application.ex`) have `@moduledoc` and `@spec` where required by Credo/Dialyzer.
+Ensure all generated files (like `hexarail.ex` and `application.ex`) have `@moduledoc` and `@spec` where required by Credo/Dialyzer.
 
 **Step 4: Run tests to verify Zero Warnings**
 
-Run: `cd hexaplanner && mix test && mix credo --strict && mix dialyzer && cargo clippy --manifest-path native/hexa_solver/Cargo.toml`
+Run: `cd hexarail && mix test && mix credo --strict && mix dialyzer && cargo clippy --manifest-path native/hexa_solver/Cargo.toml`
 Expected: All commands exit with status 0 (Success, Zero Warnings).
 
 **Step 5: Commit**
 
 ```bash
-git add hexaplanner/
+git add hexarail/
 git commit -m "chore(quality): enforce zero-tolerance policy with credo, dialyzer, and clippy"
 ```

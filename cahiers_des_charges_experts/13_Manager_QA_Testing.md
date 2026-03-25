@@ -2,7 +2,7 @@
 
 **À l'attention de :** Directeur/Directrice de l'Assurance Qualité (QA) & Test Automation  
 **Date :** 21 Mars 2026  
-**Projet :** HexaPlanner - Jumeau Numérique Industriel  
+**Projet :** HexaRail - Jumeau Numérique Industriel  
 **Objectif :** Définir la pyramide de tests pour un moteur d'IA hyper-complexe aux résultats non-déterministes.
 
 ## Contexte

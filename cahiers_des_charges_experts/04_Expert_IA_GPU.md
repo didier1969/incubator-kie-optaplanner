@@ -3,7 +3,7 @@
 **À l'attention de :** Chercheur/Chercheuse Principal(e) en IA, Reinforcement Learning & Accélération GPU  
 **Date :** 21 Mars 2026  
 **Référentiel Technologique :** État de l'art Février 2026 (RL pour l'Optimisation Combinatoire, JAX/PyTorch, CUDA 12+, GNN)  
-**Projet :** HexaPlanner - Jumeau Numérique pour Job Shop Scheduling et Optimisation Ferroviaire
+**Projet :** HexaRail - Jumeau Numérique pour Job Shop Scheduling et Optimisation Ferroviaire
 
 ## Contexte et Vision Stratégique
 Les solveurs traditionnels (Local Search, ALNS) perdent un temps précieux à explorer des voisinages sans issue ou à appliquer des heuristiques aléatoires de "destruction". L'état de l'art en 2026 exige un pont Neuro-Symbolique : utiliser des réseaux de neurones (ex: Graph Neural Networks - GNN) pour "intuiter" la topologie du problème et guider la recherche symbolique exacte.

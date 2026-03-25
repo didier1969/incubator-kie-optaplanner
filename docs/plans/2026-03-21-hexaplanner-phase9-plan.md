@@ -1,4 +1,4 @@
-# HexaPlanner Phase 9 Implementation Plan: Graphe Topologique Exact (Rust)
+# HexaRail Phase 9 Implementation Plan: Graphe Topologique Exact (Rust)
 
 > **For Claude/Gemini:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
@@ -13,10 +13,10 @@
 ### Task 1: Add Graph Library to Rust Engine
 
 **Files:**
-- Modify: `hexaplanner/native/hexa_solver/Cargo.toml`
+- Modify: `hexarail/native/hexa_solver/Cargo.toml`
 
 **Step 1: Write the failing check**
-Run: `nix develop -c bash -c "cd hexaplanner/native/hexa_solver && cargo tree | grep petgraph"`
+Run: `nix develop -c bash -c "cd hexarail/native/hexa_solver && cargo tree | grep petgraph"`
 Expected: FAIL
 
 **Step 2: Write minimal implementation**
@@ -27,12 +27,12 @@ petgraph = "0.6.5"
 ```
 
 **Step 3: Run check to verify it passes**
-Run: `nix develop -c bash -c "cd hexaplanner/native/hexa_solver && cargo update && cargo tree | grep petgraph"`
+Run: `nix develop -c bash -c "cd hexarail/native/hexa_solver && cargo update && cargo tree | grep petgraph"`
 Expected: PASS
 
 **Step 4: Commit**
 ```bash
-git add hexaplanner/native/hexa_solver/Cargo.toml hexaplanner/native/hexa_solver/Cargo.lock
+git add hexarail/native/hexa_solver/Cargo.toml hexarail/native/hexa_solver/Cargo.lock
 git commit -m "chore(deps): add petgraph for exact topological network modeling"
 ```
 
@@ -41,11 +41,11 @@ git commit -m "chore(deps): add petgraph for exact topological network modeling"
 ### Task 2: Model the Physical Network Graph
 
 **Files:**
-- Create: `hexaplanner/native/hexa_solver/src/topology.rs`
-- Modify: `hexaplanner/native/hexa_solver/src/lib.rs`
+- Create: `hexarail/native/hexa_solver/src/topology.rs`
+- Modify: `hexarail/native/hexa_solver/src/lib.rs`
 
 **Step 1: Write the failing test**
-Create `hexaplanner/native/hexa_solver/src/topology.rs` with a basic test:
+Create `hexarail/native/hexa_solver/src/topology.rs` with a basic test:
 ```rust
 #[cfg(test)]
 mod tests {
@@ -66,7 +66,7 @@ mod tests {
 ```
 
 **Step 2: Run test to verify it fails**
-Run: `nix develop -c bash -c "cd hexaplanner/native/hexa_solver && cargo test topology"`
+Run: `nix develop -c bash -c "cd hexarail/native/hexa_solver && cargo test topology"`
 Expected: FAIL
 
 **Step 3: Write minimal implementation**
@@ -123,12 +123,12 @@ impl Default for PhysicalNetwork {
 Add `pub mod topology;` to `lib.rs`.
 
 **Step 4: Run test to verify it passes**
-Run: `nix develop -c bash -c "cd hexaplanner/native/hexa_solver && cargo test topology"`
+Run: `nix develop -c bash -c "cd hexarail/native/hexa_solver && cargo test topology"`
 Expected: PASS
 
 **Step 5: Commit**
 ```bash
-git add hexaplanner/native/hexa_solver/src/
+git add hexarail/native/hexa_solver/src/
 git commit -m "feat(topology): model physical railway network using petgraph"
 ```
 
@@ -137,15 +137,15 @@ git commit -m "feat(topology): model physical railway network using petgraph"
 ### Task 3: Expose Topology Ingestion to Elixir via NIF
 
 **Files:**
-- Modify: `hexaplanner/native/hexa_solver/src/lib.rs`
-- Modify: `hexaplanner/lib/hexaplanner/solver_nif.ex`
-- Create: `hexaplanner/test/topology_nif_test.exs`
+- Modify: `hexarail/native/hexa_solver/src/lib.rs`
+- Modify: `hexarail/lib/hexarail/solver_nif.ex`
+- Create: `hexarail/test/topology_nif_test.exs`
 
 **Step 1: Write the failing test**
 Create Elixir test for pushing a list of edges to build the graph.
 ```elixir
-# hexaplanner/test/topology_nif_test.exs
-defmodule HexaPlanner.TopologyNifTest do
+# hexarail/test/topology_nif_test.exs
+defmodule HexaRail.TopologyNifTest do
   use ExUnit.Case
 
   test "can build rust topological graph via NIF" do
@@ -156,13 +156,13 @@ defmodule HexaPlanner.TopologyNifTest do
     ]
     
     # Should return the number of nodes built in Rust
-    assert HexaPlanner.SolverNif.build_network_graph(edges) == 3
+    assert HexaRail.SolverNif.build_network_graph(edges) == 3
   end
 end
 ```
 
 **Step 2: Run test to verify it fails**
-Run: `nix develop -c bash -c "cd hexaplanner && mix test test/topology_nif_test.exs"`
+Run: `nix develop -c bash -c "cd hexarail && mix test test/topology_nif_test.exs"`
 Expected: FAIL (Undefined function)
 
 **Step 3: Write minimal implementation**
@@ -186,11 +186,11 @@ fn build_network_graph(edges: Vec<(String, String, f64)>) -> usize {
 ```
 
 **Step 4: Run test to verify it passes**
-Run: `nix develop -c bash -c "cd hexaplanner && mix test test/topology_nif_test.exs"`
+Run: `nix develop -c bash -c "cd hexarail && mix test test/topology_nif_test.exs"`
 Expected: PASS
 
 **Step 5: Commit**
 ```bash
-git add hexaplanner/
+git add hexarail/
 git commit -m "feat(bridge): implement NIF to ingest topological edges into rust graph"
 ```

@@ -3,10 +3,10 @@
 **Statut :** Accepté
 **Date :** 2026-03-21
 **Contexte :** 
-Pour valider la puissance et le passage à l'échelle du framework HexaPlanner, nous définissons un premier "Vertical de Référence" : modéliser, simuler et optimiser l'intégralité du réseau ferroviaire suisse (CFF/SBB) en temps réel. Ce cas d'usage sert de stress-test pour le moteur universel. Le système doit afficher le réseau sur une carte interactive (Deck.gl/Mapbox), simuler le trafic avec une horloge variable, et permettre l'injection de perturbations. Aucune simplification du réseau n'est tolérée pour garantir la validité du framework face à la complexité réelle.
+Pour valider la puissance et le passage à l'échelle du framework HexaRail, nous définissons un premier "Vertical de Référence" : modéliser, simuler et optimiser l'intégralité du réseau ferroviaire suisse (CFF/SBB) en temps réel. Ce cas d'usage sert de stress-test pour le moteur universel. Le système doit afficher le réseau sur une carte interactive (Deck.gl/Mapbox), simuler le trafic avec une horloge variable, et permettre l'injection de perturbations. Aucune simplification du réseau n'est tolérée pour garantir la validité du framework face à la complexité réelle.
 
 **Décision :** 
-Nous établissons un macro-plan spécifique à ce vertical, orienté données (Open Data GTFS & topologie physique). Ce plan valide les capacités d'ingestion massive et de calcul de graphes du moteur HexaPlanner.
+Nous établissons un macro-plan spécifique à ce vertical, orienté données (Open Data GTFS & topologie physique). Ce plan valide les capacités d'ingestion massive et de calcul de graphes du moteur HexaRail.
 
 ## Macro-Plan Stratégique
 

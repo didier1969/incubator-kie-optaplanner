@@ -2,7 +2,7 @@
 
 **À l'attention de :** Expert(e) Métier Principal(e) en Opérations Ferroviaires et Transit (ex: SBB/CFF, SNCF, DB)  
 **Date :** 21 Mars 2026  
-**Projet :** HexaPlanner - Jumeau Numérique Industriel  
+**Projet :** HexaRail - Jumeau Numérique Industriel  
 **Objectif :** Définition des exigences fonctionnelles cibles (Business Requirements), indépendamment de l'existant.
 
 ## Contexte

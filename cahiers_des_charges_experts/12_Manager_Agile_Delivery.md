@@ -2,7 +2,7 @@
 
 **À l'attention de :** Lead Delivery Manager / Expert(e) Agile (SAFe / LeSS)  
 **Date :** 21 Mars 2026  
-**Projet :** HexaPlanner - Jumeau Numérique Industriel  
+**Projet :** HexaRail - Jumeau Numérique Industriel  
 **Objectif :** Définir le framework de livraison, la cadence et l'organisation du flux de valeur (Value Stream).
 
 ## Contexte

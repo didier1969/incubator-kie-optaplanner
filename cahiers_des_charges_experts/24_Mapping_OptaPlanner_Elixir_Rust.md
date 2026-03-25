@@ -1,6 +1,6 @@
-# Mapping OptaPlanner vers HexaPlanner (Elixir + Rust)
+# Mapping OptaPlanner vers HexaRail (Elixir + Rust)
 
-Ce document établit la correspondance stricte et exhaustive entre les fonctionnalités historiques du framework Java OptaPlanner (Timefold) et notre nouvelle architecture "HexaPlanner" basée sur Elixir et Rust. 
+Ce document établit la correspondance stricte et exhaustive entre les fonctionnalités historiques du framework Java OptaPlanner (Timefold) et notre nouvelle architecture "HexaRail" basée sur Elixir et Rust. 
 
 L'objectif est de démontrer comment chaque concept est non seulement remplacé, mais amélioré en termes de performance (zéro Garbage Collector, SIMD) et d'élasticité (modèle d'acteurs).
 
@@ -8,7 +8,7 @@ L'objectif est de démontrer comment chaque concept est non seulement remplacé,
 
 ## 1. Modélisation du Domaine (Domain Modeling)
 
-| Concept OptaPlanner (Java) | Équivalent HexaPlanner (Rust/Elixir) | Bibliothèques / Techniques |
+| Concept OptaPlanner (Java) | Équivalent HexaRail (Rust/Elixir) | Bibliothèques / Techniques |
 | :--- | :--- | :--- |
 | `@PlanningEntity` & `@PlanningVariable` | Structures de données en **Rust** (Data-Oriented Design) | Utilisation de `Structs` Rust avec des index au lieu de pointeurs. Gestion via des allocateurs d'arène (ex: crate `bumpalo` ou `typed-arena`) pour éviter toute pause de Garbage Collection. |
 | `@ProblemFact` | État immuable en Rust | Les faits du problème sont chargés une fois via le pont FFI (Rustler) et stockés en lecture seule dans la mémoire Rust. |
@@ -21,7 +21,7 @@ L'objectif est de démontrer comment chaque concept est non seulement remplacé,
 
 C'est ici qu'OptaPlanner tirait historiquement sa force (Drools, Bavet). L'architecture "Zero-Erasure" de Rust permet de faire mieux grâce à la monomorphisation (dispatch statique).
 
-| Concept OptaPlanner (Java) | Équivalent HexaPlanner (Rust/Elixir) | Bibliothèques / Techniques |
+| Concept OptaPlanner (Java) | Équivalent HexaRail (Rust/Elixir) | Bibliothèques / Techniques |
 | :--- | :--- | :--- |
 | **Constraint Streams API** | **DSL Fluide Elixir** (Macros) | Création de macros Elixir (`defconstraint`, `penalize`) qui offrent la même lisibilité métier que l'API Java pour les experts. |
 | **Bavet / Drools (Incremental Score)** | **Incremental Computation Engine (Rust)** | L'AST généré par Elixir est transpilé en flux d'itérateurs Rust. Pour le calcul du *Delta* (ne recalculer que ce qui change), nous utilisons les principes de la crate **`salsa`** (pull-based queries) ou **`qbice`** / **`incremental`**. Les calculs complexes (jointures, groupements) sont parallélisés via **`rayon`**. |
@@ -34,7 +34,7 @@ C'est ici qu'OptaPlanner tirait historiquement sa force (Drools, Bavet). L'archi
 
 L'écosystème Rust possède des crates de recherche opérationnelle de classe mondiale, souvent plus performantes que celles de la JVM grâce au contrôle de la mémoire.
 
-| Concept OptaPlanner (Java) | Équivalent HexaPlanner (Rust/Elixir) | Bibliothèques / Techniques |
+| Concept OptaPlanner (Java) | Équivalent HexaRail (Rust/Elixir) | Bibliothèques / Techniques |
 | :--- | :--- | :--- |
 | **Local Search** (Hill Climbing, Tabu Search, Simulated Annealing, Late Acceptance) | Métaheuristiques Rust | La crate **`localsearch`** (hautement parallélisée) ou **`RapidSolve`**. Pour les problèmes de routage (VRP), les crates **`vrp-core`** et **`u-routing`** offrent l'état de l'art (ALNS - Adaptive Large Neighborhood Search). |
 | **Construction Heuristics** (First Fit Decreasing, etc.) | Implémentations natives Rust | Heuristiques gloutonnes (Greedy) implémentées directement en Rust. |
@@ -45,7 +45,7 @@ L'écosystème Rust possède des crates de recherche opérationnelle de classe m
 
 ## 4. Fonctionnalités Avancées (Advanced Features)
 
-| Concept OptaPlanner (Java) | Équivalent HexaPlanner (Rust/Elixir) | Bibliothèques / Techniques |
+| Concept OptaPlanner (Java) | Équivalent HexaRail (Rust/Elixir) | Bibliothèques / Techniques |
 | :--- | :--- | :--- |
 | **Continuous Planning / Windowing** | NIF Mutable (Rustler) | Maintien de l'état Rust en mémoire ("Dirty NIF" ou processus OS lié). Elixir envoie un message pour "glisser la fenêtre" (décaler le temps), le moteur Rust libère la mémoire ancienne et continue. |
 | **Real-time Planning** (Problem Fact Changes) | Actor Model Message Passing | Le `GenServer` Elixir reçoit un événement temps-réel (ex: "Machine en panne"). Il suspend le NIF Rust via un `AtomicBool` partagé, injecte le delta, et relance la recherche. Beaucoup plus robuste que les `ProblemFactChange` de Java. |
@@ -58,7 +58,7 @@ L'écosystème Rust possède des crates de recherche opérationnelle de classe m
 
 La transition de Java (Spring/Quarkus) vers Elixir (OTP) est le changement de paradigme le plus massif, offrant une résilience (Let it crash) introuvable sur la JVM.
 
-| Concept OptaPlanner (Java) | Équivalent HexaPlanner (Rust/Elixir) | Bibliothèques / Techniques |
+| Concept OptaPlanner (Java) | Équivalent HexaRail (Rust/Elixir) | Bibliothèques / Techniques |
 | :--- | :--- | :--- |
 | **SolverManager** (Thread Pool) | **Oban + GenServer** | Au lieu d'un pool de threads en RAM (qui se perd si le serveur crashe), **Oban** gère les files d'attente d'optimisation persistées dans Postgres. Chaque résolution est un **`GenServer`** (processus léger) : l'échec de l'un n'impacte pas les autres. |
 | **Quarkus / Spring Boot Integration** | **Phoenix Framework** | API REST/GraphQL et WebSockets gérés par **Phoenix**. Temps de réponse sous la milliseconde. |

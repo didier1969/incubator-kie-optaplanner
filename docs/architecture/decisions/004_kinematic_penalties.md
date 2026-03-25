@@ -1,7 +1,7 @@
 # ADR 004: Kinematic Penalties & Inertia Modeling in A* Routing (Phase 5)
 
 ## Context
-Dans les phases précédentes, l'algorithme A* de HexaPlanner (implémenté en Rust) opérait sur la micro-topologie (Scénario D) en calculant le chemin le plus court basé exclusivement sur la distance (Edge Weight). Cette approche s'est révélée insuffisante pour une modélisation ferroviaire haute-fidélité : un train de marchandises lourd et un TGV léger ne réagissent pas de la même manière face à des aiguillages serrés qui requièrent un freinage d'approche et une lente ré-accélération. 
+Dans les phases précédentes, l'algorithme A* de HexaRail (implémenté en Rust) opérait sur la micro-topologie (Scénario D) en calculant le chemin le plus court basé exclusivement sur la distance (Edge Weight). Cette approche s'est révélée insuffisante pour une modélisation ferroviaire haute-fidélité : un train de marchandises lourd et un TGV léger ne réagissent pas de la même manière face à des aiguillages serrés qui requièrent un freinage d'approche et une lente ré-accélération. 
 
 Sans cette modélisation physique (Inertie), le solveur (et par extension les métaheuristiques de type Tabu Search) allouait de manière irréaliste des trajectoires hachées à des trains lourds, causant de potentiels faux-positifs dans les horaires du jumeau numérique.
 
@@ -19,4 +19,4 @@ Cette décision garantit que l'algorithme privilégiera toujours une trajectoire
 ## Consequences
 - Le solveur a désormais la capacité de déterminer si une perturbation d'horaire est physiquement rattrapable ou non en fonction du poids du train.
 - Temps de calcul de l'algorithme : impacté négligeablement (calculs en $O(1)$ dans la boucle de l'A*).
-- Validation TDD : Test `HexaPlanner.KinematicsTest` au vert, certifiant mathématiquement que le convoi de Fret met plus de temps que le TGV sur la même topologie d'aiguillages.
+- Validation TDD : Test `HexaRail.KinematicsTest` au vert, certifiant mathématiquement que le convoi de Fret met plus de temps que le TGV sur la même topologie d'aiguillages.

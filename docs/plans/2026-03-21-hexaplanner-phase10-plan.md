@@ -1,4 +1,4 @@
-# HexaPlanner Phase 10 Implementation Plan: Open Data Downloader & Parser
+# HexaRail Phase 10 Implementation Plan: Open Data Downloader & Parser
 
 > **For Claude/Gemini:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
@@ -13,20 +13,20 @@
 ### Task 1: Implement the HTTP Downloader Module
 
 **Files:**
-- Create: `hexaplanner/lib/hexaplanner/data/downloader.ex`
-- Create: `hexaplanner/test/data/downloader_test.exs`
+- Create: `hexarail/lib/hexarail/data/downloader.ex`
+- Create: `hexarail/test/data/downloader_test.exs`
 
 **Step 1: Write the failing test**
-Create `hexaplanner/test/data/downloader_test.exs`:
+Create `hexarail/test/data/downloader_test.exs`:
 ```elixir
-defmodule HexaPlanner.Data.DownloaderTest do
+defmodule HexaRail.Data.DownloaderTest do
   use ExUnit.Case
 
   test "downloads SBB GeoJSON with a limit parameter" do
     url = "https://data.sbb.ch/api/explore/v2.1/catalog/datasets/linie-mit-polygon/exports/geojson"
     
     # We fetch just 1 record to avoid massive downloads in tests
-    assert {:ok, geojson} = HexaPlanner.Data.Downloader.fetch_geojson(url, limit: 1)
+    assert {:ok, geojson} = HexaRail.Data.Downloader.fetch_geojson(url, limit: 1)
     
     assert geojson["type"] == "FeatureCollection"
     assert length(geojson["features"]) == 1
@@ -35,13 +35,13 @@ end
 ```
 
 **Step 2: Run test to verify it fails**
-Run: `nix develop -c bash -c "cd hexaplanner && mix test test/data/downloader_test.exs"`
+Run: `nix develop -c bash -c "cd hexarail && mix test test/data/downloader_test.exs"`
 Expected: FAIL (Undefined module)
 
 **Step 3: Write minimal implementation**
 Implement `Downloader.ex` using `Req`.
 ```elixir
-defmodule HexaPlanner.Data.Downloader do
+defmodule HexaRail.Data.Downloader do
   @moduledoc """
   Handles fetching large datasets from Open Data portals.
   """
@@ -70,12 +70,12 @@ end
 ```
 
 **Step 4: Run test to verify it passes**
-Run: `nix develop -c bash -c "cd hexaplanner && mix test test/data/downloader_test.exs"`
+Run: `nix develop -c bash -c "cd hexarail && mix test test/data/downloader_test.exs"`
 Expected: PASS
 
 **Step 5: Commit**
 ```bash
-git add hexaplanner/
+git add hexarail/
 git commit -m "feat(data): implement HTTP downloader for SBB Open Data GeoJSON"
 ```
 
@@ -84,13 +84,13 @@ git commit -m "feat(data): implement HTTP downloader for SBB Open Data GeoJSON"
 ### Task 2: Create the Track Segment Parser
 
 **Files:**
-- Create: `hexaplanner/lib/hexaplanner/data/parser.ex`
-- Create: `hexaplanner/test/data/parser_test.exs`
+- Create: `hexarail/lib/hexarail/data/parser.ex`
+- Create: `hexarail/test/data/parser_test.exs`
 
 **Step 1: Write the failing test**
-Create `hexaplanner/test/data/parser_test.exs` to extract physical tracks from the GeoJSON.
+Create `hexarail/test/data/parser_test.exs` to extract physical tracks from the GeoJSON.
 ```elixir
-defmodule HexaPlanner.Data.ParserTest do
+defmodule HexaRail.Data.ParserTest do
   use ExUnit.Case
 
   test "extracts track segments from GeoJSON" do
@@ -108,7 +108,7 @@ defmodule HexaPlanner.Data.ParserTest do
       ]
     }
 
-    segments = HexaPlanner.Data.Parser.extract_segments(geojson)
+    segments = HexaRail.Data.Parser.extract_segments(geojson)
     assert length(segments) == 1
     
     segment = hd(segments)
@@ -120,13 +120,13 @@ end
 ```
 
 **Step 2: Run test to verify it fails**
-Run: `nix develop -c bash -c "cd hexaplanner && mix test test/data/parser_test.exs"`
+Run: `nix develop -c bash -c "cd hexarail && mix test test/data/parser_test.exs"`
 Expected: FAIL
 
 **Step 3: Write minimal implementation**
 We extract the *first and last* coordinate of a `LineString` to define the segment bounds.
 ```elixir
-defmodule HexaPlanner.Data.Parser do
+defmodule HexaRail.Data.Parser do
   @moduledoc """
   Parses raw Open Data JSON into Elixir structs.
   """
@@ -160,11 +160,11 @@ end
 ```
 
 **Step 4: Run test to verify it passes**
-Run: `nix develop -c bash -c "cd hexaplanner && mix test test/data/parser_test.exs"`
+Run: `nix develop -c bash -c "cd hexarail && mix test test/data/parser_test.exs"`
 Expected: PASS
 
 **Step 5: Commit**
 ```bash
-git add hexaplanner/
+git add hexarail/
 git commit -m "feat(data): implement GeoJSON parser to extract physical track segments"
 ```

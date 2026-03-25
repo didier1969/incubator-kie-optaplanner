@@ -2,7 +2,7 @@
 
 **À l'attention de :** Chief Information Security Officer (CISO) & Head of DevSecOps  
 **Date :** 21 Mars 2026  
-**Projet :** HexaPlanner - Jumeau Numérique Industriel  
+**Projet :** HexaRail - Jumeau Numérique Industriel  
 **Objectif :** Garantir que le moteur, la chaîne d'approvisionnement logicielle et l'environnement d'exécution sont inattaquables par conception (Secure by Design).
 
 ## Contexte
@@ -25,4 +25,4 @@ Nous développons un logiciel qui va planifier des réseaux ferroviaires nationa
 4. **Gestion des Secrets et Conformité :**
    - Stratégie Zero-Trust pour la gestion des accès à la base de données et aux environnements de simulation.
 
-**Livrable attendu :** La Politique de Sécurité Applicative de HexaPlanner, incluant la matrice des menaces (Threat Model) sur l'architecture hybride et les barrières DevSecOps obligatoires.
+**Livrable attendu :** La Politique de Sécurité Applicative de HexaRail, incluant la matrice des menaces (Threat Model) sur l'architecture hybride et les barrières DevSecOps obligatoires.
