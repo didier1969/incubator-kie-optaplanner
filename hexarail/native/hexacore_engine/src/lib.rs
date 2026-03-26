@@ -302,6 +302,22 @@ fn load_dem(
 }
 
 #[rustler::nif]
+fn load_perturbations(
+    resource: ResourceArc<NetworkResource>,
+    perturbations: Vec<domain::Perturbation>,
+) -> Atom {
+    let mut manager = resource.manager.write().unwrap();
+    manager.load_perturbations(perturbations);
+    atoms::ok()
+}
+
+#[rustler::nif]
+fn get_system_health(resource: ResourceArc<NetworkResource>) -> domain::SystemHealth {
+    let manager = resource.manager.read().unwrap();
+    manager.calculate_health()
+}
+
+#[rustler::nif]
 fn finalize_temporal_graph(resource: ResourceArc<NetworkResource>) -> usize {
     let mut manager = resource.manager.write().unwrap();
     manager.finalize_temporal_graph()

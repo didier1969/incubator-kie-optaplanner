@@ -15,6 +15,9 @@ defmodule HexaRail.RailwayNif do
   defdelegate load_calendar_dates(resource, dates), to: Nif
   defdelegate load_fleet(resource, profiles), to: Nif
   defdelegate load_tracks(resource, tracks), to: Nif
+  defdelegate load_dem(resource, dem_grid), to: Nif
+  defdelegate load_perturbations(resource, perturbations), to: Nif
+  defdelegate get_system_health(resource), to: Nif
 
   defdelegate load_osm_from_json(resource, path), to: Nif
   defdelegate load_osm(resource, nodes, ways), to: Nif

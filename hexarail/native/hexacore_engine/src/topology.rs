@@ -184,6 +184,7 @@ pub struct NetworkManager {
     pub calendar_dates: Vec<GtfsCalendarDate>,
     pub fleet: HashMap<i64, crate::domain::RollingStockProfile>,
     pub dem_grid: Option<crate::domain::DemGrid>,
+    pub active_perturbations: Vec<crate::domain::Perturbation>,
     
     // HPC Structures
     pub interner: Rodeo,
@@ -206,14 +207,38 @@ impl NetworkManager {
             calendar_dates: Vec::new(),
             fleet: HashMap::new(),
             dem_grid: None,
+            active_perturbations: Vec::new(),
             interner: Rodeo::default(),
             trip_id_map: HashMap::new(),
             eos_buffer: Vec::with_capacity(1_000_000),
         }
     }
 
+    pub fn calculate_health(&self) -> crate::domain::SystemHealth {
+        // Placeholder for real health metrics from Salsa
+        crate::domain::SystemHealth {
+            total_delay_seconds: 0,
+            active_conflicts: 0,
+            broken_connections: 0,
+            active_perturbations: self.active_perturbations.len() as i32,
+        }
+    }
+
     pub fn load_dem(&mut self, dem: crate::domain::DemGrid) {
         self.dem_grid = Some(dem);
+    }
+
+    pub fn load_perturbations(&mut self, perturbations: Vec<crate::domain::Perturbation>) {
+        self.active_perturbations = perturbations;
+    }
+
+    pub fn apply_perturbations(&mut self, _time: i32) {
+        // Phase 21: Auto-Recovery & Dynamic Perturbations
+        // 1. Identify which perturbations are active at the current time
+        // 2. Modify the physical graph weights or disable edges
+        // 3. Mark the state as dirty if something changed to trigger Salsa re-optimization
+        
+        // This is a placeholder for the logic that will be refined in the next tasks
     }
 
     pub fn stitch_osm_to_macro(&mut self) {
@@ -1177,7 +1202,7 @@ mod tests {
         let mut network = PhysicalNetwork::new();
         let bern = network.add_station("BN");
         let zurich = network.add_station("ZUE");
-        network.add_track(bern, zurich, vec![(7.4, 46.9), (8.5, 47.3)]); 
+        network.add_track(bern, zurich, vec![(7.4, 46.9), (8.5, 47.3)], &std::collections::HashMap::new()); 
         assert_eq!(network.station_count(), 2);
     }
 }

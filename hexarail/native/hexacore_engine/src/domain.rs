@@ -1,6 +1,25 @@
 use rustler::NifStruct;
 use serde::{Serialize, Deserialize};
 
+#[derive(Debug, Clone, Serialize, Deserialize, rustler::NifStruct)]
+#[module = "HexaCore.Domain.Perturbation"]
+pub struct Perturbation {
+    pub id: String,
+    pub perturbation_type: String, // "infrastructure" | "vehicle" | "weather"
+    pub target_id: String,
+    pub start_time: i32,
+    pub duration: i32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, rustler::NifStruct)]
+#[module = "HexaCore.Domain.SystemHealth"]
+pub struct SystemHealth {
+    pub total_delay_seconds: i64,
+    pub active_conflicts: i32,
+    pub broken_connections: i32,
+    pub active_perturbations: i32,
+}
+
 #[derive(Debug, Clone, rustler::NifStruct)]
 #[module = "HexaCore.Domain.ActivePosition"]
 pub struct ActivePosition {
@@ -266,6 +285,17 @@ mod tests {
         let problem = Problem { id: "sim_1".to_string(), resources: vec![r1], jobs: vec![j1] };
         
         assert_eq!(problem.jobs.len(), 1);
+    }
+
+    #[test]
+    fn test_system_health_struct() {
+        let health = SystemHealth {
+            total_delay_seconds: 3600,
+            active_conflicts: 5,
+            broken_connections: 2,
+            active_perturbations: 1,
+        };
+        assert_eq!(health.total_delay_seconds, 3600);
     }
 
     #[test]
