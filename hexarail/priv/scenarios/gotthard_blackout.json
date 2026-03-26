@@ -1,0 +1,13 @@
+{
+  "name": "Gotthard Base Tunnel Blackout",
+  "description": "Simulates a massive power failure blocking the main North-South transit artery. All trains must be rerouted via the historic mountain route.",
+  "perturbations": [
+    {
+      "id": "p_gotthard_1",
+      "perturbation_type": "infrastructure",
+      "target_id": "8505000-8505300", 
+      "start_time": 28800,
+      "duration": 14400
+    }
+  ]
+}
