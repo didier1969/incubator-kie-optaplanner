@@ -119,8 +119,7 @@ defmodule HexaRail.GTFS.Importer do
     |> Stream.chunk_every(5000)
     |> Enum.each(fn chunk ->
       Repo.insert_all(Trip, chunk,
-        on_conflict: :replace_all,
-        conflict_target: :original_trip_id,
+        on_conflict: :nothing,
         log: false
       )
 
@@ -290,15 +289,20 @@ defmodule HexaRail.GTFS.Importer do
       IO.write(".")
     end)
 
-    # Resolve foreign keys via SQL
+    # Resolve foreign keys via SQL and inject smart defaults for waiting_tolerance_seconds
     Repo.query!(
       """
-        INSERT INTO gtfs_transfers (from_stop_id, to_stop_id, transfer_type, min_transfer_time, from_trip_id, to_trip_id, from_route_id, to_route_id)
+        INSERT INTO gtfs_transfers (from_stop_id, to_stop_id, transfer_type, min_transfer_time, waiting_tolerance_seconds, from_trip_id, to_trip_id, from_route_id, to_route_id)
         SELECT
           st_from.id,
           st_to.id,
           s.transfer_type,
           s.min_transfer_time,
+          CASE 
+            WHEN r_to.route_type IN (0, 1, 2, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 900) THEN 120 -- Train waits 2 mins
+            WHEN r_to.route_type IN (3, 700, 701, 702, 703, 704, 705, 715) THEN 300 -- Bus waits 5 mins
+            ELSE 0
+          END as waiting_tolerance_seconds,
           tr_from.id,
           tr_to.id,
           r_from.id,
