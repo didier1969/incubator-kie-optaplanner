@@ -18,7 +18,7 @@ use std::io::{BufReader, BufWriter};
 
 /// Represents the physical layer: rails and stations.
 pub struct PhysicalNetwork {
-    pub graph: UnGraph<String, (Vec<(f64, f64)>, f64)>, // Node: Station ID, Edge: (Curve Coordinates, Length in meters)
+    pub graph: UnGraph<String, (Vec<(f64, f64)>, f64, f64)>, // Node: Station ID, Edge: (Curve Coordinates, Length in meters, Max Speed km/h)
     pub station_map: HashMap<String, NodeIndex>,
     pub all_tracks: Vec<TrackSegment>,
     pub spatial_index: KdTree<f64, usize, [f64; 2]>, // Maps [lon, lat] -> Index in all_tracks
@@ -768,40 +768,89 @@ impl NetworkManager {
 
                 let duration = to.arrival_time - from.departure_time;
                 if duration <= 0 { return Some((from_stop.location.coordinates.0, from_stop.location.coordinates.1, from_stop.location.coordinates.0, from_stop.location.coordinates.1, 400.0, 0.0, 0.0, 0.0, 0.0)); }
-                let progress = f64::from(time - from.departure_time) / f64::from(duration);
 
-                // 1. Resolve exact physical path geometry
-                let mut coords = self.physical.find_path_coordinates(from_abbr, to_abbr);
+                // 1. Resolve exact physical path geometry & maxspeed
+                let path_res = self.physical.find_path_coordinates(from_abbr, to_abbr);
                 
-                // If path fails, use KD-Tree snapping on linear interpolation
-                if coords.is_none() {
-                    let linear_lon = from_stop.location.coordinates.0 + (to_stop.location.coordinates.0 - from_stop.location.coordinates.0) * progress;
-                    let linear_lat = from_stop.location.coordinates.1 + (to_stop.location.coordinates.1 - from_stop.location.coordinates.1) * progress;
-                    
-                    if let Ok(nearest) = self.physical.spatial_index.nearest(&[linear_lon, linear_lat], 1, &squared_euclidean) {
-                        if let Some(&(_, &track_idx)) = nearest.first() {
-                            if let Some(track) = self.physical.all_tracks.get(track_idx) {
-                                coords = Some(track.coordinates.clone());
-                            }
-                        }
+                let (coords, track_maxspeed) = if let Some((c, m)) = path_res {
+                    (c, m)
+                } else {
+                    // Quick fallback to avoid panics. Assume standard maxspeed if missing.
+                    (vec![from_stop.location.coordinates, to_stop.location.coordinates], 120.0)
+                };
+                
+                // Calculate total distance of the segment for Kinematics
+                let mut d_total = 0.0;
+                if coords.len() > 1 {
+                    for w in coords.windows(2) {
+                        d_total += haversine_distance(w[0].0, w[0].1, w[1].0, w[1].1);
                     }
                 }
+                if d_total == 0.0 { d_total = 1.0; }
 
-                let coords = coords.unwrap_or_else(|| vec![from_stop.location.coordinates, to_stop.location.coordinates]);
+                // --- 3-PHASE KINEMATICS (NEWTONIAN SOLVER) WITH SPEED CLAMPING ---
+                let t_elapsed = f64::from(time - from.departure_time);
+                let t_total = f64::from(duration);
+                
+                // Real absolute physical limit
+                let phys_max_kmh = track_maxspeed.min(base_speed) * speed_multiplier;
+                let phys_max_ms = phys_max_kmh / 3.6;
+                
+                // Read DEM elevations for start and end to get average slope
+                let get_alt = |lon: f64, lat: f64| -> f64 {
+                    self.dem_grid.as_ref().map_or(400.0, |g| g.get_elevation(lon, lat))
+                };
+                
+                let start_alt = get_alt(from_stop.location.coordinates.0, from_stop.location.coordinates.1);
+                let end_alt = get_alt(to_stop.location.coordinates.0, to_stop.location.coordinates.1);
+                let avg_pitch = if d_total > 0.0 { (end_alt - start_alt).atan2(d_total) } else { 0.0 };
+                
+                // Effective Acceleration = Base_Accel - Gravity_Component
+                let base_accel = 0.8; // m/s^2
+                let g = 9.81;
+                let mut a_eff = base_accel - g * avg_pitch.sin();
+                a_eff = a_eff.clamp(0.2, 1.5); // Bound safety
+                
+                let t_norm = t_elapsed / t_total;
+                // Standard smoothstep
+                let mut progress = t_norm * t_norm * (3.0 - 2.0 * t_norm);
+                
+                // Apply kinematic skew
+                if a_eff < base_accel {
+                    progress = progress.powf(1.1);
+                } else if a_eff > base_accel {
+                    progress = progress.powf(0.9);
+                }
+
+                // Calculate required distance based on theoretical schedule
+                let required_distance = progress * d_total;
+                
+                // Calculate physical maximum distance the train COULD have traveled
+                let max_possible_distance = t_elapsed * phys_max_ms;
+                
+                // Apply the Clamp! If the schedule requires the train to break the laws of physics,
+                // it is physically delayed.
+                let actual_distance = required_distance.min(max_possible_distance);
+                
+                // Recalculate true progress and velocity
+                progress = actual_distance / d_total;
+                
+                // Instantaneous velocity (derivative of required progress * d_total)
+                let mut inst_velocity_ms = (6.0 * t_norm * (1.0 - t_norm) / t_total) * d_total;
+                
+                // If it's hitting the clamp, it's driving at V_max
+                if required_distance > max_possible_distance {
+                    inst_velocity_ms = phys_max_ms;
+                }
+                
+                let final_velocity = inst_velocity_ms * 3.6; // to km/h
 
                 // 2. Interpolate 3D position (Head)
                 let p1 = Self::interpolate_on_curve(&coords, progress);
-                
-                // Procedural Elevation Simulation (Placeholder for SwissALTI3D)
-                // We use a wave based on longitude to simulate the Swiss Plateau vs Alps
-                let get_alt = |lon: f64, lat: f64| -> f64 {
-                    400.0 + (lon * 10.0).sin() * 200.0 + (lat * 5.0).cos() * 100.0
-                };
-                
                 let final_alt = get_alt(p1.0, p1.1);
 
-                // 3. Orientation via Tangent calculation (Step-ahead sampling)
-                let step = 0.001; // ~10-50m ahead
+                // 3. Orientation via Tangent calculation
+                let step = 0.001; 
                 let p2 = Self::interpolate_on_curve(&coords, (progress + step).min(1.0));
                 let next_alt = get_alt(p2.0, p2.1);
 
@@ -818,21 +867,18 @@ impl NetworkManager {
                 let delta_h = (h2 - heading).to_radians();
                 let roll = if dist > 0.0 {
                     let radius = dist / delta_h.abs().max(0.00001);
-                    let v = velocity / 3.6; // m/s
-                    (v * v / (9.81 * radius)).atan().to_degrees() * delta_h.signum()
+                    let v = inst_velocity_ms;
+                    (v * v / (g * radius)).atan().to_degrees() * delta_h.signum()
                 } else { 0.0 };
 
                 // 4. Calculate Tail Position (Serpent rendering)
-                // We go backwards along the curve by the train's length
-                // 1 degree lat/lon is roughly 111km. So 1 meter is ~ 0.000009 degrees.
-                // We calculate a tail progress based on train length over total segment length
-                let total_path_len = if dist > 0.0 { dist / step } else { 1.0 }; // Rough estimate of total path
+                let total_path_len = d_total;
                 let tail_offset_progress = if total_path_len > 0.0 { train_len / total_path_len } else { 0.0 };
                 let tail_progress = (progress - tail_offset_progress).max(0.0);
                 
                 let p_tail = Self::interpolate_on_curve(&coords, tail_progress);
 
-                return Some((p1.0, p1.1, p_tail.0, p_tail.1, final_alt, heading, pitch, roll, velocity));
+                return Some((p1.0, p1.1, p_tail.0, p_tail.1, final_alt, heading, pitch, roll, final_velocity));
             }
         }
 

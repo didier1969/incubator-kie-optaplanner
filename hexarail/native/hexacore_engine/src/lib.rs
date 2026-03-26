@@ -275,13 +275,23 @@ fn get_train_position(
     manager.get_position(trip_id, time)
 }
 
-#[rustler::nif]
+#[rustler::nif(schedule = "DirtyCpu")]
 fn get_active_positions(
     resource: ResourceArc<NetworkResource>,
     time: i32,
 ) -> Vec<domain::ActivePosition> {
     let manager = resource.manager.read().unwrap();
     manager.get_active_positions(time)
+}
+
+#[rustler::nif]
+fn load_dem(
+    resource: ResourceArc<NetworkResource>,
+    dem: domain::DemGrid,
+) -> Atom {
+    let mut manager = resource.manager.write().unwrap();
+    manager.load_dem(dem);
+    atoms::ok()
 }
 
 #[rustler::nif]
