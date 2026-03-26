@@ -51,14 +51,16 @@ defmodule HexaRail.Simulation.Engine do
     if File.dir?(osm_dir) do
       Path.wildcard(Path.join(osm_dir, "*_micro.json"))
       |> Enum.each(fn file ->
-        {nodes, ways} = HexaRail.Data.OsmParser.parse_file(file)
-        mapped_nodes = Enum.map(nodes, fn n -> %{n | __struct__: HexaRail.Domain.OsmNode} end)
-        mapped_ways = Enum.map(ways, fn w -> %{w | __struct__: HexaRail.Domain.OsmWay} end)
-        RailwayNif.load_osm(resource, mapped_nodes, mapped_ways)
+        # Use Rust to parse the large JSON directly
+        case RailwayNif.load_osm_from_json(resource, file) do
+          {:ok, _} -> :ok
+          _ -> :error
+        end
       end)
       RailwayNif.stitch_osm_to_macro(resource)
     end
     report_progress(40, "Micro-Topology (OSM) Stitched to Hubs")
+    :erlang.garbage_collect()
 
     # 4. StopTimes & STIG Matrix
     snapshot_path = Path.join([:code.priv_dir(:hexarail), "data", "stig_snapshot.bin"])
@@ -114,6 +116,7 @@ defmodule HexaRail.Simulation.Engine do
   end
 
   defp report_progress(percent, msg) do
+    Logger.info("[IGNITION] #{percent}% - #{msg}")
     PubSub.broadcast(HexaRail.PubSub, "simulation:switzerland", {:loading_progress, percent, msg})
     # Update internal state via cast
     GenServer.cast(__MODULE__, {:update_progress, percent, msg})
@@ -138,7 +141,17 @@ defmodule HexaRail.Simulation.Engine do
 
   def handle_info(:tick, %{status: :running, resource: resource, current_time: time} = state) do
     positions = RailwayNif.get_active_positions(resource, time)
-    PubSub.broadcast(HexaRail.PubSub, "simulation:switzerland", {:tick, time, positions})
+    Logger.info("[TICK] Time: #{time} | Active Trains: #{length(positions)}")
+    
+    # Binary Payload: [trip_id:32, head_lon:32f, head_lat:32f, tail_lon:32f, tail_lat:32f, alt:32f, heading:16i, pitch:16i, roll:16i, speed:16u] = 32 bytes
+    binary_payload = 
+      for pos <- positions, into: <<>> do
+        <<pos.trip_id::32, pos.head_lon::32-float, pos.head_lat::32-float, pos.tail_lon::32-float, pos.tail_lat::32-float, pos.alt::32-float, round(pos.heading)::signed-16, round(pos.pitch)::signed-16, round(pos.roll)::signed-16, round(pos.velocity)::16>>
+      end
+
+    b64_payload = Base.encode64(binary_payload)
+    PubSub.broadcast(HexaRail.PubSub, "simulation:switzerland", {:tick_binary, time, b64_payload})
+    
     new_time = if time + @time_dilation >= 86400, do: 0, else: time + @time_dilation
     Process.send_after(self(), :tick, @tick_interval_ms)
     {:noreply, %{state | current_time: new_time}}

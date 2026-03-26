@@ -16,6 +16,7 @@ defmodule HexaRail.RailwayNif do
   defdelegate load_fleet(resource, profiles), to: Nif
   defdelegate load_tracks(resource, tracks), to: Nif
 
+  defdelegate load_osm_from_json(resource, path), to: Nif
   defdelegate load_osm(resource, nodes, ways), to: Nif
   defdelegate route_micro_path(resource, start_id, end_id), to: Nif
   defdelegate route_micro_path_with_kinematics(resource, start_id, end_id, fleet_id), to: Nif

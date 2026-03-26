@@ -46,6 +46,18 @@ defmodule HexaRailWeb.TwinLive do
     {:noreply, assign(socket, status: :running)}
   end
 
+  def handle_info({:tick_binary, time_sec, binary_payload}, socket) do
+    time_str = format_time(time_sec)
+    active_count = div(byte_size(binary_payload), 20)
+
+    socket = 
+      socket
+      |> assign(current_time: time_str, active_count: active_count, status: :running)
+      |> push_event("update_trains_binary", %{data: binary_payload})
+
+    {:noreply, socket}
+  end
+
   def handle_info({:tick, time_sec, positions}, socket) do
     time_str = format_time(time_sec)
     json_positions = Enum.map(positions, fn {id, lon, lat} -> [id, lon, lat] end)

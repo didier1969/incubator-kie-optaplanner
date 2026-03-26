@@ -180,6 +180,7 @@ pub struct NetworkManager {
     pub calendars: HashMap<String, GtfsCalendar>,
     pub calendar_dates: Vec<GtfsCalendarDate>,
     pub fleet: HashMap<i64, crate::domain::RollingStockProfile>,
+    pub dem_grid: Option<crate::domain::DemGrid>,
     
     // HPC Structures
     pub interner: Rodeo,
@@ -201,10 +202,15 @@ impl NetworkManager {
             calendars: HashMap::new(),
             calendar_dates: Vec::new(),
             fleet: HashMap::new(),
+            dem_grid: None,
             interner: Rodeo::default(),
             trip_id_map: HashMap::new(),
             eos_buffer: Vec::with_capacity(1_000_000),
         }
+    }
+
+    pub fn load_dem(&mut self, dem: crate::domain::DemGrid) {
+        self.dem_grid = Some(dem);
     }
 
     pub fn stitch_osm_to_macro(&mut self) {
@@ -695,9 +701,7 @@ impl NetworkManager {
     }
 
     #[must_use]
-    pub fn get_active_positions(&self, time: i32) -> Vec<(i64, f64, f64)> {
-        use rayon::prelude::*;
-        
+    pub fn get_active_positions(&self, time: i32) -> Vec<crate::domain::ActivePosition> {
         // Parallel map over all trips to find active ones
         self.stop_times
             .par_iter()
@@ -710,12 +714,22 @@ impl NetworkManager {
                     return None;
                 }
 
-                if let Some((lon, lat)) = self.get_position(trip_id, time) {
-                    // Prevent Rustler ArgumentError by stripping out any NaN or Infinity that might have leaked from Bad Data
-                    if lon.is_nan() || lat.is_nan() || lon.is_infinite() || lat.is_infinite() {
+                if let Some((head_lon, head_lat, tail_lon, tail_lat, alt, heading, pitch, roll, velocity)) = self.get_position_3d(trip_id, time) {
+                    if head_lon.is_nan() || head_lat.is_nan() || tail_lon.is_nan() || tail_lat.is_nan() {
                         None
                     } else {
-                        Some((trip_id, lon, lat))
+                        Some(crate::domain::ActivePosition {
+                            trip_id,
+                            head_lon,
+                            head_lat,
+                            tail_lon,
+                            tail_lat,
+                            alt,
+                            heading,
+                            pitch,
+                            roll,
+                            velocity,
+                        })
                     }
                 } else {
                     None
@@ -725,9 +739,21 @@ impl NetworkManager {
     }
 
     #[must_use]
-    pub fn get_position(&self, trip_id: i64, time: i32) -> Option<(f64, f64)> {
+    pub fn get_position_3d(&self, trip_id: i64, time: i32) -> Option<(f64, f64, f64, f64, f64, f64, f64, f64, f64)> {
+        use kdtree::distance::squared_euclidean;
         let events = self.stop_times.get(&trip_id)?;
         if events.is_empty() { return None; }
+
+        let profile = self.fleet.get(&trip_id);
+        let train_len = profile.map_or(200.0, |p| p.length_meters);
+        let base_speed = profile.map_or(80.0, |p| p.max_speed_kmh);
+        
+        // Phase 19: Tilting capability increases curve speed
+        // If the train doesn't have the property, default to false (not tilting)
+        // Since we don't have is_tilting in the struct yet, we will just use a heuristic based on model name for now
+        let is_tilting = profile.map_or(false, |p| p.model.contains("ICN") || p.model.contains("Giruno") || p.model.contains("RABe 501"));
+        let speed_multiplier = if is_tilting { 1.2 } else { 1.0 };
+        let velocity = base_speed * speed_multiplier;
 
         for i in 0..events.len() - 1 {
             let from = &events[i];
@@ -740,38 +766,92 @@ impl NetworkManager {
                 let from_abbr = from_stop.abbreviation.as_ref().unwrap_or(&from_stop.original_stop_id);
                 let to_abbr = to_stop.abbreviation.as_ref().unwrap_or(&to_stop.original_stop_id);
 
-                if let Some(coords) = self.physical.find_path_coordinates(from_abbr, to_abbr) {
-                    let progress = f64::from(time - from.departure_time) / f64::from(to.arrival_time - from.departure_time);
-                    return Some(Self::interpolate_on_curve(&coords, progress));
-                }
-
-                // Fallback to KD-Tree Snapping to guarantee rail-following
                 let duration = to.arrival_time - from.departure_time;
-                if duration <= 0 { return Some(from_stop.location.coordinates); }
+                if duration <= 0 { return Some((from_stop.location.coordinates.0, from_stop.location.coordinates.1, from_stop.location.coordinates.0, from_stop.location.coordinates.1, 400.0, 0.0, 0.0, 0.0, 0.0)); }
                 let progress = f64::from(time - from.departure_time) / f64::from(duration);
+
+                // 1. Resolve exact physical path geometry
+                let mut coords = self.physical.find_path_coordinates(from_abbr, to_abbr);
                 
-                let lon = from_stop.location.coordinates.0 + (to_stop.location.coordinates.0 - from_stop.location.coordinates.0) * progress;
-                let lat = from_stop.location.coordinates.1 + (to_stop.location.coordinates.1 - from_stop.location.coordinates.1) * progress;
-                
-                if let Ok(nearest) = self.physical.spatial_index.nearest(&[lon, lat], 1, &squared_euclidean) {
-                    if let Some(&(_, &track_idx)) = nearest.first() {
-                        if let Some(track) = self.physical.all_tracks.get(track_idx) {
-                            return Some(Self::interpolate_on_curve(&track.coordinates, progress));
+                // If path fails, use KD-Tree snapping on linear interpolation
+                if coords.is_none() {
+                    let linear_lon = from_stop.location.coordinates.0 + (to_stop.location.coordinates.0 - from_stop.location.coordinates.0) * progress;
+                    let linear_lat = from_stop.location.coordinates.1 + (to_stop.location.coordinates.1 - from_stop.location.coordinates.1) * progress;
+                    
+                    if let Ok(nearest) = self.physical.spatial_index.nearest(&[linear_lon, linear_lat], 1, &squared_euclidean) {
+                        if let Some(&(_, &track_idx)) = nearest.first() {
+                            if let Some(track) = self.physical.all_tracks.get(track_idx) {
+                                coords = Some(track.coordinates.clone());
+                            }
                         }
                     }
                 }
+
+                let coords = coords.unwrap_or_else(|| vec![from_stop.location.coordinates, to_stop.location.coordinates]);
+
+                // 2. Interpolate 3D position (Head)
+                let p1 = Self::interpolate_on_curve(&coords, progress);
                 
-                return Some((lon, lat));
+                // Procedural Elevation Simulation (Placeholder for SwissALTI3D)
+                // We use a wave based on longitude to simulate the Swiss Plateau vs Alps
+                let get_alt = |lon: f64, lat: f64| -> f64 {
+                    400.0 + (lon * 10.0).sin() * 200.0 + (lat * 5.0).cos() * 100.0
+                };
+                
+                let final_alt = get_alt(p1.0, p1.1);
+
+                // 3. Orientation via Tangent calculation (Step-ahead sampling)
+                let step = 0.001; // ~10-50m ahead
+                let p2 = Self::interpolate_on_curve(&coords, (progress + step).min(1.0));
+                let next_alt = get_alt(p2.0, p2.1);
+
+                // Heading (Yaw)
+                let heading = (p2.0 - p1.0).atan2(p2.1 - p1.1).to_degrees();
+                
+                // Pitch (Grade)
+                let dist = haversine_distance(p1.0, p1.1, p2.0, p2.1);
+                let pitch = if dist > 0.0 { (next_alt - final_alt).atan2(dist).to_degrees() } else { 0.0 };
+                
+                // Roll (Cant / Centrifugal approximation)
+                let p3 = Self::interpolate_on_curve(&coords, (progress + step * 2.0).min(1.0));
+                let h2 = (p3.0 - p2.0).atan2(p3.1 - p2.1).to_degrees();
+                let delta_h = (h2 - heading).to_radians();
+                let roll = if dist > 0.0 {
+                    let radius = dist / delta_h.abs().max(0.00001);
+                    let v = velocity / 3.6; // m/s
+                    (v * v / (9.81 * radius)).atan().to_degrees() * delta_h.signum()
+                } else { 0.0 };
+
+                // 4. Calculate Tail Position (Serpent rendering)
+                // We go backwards along the curve by the train's length
+                // 1 degree lat/lon is roughly 111km. So 1 meter is ~ 0.000009 degrees.
+                // We calculate a tail progress based on train length over total segment length
+                let total_path_len = if dist > 0.0 { dist / step } else { 1.0 }; // Rough estimate of total path
+                let tail_offset_progress = if total_path_len > 0.0 { train_len / total_path_len } else { 0.0 };
+                let tail_progress = (progress - tail_offset_progress).max(0.0);
+                
+                let p_tail = Self::interpolate_on_curve(&coords, tail_progress);
+
+                return Some((p1.0, p1.1, p_tail.0, p_tail.1, final_alt, heading, pitch, roll, velocity));
             }
         }
 
+        // Standing at station
         for event in events {
             if time >= event.arrival_time && time <= event.departure_time {
                 let stop = self.stops.get(&event.stop_id)?;
-                return Some(stop.location.coordinates);
+                let (lon, lat) = stop.location.coordinates;
+                // At station, head and tail are roughly the same point for now (or could be offset by train_len)
+                let tail_lat = lat - (train_len / 111320.0);
+                return Some((lon, lat, lon, tail_lat, 400.0, 0.0, 0.0, 0.0, 0.0));
             }
         }
         None
+    }
+
+    #[must_use]
+    pub fn get_position(&self, trip_id: i64, time: i32) -> Option<(f64, f64)> {
+        self.get_position_3d(trip_id, time).map(|(lon, lat, _, _, _, _, _, _, _)| (lon, lat))
     }
 
     fn interpolate_on_curve(coords: &[(f64, f64)], progress: f64) -> (f64, f64) {
@@ -1054,4 +1134,3 @@ mod tests {
         assert_eq!(network.station_count(), 2);
     }
 }
-

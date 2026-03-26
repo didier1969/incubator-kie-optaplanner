@@ -40,13 +40,30 @@ defmodule Mix.Tasks.Data.LoadRust do
     RailwayNif.load_transfers(resource, transfers)
     Logger.info("✅ Transfers loaded.")
 
+    Logger.info("Filtering Domain: Rail Only (route_type 2, 100-109)...")
+    import Ecto.Query
+
+    rail_trip_ids = 
+      Repo.all(
+        from t in Trip,
+        join: r in HexaRail.GTFS.Route, on: t.route_id == r.original_route_id,
+        where: r.route_type == 2 or (r.route_type >= 100 and r.route_type <= 109),
+        select: t.id
+      )
+    
+    Logger.info("Found #{length(rail_trip_ids)} pure Rail trips.")
+
     Logger.info("Inferring and Loading Fleet Profiles (Rolling Stock)...")
     # We load trips in chunks to assign physical fleet properties
     Repo.transaction(fn ->
       Trip
+      |> where([t], t.id in ^rail_trip_ids)
       |> Repo.stream(max_rows: 50_000)
       |> Stream.chunk_every(50_000)
       |> Enum.each(fn chunk ->
+        # NEW: Load trips themselves to have block_id in Rust
+        RailwayNif.load_trips(resource, chunk)
+
         profiles_map = 
           chunk
           |> Enum.map(fn trip -> 
@@ -81,24 +98,27 @@ defmodule Mix.Tasks.Data.LoadRust do
     if File.dir?(osm_dir) do
       osm_files = Path.wildcard(Path.join(osm_dir, "*_micro.json"))
       Enum.each(osm_files, fn file ->
-        {nodes, ways} = HexaRail.Data.OsmParser.parse_file(file)
-        mapped_nodes = Enum.map(nodes, fn n -> %{n | __struct__: HexaRail.Domain.OsmNode} end)
-        mapped_ways = Enum.map(ways, fn w -> %{w | __struct__: HexaRail.Domain.OsmWay} end)
-        RailwayNif.load_osm(resource, mapped_nodes, mapped_ways)
+        case RailwayNif.load_osm_from_json(resource, file) do
+          {:ok, _} -> :ok
+          _ -> :error
+        end
       end)
       Logger.info("Stitching OSM Micro-Topology to GeoJSON Macro-Topology...")
       RailwayNif.stitch_osm_to_macro(resource)
       Logger.info("✅ Micro-topology loaded and stitched.")
     end
 
-    Logger.info("Loading 100% of Stop Times into Rust (~19 Million rows)...")
+    Logger.info("Loading Rail Stop Times into Rust...")
     # Stream in chunks to avoid BEAM memory spikes
     Repo.transaction(fn ->
       StopTime
+      |> where([st], st.trip_id in ^rail_trip_ids)
       |> Repo.stream(max_rows: 50_000)
       |> Stream.chunk_every(50_000)
-      |> Enum.each(fn chunk ->
+      |> Stream.with_index()
+      |> Enum.each(fn {chunk, index} ->
         RailwayNif.load_stop_times(resource, chunk)
+        if rem(index, 10) == 0, do: IO.write("#{index * 50_000} ")
         IO.write(".")
       end)
     end, timeout: :infinity)
@@ -107,9 +127,11 @@ defmodule Mix.Tasks.Data.LoadRust do
     edge_count = RailwayNif.finalize_temporal_graph(resource)
     Logger.info("✅ All data loaded. STIG contains #{edge_count} edges.")
 
-    Logger.info("Detecting Spatio-Temporal Conflicts (Sweep-Line)...")
-    summary = RailwayNif.detect_conflicts(resource)
-    Logger.info("⚠️ Detected #{summary.total_conflicts} physical collisions (including headway violations) in the baseline schedule.")
+    # Save snapshot for fast engine startup
+    snapshot_path = Path.join([:code.priv_dir(:hexarail), "data", "stig_snapshot.bin"])
+    File.mkdir_p!(Path.dirname(snapshot_path))
+    Logger.info("Freezing STIG state to #{snapshot_path}...")
+    RailwayNif.freeze_state(resource, snapshot_path)
     
     # Measure memory (approximate)
     :erlang.garbage_collect()

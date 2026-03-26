@@ -23,6 +23,7 @@
             gcc
             unzip
             tippecanoe
+            gdal
             (postgresql_15.withPackages (p: [ p.postgis ]))
           ];
 

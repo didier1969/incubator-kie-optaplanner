@@ -1,6 +1,67 @@
 use rustler::NifStruct;
 use serde::{Serialize, Deserialize};
 
+#[derive(Debug, Clone, rustler::NifStruct)]
+#[module = "HexaCore.Domain.ActivePosition"]
+pub struct ActivePosition {
+    pub trip_id: i64,
+    pub head_lon: f64,
+    pub head_lat: f64,
+    pub tail_lon: f64,
+    pub tail_lat: f64,
+    pub alt: f64,
+    pub heading: f64,
+    pub pitch: f64,
+    pub roll: f64,
+    pub velocity: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DemGrid {
+    pub lat_min: f64,
+    pub lat_max: f64,
+    pub lon_min: f64,
+    pub lon_max: f64,
+    pub lat_steps: usize,
+    pub lon_steps: usize,
+    pub elevations: Vec<f32>,
+}
+
+impl DemGrid {
+    pub fn get_elevation(&self, lon: f64, lat: f64) -> f64 {
+        if lon < self.lon_min || lon > self.lon_max || lat < self.lat_min || lat > self.lat_max {
+            return 400.0; // Default off-grid
+        }
+        
+        let lon_progress = (lon - self.lon_min) / (self.lon_max - self.lon_min);
+        let lat_progress = (lat - self.lat_min) / (self.lat_max - self.lat_min);
+        
+        let x_float = lon_progress * self.lon_steps as f64;
+        let y_float = lat_progress * self.lat_steps as f64;
+        
+        let x0 = (x_float.floor() as usize).min(self.lon_steps - 1);
+        let x1 = (x0 + 1).min(self.lon_steps);
+        let y0 = (y_float.floor() as usize).min(self.lat_steps - 1);
+        let y1 = (y0 + 1).min(self.lat_steps);
+        
+        let dx = x_float - x0 as f64;
+        let dy = y_float - y0 as f64;
+        
+        let cols = self.lon_steps + 1;
+        
+        // Bilinear interpolation
+        let e00 = self.elevations[y0 * cols + x0] as f64;
+        let e10 = self.elevations[y0 * cols + x1] as f64;
+        let e01 = self.elevations[y1 * cols + x0] as f64;
+        let e11 = self.elevations[y1 * cols + x1] as f64;
+        
+        let e0 = e00 * (1.0 - dx) + e10 * dx;
+        let e1 = e01 * (1.0 - dx) + e11 * dx;
+        
+        e0 * (1.0 - dy) + e1 * dy
+    }
+}
+
 #[derive(Debug, Clone, NifStruct)]
 #[module = "HexaCore.Domain.Resource"]
 pub struct Resource {

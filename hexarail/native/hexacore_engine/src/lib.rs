@@ -118,6 +118,60 @@ fn load_tracks(resource: ResourceArc<NetworkResource>, tracks: Vec<domain::Track
 }
 
 #[rustler::nif]
+fn load_osm_from_json(resource: ResourceArc<NetworkResource>, path: String) -> Result<usize, String> {
+    let mut manager = resource.manager.write().unwrap();
+    
+    use std::fs::File;
+    use std::io::BufReader;
+    use std::collections::HashMap;
+
+    let file = File::open(path).map_err(|e: std::io::Error| e.to_string())?;
+    let reader = BufReader::new(file);
+    
+    // Define temporary structures for JSON parsing
+    #[derive(serde::Deserialize)]
+    struct OsmElement {
+        #[serde(rename = "type")]
+        element_type: String,
+        id: i64,
+        lat: Option<f64>,
+        lon: Option<f64>,
+        nodes: Option<Vec<i64>>,
+        tags: Option<HashMap<String, String>>,
+    }
+    
+    #[derive(serde::Deserialize)]
+    struct OsmData {
+        elements: Vec<OsmElement>,
+    }
+    
+    let data: OsmData = serde_json::from_reader(reader).map_err(|e: serde_json::Error| e.to_string())?;
+    
+    let mut nodes = Vec::new();
+    let mut ways = Vec::new();
+    
+    for e in data.elements {
+        if e.element_type == "node" {
+            nodes.push(domain::OsmNode {
+                id: e.id,
+                lat: e.lat.unwrap_or(0.0),
+                lon: e.lon.unwrap_or(0.0),
+                tags: e.tags.unwrap_or_default(),
+            });
+        } else if e.element_type == "way" {
+            ways.push(domain::OsmWay {
+                id: e.id,
+                nodes: e.nodes.unwrap_or_default(),
+                tags: e.tags.unwrap_or_default(),
+            });
+        }
+    }
+    
+    manager.load_osm(nodes, ways);
+    Ok(manager.micro.graph.edge_count())
+}
+
+#[rustler::nif]
 fn load_osm(resource: ResourceArc<NetworkResource>, nodes: Vec<domain::OsmNode>, ways: Vec<domain::OsmWay>) -> usize {
     let mut manager = resource.manager.write().unwrap();
     manager.load_osm(nodes, ways);
@@ -225,7 +279,7 @@ fn get_train_position(
 fn get_active_positions(
     resource: ResourceArc<NetworkResource>,
     time: i32,
-) -> Vec<(i64, f64, f64)> {
+) -> Vec<domain::ActivePosition> {
     let manager = resource.manager.read().unwrap();
     manager.get_active_positions(time)
 }
