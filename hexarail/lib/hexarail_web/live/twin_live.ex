@@ -15,6 +15,14 @@ defmodule HexaRailWeb.TwinLive do
   def mount(_params, _session, socket) do
     if connected?(socket) do
       PubSub.subscribe(HexaRail.PubSub, "simulation:switzerland")
+      
+      # Phase 19-C: Push DEM data to frontend for local Martini meshing
+      dem_path = Path.join([:code.priv_dir(:hexarail), "data", "swiss_dem_1km.bin"])
+      if File.exists?(dem_path) do
+        binary = File.read!(dem_path)
+        b64 = Base.encode64(binary)
+        send(self(), {:push_dem, b64})
+      end
     end
 
     # Get initial state from Engine
@@ -34,6 +42,10 @@ defmodule HexaRailWeb.TwinLive do
     {:ok, socket}
   end
 
+  def handle_info({:push_dem, b64}, socket) do
+    {:noreply, push_event(socket, "load_dem", %{data: b64})}
+  end
+
   def handle_info({:chaos_detected, event}, socket) do
     {:noreply, assign(socket, chaos_event: event)}
   end
@@ -48,7 +60,8 @@ defmodule HexaRailWeb.TwinLive do
 
   def handle_info({:tick_binary, time_sec, binary_payload}, socket) do
     time_str = format_time(time_sec)
-    active_count = div(byte_size(binary_payload), 20)
+    # 32 bytes per train (Phase 19-B)
+    active_count = div(byte_size(Base.decode64!(binary_payload)), 32)
 
     socket = 
       socket

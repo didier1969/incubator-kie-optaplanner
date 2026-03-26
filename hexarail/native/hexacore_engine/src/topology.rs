@@ -98,7 +98,7 @@ fn get_logical_station_id(stop: &GtfsStop) -> &str {
 }
 
 impl PhysicalNetwork {
-    pub fn add_track(&mut self, a: NodeIndex, b: NodeIndex, coords: Vec<(f64, f64)>) {
+    pub fn add_track(&mut self, a: NodeIndex, b: NodeIndex, coords: Vec<(f64, f64)>, properties: &std::collections::HashMap<String, String>) {
         let mut length = 0.0;
         if coords.len() > 1 {
             for window in coords.windows(2) {
@@ -106,7 +106,9 @@ impl PhysicalNetwork {
             }
         }
         if length == 0.0 { length = 1.0; } // Prevent div by zero
-        self.graph.add_edge(a, b, (coords, length));
+        
+        let maxspeed = properties.get("maxspeed").and_then(|s| s.parse::<f64>().ok()).unwrap_or(120.0);
+        self.graph.add_edge(a, b, (coords, length, maxspeed));
     }
 
     #[must_use]
@@ -120,11 +122,12 @@ impl PhysicalNetwork {
     }
 
     #[must_use]
-    pub fn find_path_coordinates(&self, from_id: &str, to_id: &str) -> Option<Vec<(f64, f64)>> {
+    pub fn find_path_coordinates(&self, from_id: &str, to_id: &str) -> Option<(Vec<(f64, f64)>, f64)> {
         let start = *self.station_map.get(from_id)?;
         let end = *self.station_map.get(to_id)?;
         let edge = self.graph.find_edge(start, end)?;
-        Some(self.graph.edge_weight(edge)?.0.clone())
+        let weight = self.graph.edge_weight(edge)?;
+        Some((weight.0.clone(), weight.2))
     }
 }
 
@@ -241,7 +244,7 @@ impl NetworkManager {
         for (macro_idx, micro_idx) in links_to_make {
             // Check if edge exists to avoid duplicates
             if self.physical.graph.find_edge(macro_idx, micro_idx).is_none() {
-                self.physical.graph.add_edge(macro_idx, micro_idx, (vec![], 0.1));
+                self.physical.graph.add_edge(macro_idx, micro_idx, (vec![], 0.1, 40.0));
             }
         }
     }
@@ -323,8 +326,10 @@ impl NetworkManager {
                         let a = self.physical.add_station(&p_u_id);
                         let b = self.physical.add_station(&p_v_id);
                         
+                        let maxspeed = way.tags.get("maxspeed").and_then(|s| s.parse::<f64>().ok()).unwrap_or(120.0);
+                        
                         let safe_dist = if accumulated_physical_distance <= 0.0 { 1.0 } else { accumulated_physical_distance };
-                        self.physical.graph.add_edge(a, b, (current_segment_coords.clone(), safe_dist));
+                        self.physical.graph.add_edge(a, b, (current_segment_coords.clone(), safe_dist, maxspeed));
                         
                         // Add to spatial index for snapping
                         let track_idx = self.physical.all_tracks.len();
@@ -372,7 +377,7 @@ impl NetworkManager {
             if !start_id.is_empty() && !end_id.is_empty() {
                 let a = self.physical.add_station(&start_id);
                 let b = self.physical.add_station(&end_id);
-                self.physical.add_track(a, b, track.coordinates.clone());
+                self.physical.add_track(a, b, track.coordinates.clone(), &track.properties);
             }
             
             let track_idx = self.physical.all_tracks.len();
@@ -740,7 +745,6 @@ impl NetworkManager {
 
     #[must_use]
     pub fn get_position_3d(&self, trip_id: i64, time: i32) -> Option<(f64, f64, f64, f64, f64, f64, f64, f64, f64)> {
-        use kdtree::distance::squared_euclidean;
         let events = self.stop_times.get(&trip_id)?;
         if events.is_empty() { return None; }
 
@@ -753,7 +757,6 @@ impl NetworkManager {
         // Since we don't have is_tilting in the struct yet, we will just use a heuristic based on model name for now
         let is_tilting = profile.map_or(false, |p| p.model.contains("ICN") || p.model.contains("Giruno") || p.model.contains("RABe 501"));
         let speed_multiplier = if is_tilting { 1.2 } else { 1.0 };
-        let velocity = base_speed * speed_multiplier;
 
         for i in 0..events.len() - 1 {
             let from = &events[i];
@@ -770,9 +773,7 @@ impl NetworkManager {
                 if duration <= 0 { return Some((from_stop.location.coordinates.0, from_stop.location.coordinates.1, from_stop.location.coordinates.0, from_stop.location.coordinates.1, 400.0, 0.0, 0.0, 0.0, 0.0)); }
 
                 // 1. Resolve exact physical path geometry & maxspeed
-                let path_res = self.physical.find_path_coordinates(from_abbr, to_abbr);
-                
-                let (coords, track_maxspeed) = if let Some((c, m)) = path_res {
+                let (coords, track_maxspeed): (Vec<(f64, f64)>, f64) = if let Some((c, m)) = self.physical.find_path_coordinates(from_abbr, to_abbr) {
                     (c, m)
                 } else {
                     // Quick fallback to avoid panics. Assume standard maxspeed if missing.

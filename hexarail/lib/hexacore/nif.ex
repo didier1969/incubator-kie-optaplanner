@@ -21,6 +21,7 @@ defmodule HexaCore.Nif do
   def load_trips(_resource, _trips), do: :erlang.nif_error(:nif_not_loaded)
   def load_stop_times(_resource, _stop_times), do: :erlang.nif_error(:nif_not_loaded)
   def load_transfers(_resource, _transfers), do: :erlang.nif_error(:nif_not_loaded)
+  def load_dem(_resource, _dem_grid), do: :erlang.nif_error(:nif_not_loaded)
   def load_calendars(_resource, _calendars), do: :erlang.nif_error(:nif_not_loaded)
   def load_calendar_dates(_resource, _dates), do: :erlang.nif_error(:nif_not_loaded)
   def load_fleet(_resource, _profiles), do: :erlang.nif_error(:nif_not_loaded)

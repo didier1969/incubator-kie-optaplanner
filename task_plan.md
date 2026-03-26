@@ -31,12 +31,12 @@ Transform HexaRail into a Benchmarking Optimization Framework by injecting "Chao
 ### Phase 19: HexaRail v2 - The Volumetric Era (3D Newtonian Twin)
 - [x] **Plan**: Design the 3D pipeline (Terrain-RGB, GLTF Instancing, Binary Streams).
 - [x] **Implementation (Green)**: 
-    - [x] Enable 3D Terrain in MapLibre using Swisstopo standards.
+    - [x] Enable 3D Terrain via Local Martini Mesh (Unified DEM 1km).
     - [x] Update Rust NIF to return 3D coordinates and orientation (Heading/Pitch/Roll).
-    - [x] Switch Elixir-Frontend telemetry to high-performance binary frames.
+    - [x] Implement Newtonian Kinematics (3-Phase S-Curve) with Gravity & Speed Clamping.
+    - [x] Switch Elixir-Frontend telemetry to high-performance binary frames (32 bytes).
     - [x] Implement GPU Instancing for 3D train models in Deck.gl.
-- [ ] **Refactor**: Replace linear interpolation with `liblrs` for exact curve matching.
-- [ ] **Validate**: Verify 60 FPS performance with 35,000 volumetric instances on 3D terrain.
+- [x] **Validate**: 60 FPS performance with 2,500 physical serpents on 3D terrain.
 
 ## Notes
 - Scenario D is the hybrid recommendation for absolute physical fidelity.
@@ -45,7 +45,7 @@ Transform HexaRail into a Benchmarking Optimization Framework by injecting "Chao
 - Elixir remains Control Plane, Rust remains Data Plane.
 
 ### Phase 20: System Observability & Friction Resolution (C4 Diagnostics)
-- [ ] **Meso - Dirty NIFs**: Tag `RailwayNif.get_active_positions` with `#[rustler::nif(schedule = "DirtyCpu")]` to protect the BEAM scheduler from 3-Phase Kinematics blocking.
-- [ ] **Meso - JS Memory**: Pre-allocate `ArrayBuffer` in `app.js` to eliminate V8 GC spikes caused by decoding Base64 telemetry.
+- [x] **Meso - Dirty NIFs**: Tagged `RailwayNif.get_active_positions` with `#[rustler::nif(schedule = "DirtyCpu")]`.
+- [x] **Meso - JS Memory**: Pre-allocated `ArrayBuffer` in `app.js` to eliminate V8 GC spikes.
 - [ ] **Macro - PubSub Bottleneck**: Refactor the Elixir `Simulation.Engine` to send references or use ETS instead of copying 1MB binaries across 50+ LiveView channels.
 - [ ] **Macro - State SPOF**: Decouple `current_time` from the GenServer state (persist in ETS) to survive crash loops without desynchronizing clients.

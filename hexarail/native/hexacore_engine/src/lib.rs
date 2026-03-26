@@ -11,9 +11,16 @@ pub mod score;
 pub mod solver;
 pub mod topology;
 
-use rustler::{Env, ResourceArc, Term};
+use rustler::{Env, ResourceArc, Term, Atom};
 use std::sync::RwLock;
 use crate::topology::NetworkManager;
+
+mod atoms {
+    rustler::atoms! {
+        ok,
+        error,
+    }
+}
 
 pub struct NetworkResource {
     pub manager: RwLock<NetworkManager>,
@@ -64,7 +71,7 @@ fn build_network_graph(edges: Vec<(String, String, Vec<(f64, f64)>)>) -> usize {
     for (station_a, station_b, coords) in edges {
         let node_a = network.add_station(&station_a);
         let node_b = network.add_station(&station_b);
-        network.add_track(node_a, node_b, coords);
+        network.add_track(node_a, node_b, coords, &std::collections::HashMap::new());
     }
     network.station_count()
 }

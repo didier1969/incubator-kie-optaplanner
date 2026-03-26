@@ -16,7 +16,8 @@ pub struct ActivePosition {
     pub velocity: f64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, rustler::NifStruct)]
+#[module = "HexaCore.Domain.DemGrid"]
 pub struct DemGrid {
     pub lat_min: f64,
     pub lat_max: f64,
