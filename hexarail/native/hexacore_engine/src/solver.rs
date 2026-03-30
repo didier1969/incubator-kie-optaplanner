@@ -1,10 +1,10 @@
+// Copyright (c) Didier Stadelmann. All rights reserved.
+
 use crate::domain::Problem;
-use crate::score::calculate_score;
 use crate::incremental_score::{ScoreDatabase, ScoreEngine};
-use crate::topology::NetworkManager;
 
 #[must_use]
-pub fn optimize(mut current_problem: Problem, manager: &NetworkManager, iterations: i32) -> Problem {
+pub fn optimize(mut current_problem: Problem, total_conflicts: usize, iterations: i32) -> Problem {
     // Initialize Salsa Database
     let mut db = ScoreDatabase::default();
     
@@ -14,10 +14,10 @@ pub fn optimize(mut current_problem: Problem, manager: &NetworkManager, iteratio
         db.set_job_assigned(job.id, job.start_time.is_some());
     }
 
-    // We compute the heavy STIG collisions via the naive approach for now
-    // and pass it as the "base score" to the incremental engine.
-    let base_conflict_score = calculate_score(&current_problem, manager) - db.calculate_penalties();
-    
+    let base_conflict_score =
+        crate::score::calculate_score_with_conflicts(&current_problem, total_conflicts) -
+        db.calculate_penalties();
+
     db.set_get_base_score(base_conflict_score);
 
     let mut current_score = db.get_total_score();
@@ -71,15 +71,14 @@ mod tests {
             resources: vec![],
             jobs: vec![Job { id: 1, duration: 10, required_resources: vec![], start_time: None }],
         };
-        let manager = NetworkManager::new();
 
         // Initially score is -100
-        assert_eq!(score::calculate_score(&problem, &manager), -100);
+        assert_eq!(score::calculate_score(&problem), -100);
 
-        let optimized = optimize(problem, &manager, 10);
+        let optimized = optimize(problem, 0, 10);
         
         // After optimization, the job should have a start_time, making score 0
-        assert_eq!(score::calculate_score(&optimized, &manager), 0);
+        assert_eq!(score::calculate_score(&optimized), 0);
         assert!(optimized.jobs[0].start_time.is_some());
     }
 }

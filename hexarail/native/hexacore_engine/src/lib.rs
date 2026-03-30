@@ -1,3 +1,5 @@
+// Copyright (c) Didier Stadelmann. All rights reserved.
+
 #![deny(warnings)]
 #![deny(clippy::all)]
 #![deny(clippy::pedantic)]
@@ -29,7 +31,13 @@ pub struct NetworkResource {
 #[rustler::nif]
 fn evaluate_problem(resource: ResourceArc<NetworkResource>, problem: domain::Problem) -> i64 {
     let manager = resource.manager.read().unwrap();
-    score::calculate_score(&problem, &manager)
+    let total_conflicts = manager.detect_conflicts().total_conflicts;
+    score::calculate_score_with_conflicts(&problem, total_conflicts)
+}
+
+#[rustler::nif]
+fn evaluate_problem_core(problem: domain::Problem) -> i64 {
+    score::calculate_score(&problem)
 }
 
 #[rustler::nif]
@@ -41,7 +49,14 @@ fn add(a: i64, b: i64) -> i64 {
 #[allow(clippy::needless_pass_by_value)]
 fn optimize_problem(resource: ResourceArc<NetworkResource>, problem: domain::Problem, iterations: i32) -> domain::Problem {
     let manager = resource.manager.read().unwrap();
-    solver::optimize(problem, &manager, iterations)
+    let total_conflicts = manager.detect_conflicts().total_conflicts;
+    solver::optimize(problem, total_conflicts, iterations)
+}
+
+#[rustler::nif]
+#[allow(clippy::needless_pass_by_value)]
+fn optimize_problem_core(problem: domain::Problem, iterations: i32) -> domain::Problem {
+    solver::optimize(problem, 0, iterations)
 }
 
 #[rustler::nif]

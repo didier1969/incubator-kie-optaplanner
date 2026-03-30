@@ -1,3 +1,5 @@
+# Copyright (c) Didier Stadelmann. All rights reserved.
+
 defmodule HexaCore.Nif do
   @moduledoc """
   Agnostic NIF bridge to the Rust Core Optimization Engine.
@@ -11,9 +13,16 @@ defmodule HexaCore.Nif do
   @spec evaluate_problem(reference(), HexaCore.Domain.Problem.t()) :: integer()
   def evaluate_problem(_resource, _problem), do: :erlang.nif_error(:nif_not_loaded)
 
+  @spec evaluate_problem_core(HexaCore.Domain.Problem.t()) :: integer()
+  def evaluate_problem_core(_problem), do: :erlang.nif_error(:nif_not_loaded)
+
   @spec optimize_problem(reference(), HexaCore.Domain.Problem.t(), integer()) ::
           HexaCore.Domain.Problem.t()
   def optimize_problem(_resource, _problem, _iterations), do: :erlang.nif_error(:nif_not_loaded)
+
+  @spec optimize_problem_core(HexaCore.Domain.Problem.t(), integer()) ::
+          HexaCore.Domain.Problem.t()
+  def optimize_problem_core(_problem, _iterations), do: :erlang.nif_error(:nif_not_loaded)
 
   def init_network, do: :erlang.nif_error(:nif_not_loaded)
 

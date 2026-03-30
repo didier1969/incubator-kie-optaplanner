@@ -1,24 +1,31 @@
+// Copyright (c) Didier Stadelmann. All rights reserved.
+
 use crate::domain::Problem;
-use crate::topology::NetworkManager;
+
+const UNASSIGNED_JOB_PENALTY: i64 = 100;
+const CONFLICT_PENALTY: i64 = 1_000;
 
 #[must_use]
-pub fn calculate_score(problem: &Problem, manager: &NetworkManager) -> i64 {
+pub fn calculate_score(problem: &Problem) -> i64 {
     let mut score = 0;
 
     // Constraint 1: Unassigned Job Penalty
     for job in &problem.jobs {
         if job.start_time.is_none() {
-            score -= 100;
+            score -= UNASSIGNED_JOB_PENALTY;
         }
     }
 
-    // Constraint 2: Spatio-Temporal Conflicts (STIG)
-    // Absolute fidelity: every physical collision is heavily penalized
-    let conflict_summary = manager.detect_conflicts();
-    
+    score
+}
+
+#[must_use]
+pub fn calculate_score_with_conflicts(problem: &Problem, total_conflicts: usize) -> i64 {
+    let mut score = calculate_score(problem);
+
     #[allow(clippy::cast_possible_wrap)]
     {
-        score -= (conflict_summary.total_conflicts as i64) * 1000;
+        score -= (total_conflicts as i64) * CONFLICT_PENALTY;
     }
 
     score
@@ -33,8 +40,14 @@ mod tests {
     fn test_unassigned_job_penalty() {
         let j1 = Job { id: 1, duration: 10, required_resources: vec![], start_time: None }; // Unassigned
         let problem = Problem { id: "1".to_string(), resources: vec![], jobs: vec![j1] };
-        let manager = NetworkManager::new();
-        let score = calculate_score(&problem, &manager);
+        let score = calculate_score(&problem);
         assert_eq!(score, -100); 
+    }
+
+    #[test]
+    fn test_conflict_penalty_is_added_without_topology_dependency() {
+        let problem = Problem { id: "1".to_string(), resources: vec![], jobs: vec![] };
+        let score = calculate_score_with_conflicts(&problem, 2);
+        assert_eq!(score, -2_000);
     }
 }

@@ -1,5 +1,11 @@
 # Refactoring Plan: HexaCore vs HexaRail
 
+## Proven Slice (2026-03-30)
+- A first API-boundary slice is now proven through a `HexaCore`-only test path.
+- `HexaCore.Nif` exposes core-only `evaluate_problem_core/1` and `optimize_problem_core/2`.
+- The Rust score/solver kernel no longer depends directly on `NetworkManager`; railway conflict count is now injected from the vertical-backed path.
+- This does not yet remove railway loaders from `HexaCore.Nif`, but it proves the first reusable optimization path without GTFS/OSM resource state.
+
 ## Phase 1: Elixir Namespace & Directory Restructuring
 - Create `lib/hexacore` to house agnostic components.
 - Move `lib/hexarail/dsl`, `lib/hexarail/transpiler`, and `lib/hexarail/domain/job.ex`/`problem.ex` into `lib/hexacore`.
