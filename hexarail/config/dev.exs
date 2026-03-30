@@ -1,17 +1,22 @@
+# Copyright (c) Didier Stadelmann. All rights reserved.
+
 import Config
+
+pg_port = String.to_integer(System.get_env("HEXARAIL_PGPORT", "15432"))
+web_port = String.to_integer(System.get_env("HEXARAIL_WEB_PORT", System.get_env("PORT", "14326")))
 
 config :hexarail, HexaRail.Repo,
   username: "postgres",
   password: "postgres_password",
   hostname: "localhost",
-  port: 15432,
+  port: pg_port,
   database: "hexarail_dev",
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
 
 config :hexarail, HexaRailWeb.Endpoint,
-  http: [ip: {0, 0, 0, 0}, port: 14326],
+  http: [ip: {0, 0, 0, 0}, port: web_port],
   check_origin: false,
   code_reloader: true,
   debug_errors: true,

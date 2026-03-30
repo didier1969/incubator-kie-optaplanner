@@ -1,47 +1,72 @@
-# HexaRail: Universal Digital Twin & Optimization Framework
+# HexaCore Platform with HexaRail Showcase
 
-HexaRail is an industrial-grade, high-performance framework designed to model, simulate, and optimize complex systems in real-time. Built to replace legacy Java-based optimization engines, it leverages the Elixir/OTP control plane for resilience and the Rust data plane for computational speed.
+This repository is evolving toward an industrial-grade, high-performance optimization and digital twin platform built around an agnostic core.
 
-## 🌌 The Vision: Optimization without Compromise
-Most optimization systems simplify reality to fit mathematical models. HexaRail reverses this paradigm: it models reality with 100% fidelity, ensuring that optimizations are actionable in the real world.
+The target architecture separates:
+*   **HexaCore:** the reusable optimization engine and orchestration platform.
+*   **HexaRail:** the railway vertical and primary showcase.
+*   **HexaFactory:** the manufacturing/job-shop vertical currently started at the domain and planning level.
 
-### The "CFF/SBB" Vertical (Showcase)
-As a primary validator of its scale and precision, HexaRail currently hosts a full-scale Digital Twin of the **Swiss Federal Railways (CFF/SBB)** network. 
-*   **Scale:** 1.19M+ trips, 19M+ stop events, 96k locations.
-*   **Purpose:** Prove that if the framework can handle the entire Swiss railway network with zero simplification, it can optimize any industrial domain (Manufacturing, Logistics, Healthcare).
+## Vision
+Most optimization systems simplify reality to fit mathematical models. This project takes the opposite stance: model reality with enough physical, temporal, and operational fidelity that proposed optimizations remain actionable in the real world.
 
-## 🏛 Architecture: Dual-Plane Scalability
-*   **Control Plane (Elixir/OTP):** Handles actor-based orchestration, state management for millions of entities, and real-time interaction via Phoenix LiveView.
-*   **Data Plane (Rust):** High-speed incremental computation engine (`salsa`), topological graph analysis (`petgraph`), and SIMD-accelerated search algorithms.
-*   **Persistence (PostgreSQL/PostGIS):** Ultra-optimized storage for massive geospatial and temporal datasets.
+The long-term goal is not a single railway product. The goal is a multi-vertical platform that can support domains such as:
+*   Rail operations and disruption management
+*   Manufacturing / job-shop scheduling
+*   Logistics and supply chain flows
+*   Workforce and rostering problems
 
-## 🚀 Key Framework Capabilities
-*   **Massive Ingestion:** Proprietary streaming pipeline capable of ingesting 20M+ rows in minutes.
-*   **Zero-Copy Memory:** Efficient data transfer between the BEAM and the Rust Data Plane.
-*   **Incremental Scoring:** Real-time conflict detection and score calculation.
-*   **Real-Time Visualization:** Streaming UI capable of displaying millions of entities without reduction.
+## Current Vertical Status
 
-## 🛠 Getting Started (CFF Showcase)
+### HexaRail
+HexaRail is the most advanced vertical in the repository. It serves as the technical validator and showcase by modeling the **Swiss Federal Railways (CFF/SBB)** network.
+*   **Scale:** 1.19M+ trips, 19M+ stop events, 96k locations
+*   **Role:** prove that the platform can handle a zero-simplification, high-density real-world system
 
-### 1. Initialize Environment
+### HexaFactory
+HexaFactory is the second vertical already initiated in the repo.
+*   **Focus:** manufacturing, job-shop scheduling, setup optimization, plant capacities, and supply chain constraints
+*   **Status:** domain ontology, planning documents, and synthetic data generation design are present under `docs/plans/hexafactory/`
+
+## Architecture
+*   **Control Plane (Elixir/OTP):** orchestration, actor-based state management, resilience, and real-time interfaces via Phoenix LiveView
+*   **Data Plane (Rust):** incremental computation, graph analysis, heuristics, and performance-critical simulation logic
+*   **Persistence (PostgreSQL/PostGIS):** storage for large geospatial, temporal, and operational datasets
+
+## Core Capabilities
+*   **Agnostic optimization core:** reusable solver, DSL, transpilation, and incremental score engine
+*   **Massive ingestion:** high-volume import pipelines for dense industrial datasets
+*   **Zero-copy boundaries:** efficient transfer between the BEAM and Rust
+*   **Real-time visualization:** operational dashboards and scenario playback
+*   **Scenario-based planning:** support for live replanning and what-if simulation
+
+## Getting Started
+
+### Railway Showcase
 ```bash
+direnv allow
 nix develop
+bash scripts/env-smoke-check.sh
 cd hexarail
 mix deps.get
 mix ecto.setup
 ```
 
-### 2. Ingest the SBB Dataset
+To ingest the SBB showcase dataset:
+
 ```bash
 mix data.download
 mix data.import
 ```
 
-## 📈 Roadmap
-*   **Phase 1-11:** COMPLETED (Framework foundations & Big Data pipeline).
-*   **Current:** Phase 12 - Universal Graph Assembler (Rust).
-*   **Future:** Generic DSL for multi-domain constraints (Manufacturing, HR).
+The shell now isolates mutable state under `./.state/` and exports project-local randomized ports for the web endpoint, tests, and PostgreSQL.
 
-## ⚖ Mandates
-*   **Zero Simplification:** We model the world as it is, not as the math prefers it.
-*   **Zero Warning Policy:** 100% test coverage and strict static analysis.
+## Repository Direction
+*   **Near term:** complete the separation between `HexaCore` and the railway-specific vertical
+*   **Medium term:** stabilize the agnostic APIs and prove reuse across multiple verticals
+*   **Long term:** ship a true multi-vertical optimization platform, with HexaRail as showcase and HexaFactory as the next concrete industrial implementation
+
+## Mandates
+*   **Zero Simplification:** model the world as it is, not as the math prefers it
+*   **Framework First:** verticals must sit on a reusable agnostic core
+*   **Zero Warning Policy:** strict testing and static analysis standards

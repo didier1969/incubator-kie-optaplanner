@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+# Copyright (c) Didier Stadelmann. All rights reserved.
+
+set -euo pipefail
+
+PORT="${HEXARAIL_WEB_PORT:-${PORT:-14326}}"
 
 echo "[NEXUS] Starting System Initialization..."
 
@@ -18,10 +23,11 @@ else
 fi
 
 # Strategy B: Free the specific TCP port
-PORT_PIDS=$(lsof -t -i :14326 2>/dev/null || true)
+PORT_PIDS=$(lsof -t -i :"$PORT" 2>/dev/null || true)
 if [ ! -z "$PORT_PIDS" ]; then
-  echo "[NEXUS] Freeing port 14326 (PIDs: $PORT_PIDS)..."
-  kill -9 $PORT_PIDS 2>/dev/null || true
+  echo "[NEXUS] Freeing port $PORT (PIDs: $PORT_PIDS)..."
+  kill $PORT_PIDS 2>/dev/null || true
+  sleep 1
 fi
 
 # 2. Compile and build
@@ -31,6 +37,6 @@ mix deps.get
 mix compile
 
 # 3. Start the Server
-echo "[NEXUS] Igniting Tick Engine on Port 14326..."
-export PORT=14326
+echo "[NEXUS] Igniting Tick Engine on Port $PORT..."
+export PORT
 exec mix phx.server

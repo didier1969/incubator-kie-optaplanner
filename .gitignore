@@ -1,3 +1,6 @@
+/.direnv/
+/.state/
+/.pgdata/
 /hexarail/priv/data/raw/
 /hexarail/priv/data/stig_snapshot.bin
 /hexarail/priv/static/data/
