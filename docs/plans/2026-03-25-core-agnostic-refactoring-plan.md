@@ -6,6 +6,18 @@
 - The Rust score/solver kernel no longer depends directly on `NetworkManager`; railway conflict count is now injected from the vertical-backed path.
 - This does not yet remove railway loaders from `HexaCore.Nif`, but it proves the first reusable optimization path without GTFS/OSM resource state.
 
+## Proven Slice (2026-03-31)
+- `HexaCore` now carries a first generic uplift required by future verticals:
+  - generic precedence edges
+  - generic availability windows
+  - generic release and due dates
+  - generic batch keys
+- These primitives are proven through:
+  - `test/hexacore/problem_contract_test.exs`
+  - `test/hexacore/core_constraints_test.exs`
+  - Rust unit coverage in `native/hexacore_engine/src/score.rs` and `native/hexacore_engine/src/domain.rs`
+- The solve path is still minimal, but the contract is no longer railway-shaped-only.
+
 ## Phase 1: Elixir Namespace & Directory Restructuring
 - Create `lib/hexacore` to house agnostic components.
 - Move `lib/hexarail/dsl`, `lib/hexarail/transpiler`, and `lib/hexarail/domain/job.ex`/`problem.ex` into `lib/hexacore`.

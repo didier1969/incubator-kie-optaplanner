@@ -69,7 +69,17 @@ mod tests {
         let problem = Problem {
             id: "sim_1".to_string(),
             resources: vec![],
-            jobs: vec![Job { id: 1, duration: 10, required_resources: vec![], start_time: None }],
+            jobs: vec![Job {
+                id: 1,
+                duration: 10,
+                required_resources: vec![],
+                release_time: None,
+                due_time: None,
+                batch_key: None,
+                start_time: None,
+            }],
+            edges: vec![],
+            score_components: vec![],
         };
 
         // Initially score is -100

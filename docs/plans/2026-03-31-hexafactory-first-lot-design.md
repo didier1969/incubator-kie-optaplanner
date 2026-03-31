@@ -357,6 +357,31 @@ The generator profile must include:
 - batching and transfer policies
 - order pressure profile
 
+## Open Source Reuse Posture
+
+The first lot must reuse stable external building blocks where they help, and must not reinvent canonical semantics that already exist elsewhere.
+
+### Manufacturing Semantics
+
+- Use `B2MML / BatchML` as the canonical semantic reference for ISA-95 / ISA-88 manufacturing concepts.
+- Use `AAS` submodel templates as the canonical reference for equipment, maintenance, production calendars, and hierarchical asset structures.
+- Use operational ERP references such as `ERPNext` and `Odoo` to validate executable manufacturing concepts such as BOM, routing, workstation capacity, scrap, downtime, and maintenance.
+
+### Elixir
+
+- Prefer stdlib `:rand`, `Calendar`, and `:calendar` for deterministic generation primitives.
+- Evaluate `Tempus` as the primary calendar and timeslot helper instead of inventing a new interval algebra in Elixir.
+- Evaluate `Holidays` only as a holiday-source helper, not as the core planning model.
+- Avoid narrow date helpers that do not cover real industrial time windows well enough.
+
+### Rust
+
+- Keep `petgraph` as the graph foundation and plan an upgrade to the current stable line instead of introducing another general graph library.
+- Evaluate `rangemap` for generic availability and blackout interval handling.
+- Evaluate `rand_chacha` for deterministic scenario replay and seeded generation.
+- Evaluate `good_lp` with a `HiGHS` backend only as a bounded exact sidecar for local subproblems, not as a replacement for `HexaCore`.
+- Avoid pulling in a second pathfinding library when `petgraph` already covers the required graph layer.
+
 ## Testing and Validation Strategy
 
 The first lot follows strict TDD.
