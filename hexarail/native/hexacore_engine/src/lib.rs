@@ -293,7 +293,8 @@ fn get_train_position(
     trip_id: i64,
     time: i32,
 ) -> Option<(f64, f64)> {
-    let manager = resource.manager.read().unwrap();
+    let mut manager = resource.manager.write().unwrap();
+    manager.apply_perturbations(time);
     manager.get_position(trip_id, time)
 }
 
@@ -302,7 +303,8 @@ fn get_active_positions(
     resource: ResourceArc<NetworkResource>,
     time: i32,
 ) -> Vec<domain::ActivePosition> {
-    let manager = resource.manager.read().unwrap();
+    let mut manager = resource.manager.write().unwrap();
+    manager.apply_perturbations(time);
     manager.get_active_positions(time)
 }
 

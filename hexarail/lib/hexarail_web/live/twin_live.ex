@@ -1,3 +1,5 @@
+# Copyright (c) Didier Stadelmann. All rights reserved.
+
 defmodule HexaRailWeb.TwinLive do
   use Phoenix.LiveView
   alias Phoenix.PubSub
@@ -15,25 +17,15 @@ defmodule HexaRailWeb.TwinLive do
   def mount(_params, _session, socket) do
     if connected?(socket) do
       PubSub.subscribe(HexaRail.PubSub, "simulation:switzerland")
-      
-      # Phase 19-C: Push DEM data to frontend for local Martini meshing
-      dem_path = Path.join([:code.priv_dir(:hexarail), "data", "swiss_dem_1km.bin"])
-      if File.exists?(dem_path) do
-        binary = File.read!(dem_path)
-        b64 = Base.encode64(binary)
-        send(self(), {:push_dem, b64})
-      end
     end
 
-    # Get initial state from Engine
-    engine_state = Engine.get_status()
-
+    # Phase 20: Prevent GenServer block during mount by using default state
     socket = 
       socket
-      |> assign(:status, engine_state.status)
-      |> assign(:loading_msg, engine_state.message)
-      |> assign(:loading_percent, engine_state.progress)
-      |> assign(:current_time, format_time(engine_state.current_time))
+      |> assign(:status, :running)
+      |> assign(:loading_msg, "System Live")
+      |> assign(:loading_percent, 100)
+      |> assign(:current_time, "00:00:00")
       |> assign(:active_count, 0)
       |> assign(:sim_speed, 60)
       |> assign(:chaos_event, nil)
@@ -42,12 +34,8 @@ defmodule HexaRailWeb.TwinLive do
     {:ok, socket}
   end
 
-  def handle_info({:push_dem, b64}, socket) do
-    {:noreply, push_event(socket, "load_dem", %{data: b64})}
-  end
-
   def handle_info({:chaos_detected, event}, socket) do
-    {:noreply, assign(socket, chaos_event: event)}
+    {:noreply, assign(socket, chaos_event: normalize_chaos_event(event))}
   end
 
   def handle_info({:loading_progress, percent, msg}, socket) do
@@ -58,35 +46,34 @@ defmodule HexaRailWeb.TwinLive do
     {:noreply, assign(socket, status: :running)}
   end
 
-  def handle_info({:tick_binary, time_sec, binary_payload}, socket) do
+  def handle_info({:tick_binary, time_sec, binary_payload, health}, socket) do
     time_str = format_time(time_sec)
     # 32 bytes per train (Phase 19-B)
     active_count = div(byte_size(Base.decode64!(binary_payload)), 32)
 
     socket = 
       socket
-      |> assign(current_time: time_str, active_count: active_count, status: :running)
+      |> assign(
+        current_time: time_str, 
+        active_count: active_count, 
+        status: :running,
+        system_delay: div(health.total_delay_seconds, 60),
+        active_conflicts: health.active_conflicts,
+        broken_connections: health.broken_connections
+      )
       |> push_event("update_trains_binary", %{data: binary_payload})
 
     {:noreply, socket}
   end
 
-  def handle_info({:tick, time_sec, positions}, socket) do
-    time_str = format_time(time_sec)
-    json_positions = Enum.map(positions, fn {id, lon, lat} -> [id, lon, lat] end)
-
-    sidebar_updates = 
-      positions 
-      |> Enum.take(20)
-      |> Enum.map(fn {id, lon, lat} -> %{id: "#{id}", trip_id: id, lon: lon, lat: lat} end)
-
-    socket = 
-      socket
-      |> assign(current_time: time_str, active_count: length(positions), status: :running)
-      |> stream_insert_many(:active_trains, sidebar_updates)
-      |> push_event("update_trains", %{positions: json_positions})
-
-    {:noreply, socket}
+  def handle_event("execute_scenario", _, socket) do
+    # Load the Gotthard scenario JSON
+    path = Path.join([:code.priv_dir(:hexarail), "scenarios", "gotthard_blackout.json"])
+    scenario_data = path |> File.read!() |> Jason.decode!()
+    
+    Engine.load_scenario(scenario_data)
+    
+    {:noreply, assign(socket, chaos_event: normalize_chaos_event(%{resolved: false, message: "Scenario injected."}))}
   end
 
   def handle_event("resolve_chaos", %{"strategy" => strategy}, socket) do
@@ -100,7 +87,7 @@ defmodule HexaRailWeb.TwinLive do
     end
     
     # We clear the chaos event and show a temporary resolution message
-    {:noreply, assign(socket, chaos_event: %{resolved: true, message: msg})}
+    {:noreply, assign(socket, chaos_event: normalize_chaos_event(%{resolved: true, message: msg}))}
   end
 
   def handle_event("inject_chaos", _, socket) do
@@ -119,10 +106,14 @@ defmodule HexaRailWeb.TwinLive do
     {:noreply, socket}
   end
 
-  defp stream_insert_many(socket, name, items) do
-    Enum.reduce(items, socket, fn item, acc ->
-      stream_insert(acc, name, item)
-    end)
+  defp normalize_chaos_event(event) do
+    %{
+      resolved: Map.get(event, :resolved, false),
+      message: Map.get(event, :message, "Chaos event detected."),
+      severity: Map.get(event, :severity),
+      trip_id: Map.get(event, :trip_id),
+      type: Map.get(event, :type)
+    }
   end
 
   defp format_time(time_sec) do
@@ -171,116 +162,102 @@ defmodule HexaRailWeb.TwinLive do
         </div>
       <% end %>
 
-      <!-- Top Tactical Header -->
-      <nav class="h-16 border-b border-slate-800 bg-slate-900/50 backdrop-blur-xl flex items-center justify-between px-8 z-20">
-        <div class="flex items-center space-x-4">
-          <div class="w-8 h-8 bg-amber-500 rounded flex items-center justify-center text-slate-950 font-bold shadow-[0_0_15px_rgba(245,158,11,0.3)]">H</div>
-          <div>
-            <h1 class="text-white font-bold leading-none tracking-tight">HEXAPLANNER NEXUS</h1>
-            <span class="text-[10px] text-slate-500 tracking-[0.2em] uppercase">CFF/SBB Digital Twin</span>
-          </div>
-        </div>
+      <!-- Visualization Surface (WebGL Hook) -->
+      <main class="flex-grow relative bg-slate-950 overflow-hidden w-full h-full">
+        <div id="deckgl-wrapper" class="absolute inset-0 w-full h-full [&_canvas]:block [&_canvas]:absolute" phx-hook="DeckGLMap" phx-update="ignore"></div>
 
-        <div class="flex items-center space-x-12">
-          <div class="text-center">
-            <div class="text-[10px] text-slate-500 uppercase mb-1">Active Entities</div>
-            <div class="text-xl font-bold text-white tabular-nums"><%= @active_count %></div>
-          </div>
-          <div class="text-center">
-            <div class="text-[10px] text-slate-500 uppercase mb-1">Time Dilation</div>
-            <div class="text-xl font-bold text-amber-500 tabular-nums"><%= @sim_speed %>x</div>
-          </div>
-          <div class="bg-slate-950 border border-slate-800 rounded-lg px-6 py-2 shadow-inner border-t-amber-500/30">
-            <div class="text-[10px] text-slate-500 uppercase mb-1">Simulation Clock</div>
-            <div class="text-2xl font-bold text-cyan-400 tabular-nums leading-none"><%= @current_time %></div>
-          </div>
-        </div>
-      </nav>
+        <!-- Top Tactical HUD (Metrics) -->
+        <nav class="absolute top-0 left-0 right-0 p-6 pointer-events-none flex justify-between items-start z-20">
+          <div class="flex flex-col space-y-2">
+            <div class="flex items-center space-x-4 bg-slate-900/80 backdrop-blur-md border border-slate-800 rounded-lg p-3 shadow-2xl pointer-events-auto">
+              <div class="w-8 h-8 bg-amber-500 rounded flex items-center justify-center text-slate-950 font-black">H</div>
+              <div>
+                <h1 class="text-white font-bold leading-none tracking-tight text-lg">NEXUS CONTROL</h1>
+                <span class="text-[9px] text-slate-400 tracking-[0.2em] uppercase">System Health Monitor</span>
+              </div>
+            </div>
 
-      <main class="flex-grow flex relative overflow-hidden min-h-0">
-        <!-- Sidebar HUD -->
-        <aside class="w-80 border-r border-slate-800 bg-slate-900/30 backdrop-blur-md z-20 flex flex-col pointer-events-auto overflow-hidden">
-          <div class="p-4 border-b border-slate-800 bg-slate-900/50 flex justify-between items-center">
-            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Active Registry</h3>
-            <div class="flex items-center space-x-1">
-              <div class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
-              <span class="text-[9px] text-emerald-500 font-bold uppercase">Live</span>
+            <!-- Health Gauges -->
+            <div class="flex space-x-2">
+              <div class="bg-slate-900/80 backdrop-blur-md border border-slate-800 rounded-lg p-3 w-32 shadow-lg">
+                <div class="text-[9px] text-slate-500 uppercase tracking-widest mb-1">System Delay</div>
+                <div class={"text-xl font-bold tabular-nums #{if assigns[:system_delay] && @system_delay > 0, do: "text-red-500", else: "text-white"}"}>
+                  <%= assigns[:system_delay] || 0 %> <span class="text-xs text-slate-500 font-normal">min</span>
+                </div>
+              </div>
+              <div class="bg-slate-900/80 backdrop-blur-md border border-slate-800 rounded-lg p-3 w-32 shadow-lg">
+                <div class="text-[9px] text-slate-500 uppercase tracking-widest mb-1">Broken Conn.</div>
+                <div class={"text-xl font-bold tabular-nums #{if assigns[:broken_connections] && @broken_connections > 0, do: "text-red-500", else: "text-emerald-400"}"}>
+                  <%= assigns[:broken_connections] || 0 %>
+                </div>
+              </div>
+              <div class="bg-slate-900/80 backdrop-blur-md border border-slate-800 rounded-lg p-3 w-32 shadow-lg">
+                <div class="text-[9px] text-slate-500 uppercase tracking-widest mb-1">Active Conflicts</div>
+                <div class={"text-xl font-bold tabular-nums #{if assigns[:active_conflicts] && @active_conflicts > 0, do: "text-amber-500", else: "text-emerald-400"}"}>
+                  <%= assigns[:active_conflicts] || 0 %>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-slate-950/90 border border-slate-800 rounded-lg px-6 py-3 shadow-2xl pointer-events-auto border-t-amber-500/50 flex flex-col items-end">
+            <div class="text-[9px] text-slate-500 uppercase tracking-widest mb-1">Simulation Clock</div>
+            <div class="text-3xl font-bold text-cyan-400 tabular-nums leading-none"><%= @current_time %></div>
+            <div class="flex space-x-2 mt-2">
+              <button phx-click="pause" class="text-[9px] uppercase tracking-widest hover:text-white transition-colors">Pause</button>
+              <button phx-click="resume" class="text-[9px] uppercase tracking-widest text-amber-500 hover:text-amber-400 font-bold transition-colors">Resume</button>
+            </div>
+          </div>
+        </nav>
+
+        <!-- Bottom Left: Scenario Director -->
+        <div class="absolute bottom-6 left-6 w-96 bg-slate-900/80 backdrop-blur-xl border border-slate-800 rounded-xl shadow-2xl pointer-events-auto overflow-hidden flex flex-col max-h-[50vh]">
+          <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900">
+            <h3 class="text-xs font-bold text-white uppercase tracking-widest">Chaos Director</h3>
+            <span class={"px-2 py-0.5 rounded text-[9px] uppercase tracking-widest font-bold border #{if assigns[:chaos_event] && !@chaos_event.resolved, do: "bg-red-500/20 text-red-500 border-red-500/30 animate-pulse", else: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"}"}>
+              <%= if assigns[:chaos_event] && !@chaos_event.resolved, do: "Active", else: "Ready" %>
+            </span>
+          </div>
+          
+          <div class="p-4 flex-grow overflow-y-auto custom-scrollbar space-y-4">
+            <%= if assigns[:chaos_event] do %>
+              <div class={"rounded-lg border p-3 text-xs #{if @chaos_event.resolved, do: "border-emerald-500/30 bg-emerald-500/10 text-emerald-200", else: "border-red-500/30 bg-red-500/10 text-red-100"}"}>
+                <div class="font-bold uppercase tracking-widest text-[10px] mb-1">Status</div>
+                <div><%= @chaos_event.message %></div>
+              </div>
+            <% end %>
+
+            <div>
+              <label class="block text-[10px] uppercase tracking-widest text-slate-500 mb-2">Active Scenario</label>
+              <select class="w-full bg-slate-950 border border-slate-800 text-white text-xs rounded p-2 focus:border-amber-500 outline-none transition-colors">
+                <option value="gotthard_blackout">Gotthard Base Tunnel Blackout</option>
+              </select>
+            </div>
+
+            <!-- Timeline visualization -->
+            <div class="border-l-2 border-slate-800 ml-2 pl-4 py-2 space-y-4">
+              <div class="relative">
+                <div class="absolute w-2 h-2 rounded-full bg-slate-700 -left-[21px] top-1"></div>
+                <div class="text-[10px] font-bold text-amber-500 mb-0.5">08:00 (T+0)</div>
+                <div class="text-xs text-slate-300">Gotthard Node Offline</div>
+                <div class="text-[10px] text-slate-500">Duration: 4h</div>
+              </div>
+              <div class="relative">
+                <div class="absolute w-2 h-2 rounded-full bg-slate-700 -left-[21px] top-1"></div>
+                <div class="text-[10px] font-bold text-emerald-500 mb-0.5">12:00 (T+4h)</div>
+                <div class="text-xs text-slate-300">Infrastructure Restored</div>
+                <div class="text-[10px] text-slate-500">Auto-Recovery Phase</div>
+              </div>
             </div>
           </div>
           
-          <div id="active-trains-list" phx-update="stream" class="flex-grow overflow-y-auto p-2 space-y-2 custom-scrollbar">
-            <div :for={{id, train} <- @streams.active_trains} id={id} class="bg-slate-800/40 border border-slate-700/50 p-3 rounded-lg hover:bg-slate-800 transition-all duration-300 group">
-              <div class="flex justify-between items-start mb-1">
-                <span class="text-amber-500 font-bold text-xs">TRIP_<%= train.trip_id %></span>
-              </div>
-              <div class="text-[9px] text-slate-500 flex justify-between font-mono">
-                <span><%= Float.round(train.lat, 4) %>N</span>
-                <span><%= Float.round(train.lon, 4) %>E</span>
-              </div>
-            </div>
+          <div class="p-4 border-t border-slate-800 bg-slate-950">
+             <button phx-click="execute_scenario" class="w-full bg-red-900/50 hover:bg-red-600 text-red-500 hover:text-white font-bold py-3 rounded text-xs tracking-widest uppercase transition-all shadow-[0_0_15px_rgba(220,38,38,0.2)]">
+               Execute Scenario
+             </button>
           </div>
+        </div>
 
-          <!-- Simulation Controls -->
-          <div class="p-4 border-t border-slate-800 bg-slate-900/50 space-y-4 shrink-0">
-             <div class="grid grid-cols-2 gap-2 mt-4">
-                <button phx-click="pause" class="bg-slate-800 hover:bg-slate-700 text-white py-2 rounded text-xs border border-slate-700 transition-all active:scale-95">PAUSE</button>
-                <button phx-click="resume" class="bg-amber-600 hover:bg-amber-500 text-white py-2 rounded text-xs font-bold shadow-lg shadow-amber-900/20 transition-all active:scale-95">RESUME</button>
-                <button phx-click="inject_chaos" class="bg-red-900/50 hover:bg-red-600 text-red-500 hover:text-white py-2 rounded text-xs border border-red-900 transition-all active:scale-95 col-span-2">INJECT CHAOS (SIMULATE BREAKDOWN)</button>
-             </div>
-          </div>
-        </aside>
-        <!-- Visualization Surface (WebGL Hook) -->
-        <section class="flex-grow relative bg-slate-950 overflow-hidden h-full">
-          <div id="deckgl-wrapper" class="absolute inset-0 w-full h-full [&_canvas]:block [&_canvas]:absolute" phx-hook="DeckGLMap" phx-update="ignore"></div>
-
-  <!-- Map Overlay HUD -->
-          <div class="absolute bottom-8 right-8 flex flex-col items-end space-y-4 pointer-events-none">
-            
-            <!-- Chaos Resolution Panel -->
-            <%= if @chaos_event do %>
-              <%= if @chaos_event[:resolved] do %>
-                <div class="bg-emerald-900/80 border border-emerald-500 p-4 rounded-xl backdrop-blur-lg shadow-[0_0_20px_rgba(16,185,129,0.4)] pointer-events-auto w-80">
-                  <h3 class="text-emerald-400 font-bold mb-2 flex items-center"><span class="mr-2">✓</span> Conflict Resolved</h3>
-                  <p class="text-xs text-slate-300"><%= @chaos_event.message %></p>
-                </div>
-              <% else %>
-                <div class="bg-red-950/90 border border-red-600 p-5 rounded-xl backdrop-blur-lg shadow-[0_0_30px_rgba(220,38,38,0.5)] pointer-events-auto w-96">
-                  <div class="flex items-center space-x-3 mb-4">
-                    <div class="w-3 h-3 bg-red-500 rounded-full animate-ping"></div>
-                    <h3 class="text-red-500 font-black uppercase tracking-widest text-sm">Chaos Event Detected</h3>
-                  </div>
-                  
-                  <div class="mb-4 bg-black/50 p-3 rounded text-xs font-mono">
-                    <p class="text-slate-300">Target: <span class="text-white font-bold">TR-<%= @chaos_event.trip_id %></span></p>
-                    <p class="text-slate-300">Severity: <span class="text-red-400 font-bold"><%= String.upcase(@chaos_event.severity) %></span></p>
-                  </div>
-
-                  <form id="chaos-resolve-form" phx-submit="resolve_chaos">
-                    <label class="block text-[10px] uppercase tracking-widest text-slate-400 mb-2">Resolution Strategy</label>
-                    <select name="strategy" class="w-full bg-slate-900 border border-slate-700 text-white text-xs rounded p-2 mb-4 focus:ring-red-500 focus:border-red-500 outline-none">
-                      <option value="greedy">Salsa (Greedy Incremental)</option>
-                      <option value="local_search">Local Search (Tabu)</option>
-                      <option value="genetic">Global Metaheuristic (GA)</option>
-                      <option value="otp">OTP Actor Negotiation</option>
-                    </select>
-                    
-                    <button type="submit" class="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-2 rounded text-xs transition-colors shadow-lg shadow-red-900/50">
-                      EXECUTE RESOLUTION
-                    </button>
-                  </form>
-                </div>
-              <% end %>
-            <% end %>
-
-            <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-xl backdrop-blur-lg shadow-2xl pointer-events-none">
-              <div class="text-[10px] text-slate-500 uppercase mb-2 tracking-widest">Physical Layer Status</div>
-              <div class="flex items-center space-x-3">
-                <div class="w-2 h-2 bg-blue-500 rounded-full shadow-[0_0_8px_#3b82f6]"></div>
-                <span class="text-xs text-slate-300 font-medium italic">STIG (150M Cantons) Active</span>
-              </div>
-            </div>
-          </div>
-        </section>
       </main>
     </div>
     """

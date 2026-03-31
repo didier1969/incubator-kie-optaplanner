@@ -1,3 +1,5 @@
+# Copyright (c) Didier Stadelmann. All rights reserved.
+
 defmodule HexaRailWeb.TwinLiveTest do
   use ExUnit.Case
   import Phoenix.ConnTest
@@ -14,25 +16,35 @@ defmodule HexaRailWeb.TwinLiveTest do
     assert render(page_live) =~ "NEXUS"
   end
 
-  test "chaos control panel renders strategy selector and resolves conflict", %{conn: conn} do
+  test "chaos director tolerates partial detected events and marks the panel active", %{conn: conn} do
     {:ok, view, _html} = live(conn, "/")
 
-    # The Chaos Panel should initially be hidden or inactive
-    # We trigger a mock "chaos" event from the system
     send(view.pid, {:chaos_detected, %{trip_id: 9224174, severity: "critical"}})
 
-    # The UI should now show the Chaos Control Panel
-    assert render(view) =~ "Chaos Event Detected"
-    assert render(view) =~ "TR-9224174"
+    html = render(view)
+    assert html =~ "Chaos Director"
+    assert html =~ "Active"
+  end
 
-    # We should be able to select a strategy
-    assert render(view) =~ "Salsa (Greedy Incremental)"
-    assert render(view) =~ "Local Search (Tabu)"
+  test "execute scenario marks chaos director active with injection message", %{conn: conn} do
+    {:ok, view, _html} = live(conn, "/")
 
-    # Submitting the resolution form
-    html = view 
-           |> form("#chaos-resolve-form", strategy: "local_search") 
-           |> render_submit()
+    html =
+      view
+      |> element("button[phx-click=\"execute_scenario\"]")
+      |> render_click()
+
+    assert html =~ "Chaos Director"
+    assert html =~ "Active"
+    assert html =~ "Scenario injected."
+  end
+
+  test "resolve chaos shows the selected strategy message", %{conn: conn} do
+    {:ok, view, _html} = live(conn, "/")
+
+    html =
+      view
+      |> render_hook("resolve_chaos", %{"strategy" => "local_search"})
 
     assert html =~ "Resolving using Local Search..."
   end

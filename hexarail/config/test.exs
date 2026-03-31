@@ -20,3 +20,6 @@ config :hexarail, HexaRailWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: test_port],
   secret_key_base: "TEST_SECRET_KEY_BASE_HEXAPLANNER_VERY_LONG_MUST_BE_AT_LEAST_64_BYTES_LONG",
   server: false
+
+config :hexarail,
+  start_simulation_engine: false

@@ -1,9 +1,11 @@
+# Copyright (c) Didier Stadelmann. All rights reserved.
+
 defmodule HexaRail.Simulation.Engine do
   use GenServer
   require Logger
   alias HexaRail.Repo
   alias HexaRail.RailwayNif
-  alias HexaRail.GTFS.{Stop, Trip, StopTime}
+  alias HexaRail.GTFS.{Stop, StopTime}
   alias HexaRail.Data.Parser
   alias Phoenix.PubSub
 
@@ -19,6 +21,7 @@ defmodule HexaRail.Simulation.Engine do
   def get_status, do: GenServer.call(__MODULE__, :get_status)
   def pause, do: GenServer.call(__MODULE__, :pause)
   def resume, do: GenServer.call(__MODULE__, :resume)
+  def load_scenario(scenario_data), do: GenServer.cast(__MODULE__, {:load_scenario, scenario_data})
 
   def init(_) do
     Logger.info("Simulation Engine initializing...")
@@ -126,6 +129,24 @@ defmodule HexaRail.Simulation.Engine do
     {:noreply, %{state | progress: p, message: m}}
   end
 
+  def handle_cast({:load_scenario, scenario_data}, state) do
+    # Map raw maps to the HexaCore.Domain.Perturbation struct expected by the NIF
+    perturbations = Enum.map(scenario_data["perturbations"] || [], fn p ->
+      %{
+        __struct__: HexaCore.Domain.Perturbation,
+        id: p["id"],
+        perturbation_type: p["perturbation_type"],
+        target_id: p["target_id"],
+        start_time: p["start_time"],
+        duration: p["duration"]
+      }
+    end)
+    
+    RailwayNif.load_perturbations(state.resource, perturbations)
+    Logger.warning("SCENARIO LOADED: #{scenario_data["name"]} with #{length(perturbations)} perturbations.")
+    {:noreply, state}
+  end
+
   def handle_call(:get_status, _from, state), do: {:reply, state, state}
   def handle_call(:get_resource, _from, state), do: {:reply, state.resource, state}
   def handle_call(:pause, _from, state), do: {:reply, :ok, %{state | status: :paused}}
@@ -141,7 +162,9 @@ defmodule HexaRail.Simulation.Engine do
 
   def handle_info(:tick, %{status: :running, resource: resource, current_time: time} = state) do
     positions = RailwayNif.get_active_positions(resource, time)
-    Logger.info("[TICK] Time: #{time} | Active Trains: #{length(positions)}")
+    health = RailwayNif.get_system_health(resource)
+    
+    Logger.info("[TICK] Time: #{time} | Active Trains: #{length(positions)} | Health: Delay=#{health.total_delay_seconds}s Conflicts=#{health.active_conflicts}")
     
     # Binary Payload: [trip_id:32, head_lon:32f, head_lat:32f, tail_lon:32f, tail_lat:32f, alt:32f, heading:16i, pitch:16i, roll:16i, speed:16u] = 32 bytes
     binary_payload = 
@@ -150,7 +173,7 @@ defmodule HexaRail.Simulation.Engine do
       end
 
     b64_payload = Base.encode64(binary_payload)
-    PubSub.broadcast(HexaRail.PubSub, "simulation:switzerland", {:tick_binary, time, b64_payload})
+    PubSub.broadcast(HexaRail.PubSub, "simulation:switzerland", {:tick_binary, time, b64_payload, health})
     
     new_time = if time + @time_dilation >= 86400, do: 0, else: time + @time_dilation
     Process.send_after(self(), :tick, @tick_interval_ms)

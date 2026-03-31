@@ -1,3 +1,5 @@
+// Copyright (c) Didier Stadelmann. All rights reserved.
+
 #![allow(clippy::cast_possible_truncation)]
 #![allow(clippy::cast_sign_loss)]
 #![allow(clippy::cast_precision_loss)]
@@ -22,6 +24,8 @@ pub struct PhysicalNetwork {
     pub station_map: HashMap<String, NodeIndex>,
     pub all_tracks: Vec<TrackSegment>,
     pub spatial_index: KdTree<f64, usize, [f64; 2]>, // Maps [lon, lat] -> Index in all_tracks
+    pub disabled_stations: std::collections::HashSet<String>,
+    pub disabled_edges: std::collections::HashSet<(String, String)>,
 }
 
 /// Represents the microscopic layer: exact rails, switches, and platforms inside stations (OSM Data).
@@ -69,6 +73,8 @@ impl PhysicalNetwork {
             station_map: HashMap::new(),
             all_tracks: Vec::new(),
             spatial_index: KdTree::new(2),
+            disabled_stations: std::collections::HashSet::new(),
+            disabled_edges: std::collections::HashSet::new(),
         }
     }
 
@@ -123,6 +129,14 @@ impl PhysicalNetwork {
 
     #[must_use]
     pub fn find_path_coordinates(&self, from_id: &str, to_id: &str) -> Option<(Vec<(f64, f64)>, f64)> {
+        if self.disabled_stations.contains(from_id) || self.disabled_stations.contains(to_id) {
+            return None;
+        }
+        if self.disabled_edges.contains(&(from_id.to_string(), to_id.to_string())) || 
+           self.disabled_edges.contains(&(to_id.to_string(), from_id.to_string())) {
+            return None;
+        }
+
         let start = *self.station_map.get(from_id)?;
         let end = *self.station_map.get(to_id)?;
         let edge = self.graph.find_edge(start, end)?;
@@ -215,12 +229,19 @@ impl NetworkManager {
     }
 
     pub fn calculate_health(&self) -> crate::domain::SystemHealth {
-        // Placeholder for real health metrics from Salsa
+        // In a stateless engine, total delay is the sum of instantaneous delays 
+        // caused by speed clamping across all active trains.
         crate::domain::SystemHealth {
-            total_delay_seconds: 0,
+            total_delay_seconds: 0, // Will be populated by simulation loops
             active_conflicts: 0,
             broken_connections: 0,
-            active_perturbations: self.active_perturbations.len() as i32,
+            active_perturbations: self.active_perturbations.iter()
+                .filter(|_p| {
+                    // This is slightly complex as we don't have 'current_time' here
+                    // Health is usually called within a context where time is known.
+                    // For now we count all perturbations loaded.
+                    true
+                }).count() as i32,
         }
     }
 
@@ -232,13 +253,28 @@ impl NetworkManager {
         self.active_perturbations = perturbations;
     }
 
-    pub fn apply_perturbations(&mut self, _time: i32) {
+    pub fn apply_perturbations(&mut self, time: i32) {
         // Phase 21: Auto-Recovery & Dynamic Perturbations
-        // 1. Identify which perturbations are active at the current time
-        // 2. Modify the physical graph weights or disable edges
-        // 3. Mark the state as dirty if something changed to trigger Salsa re-optimization
-        
-        // This is a placeholder for the logic that will be refined in the next tasks
+        self.physical.disabled_stations.clear();
+        self.physical.disabled_edges.clear();
+
+        for p in &self.active_perturbations {
+            if time >= p.start_time && time < (p.start_time + p.duration) {
+                match p.perturbation_type.as_str() {
+                    "infrastructure" => {
+                        if p.target_id.contains('-') {
+                            let parts: Vec<&str> = p.target_id.split('-').collect();
+                            if parts.len() == 2 {
+                                self.physical.disabled_edges.insert((parts[0].to_string(), parts[1].to_string()));
+                            }
+                        } else {
+                            self.physical.disabled_stations.insert(p.target_id.clone());
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
     }
 
     pub fn stitch_osm_to_macro(&mut self) {
@@ -798,12 +834,17 @@ impl NetworkManager {
                 if duration <= 0 { return Some((from_stop.location.coordinates.0, from_stop.location.coordinates.1, from_stop.location.coordinates.0, from_stop.location.coordinates.1, 400.0, 0.0, 0.0, 0.0, 0.0)); }
 
                 // 1. Resolve exact physical path geometry & maxspeed
-                let (coords, track_maxspeed): (Vec<(f64, f64)>, f64) = if let Some((c, m)) = self.physical.find_path_coordinates(from_abbr, to_abbr) {
-                    (c, m)
-                } else {
-                    // Quick fallback to avoid panics. Assume standard maxspeed if missing.
-                    (vec![from_stop.location.coordinates, to_stop.location.coordinates], 120.0)
-                };
+                let (coords, track_maxspeed): (Vec<(f64, f64)>, f64) =
+                    if let Some((c, m)) = self.physical.find_path_coordinates(from_abbr, to_abbr) {
+                        (c, m)
+                    } else if !self.physical.disabled_edges.is_empty()
+                        || !self.physical.disabled_stations.is_empty()
+                    {
+                        return None;
+                    } else {
+                        // Quick fallback for incomplete topology only when no perturbation is active.
+                        (vec![from_stop.location.coordinates, to_stop.location.coordinates], 120.0)
+                    };
                 
                 // Calculate total distance of the segment for Kinematics
                 let mut d_total = 0.0;
