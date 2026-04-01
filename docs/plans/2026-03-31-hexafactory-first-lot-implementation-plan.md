@@ -10,6 +10,13 @@
 
 ---
 
+## Implemented Slices
+
+- Tasks 1 and 2 are implemented: `HexaCore` now carries generic precedence, windows, release/due dates, and core constraint scoring.
+- Task 3 is implemented: `HexaFactory` foundation schemas and migration exist.
+- Task 4 is implemented: `HexaFactory` planning schemas and migration exist.
+- Task 5 is now partially implemented: a deterministic generator entrypoint and builder modules exist, validated by `generator_determinism_test.exs` and `generator_invariants_test.exs`.
+
 ## Global Rules
 
 - Every modified code file must start with: `Copyright (c) Didier Stadelmann. All rights reserved.`
