@@ -18,6 +18,15 @@
   - Rust unit coverage in `native/hexacore_engine/src/score.rs` and `native/hexacore_engine/src/domain.rs`
 - The solve path is still minimal, but the contract is no longer railway-shaped-only.
 
+## Proven Slice (2026-04-01)
+- A second vertical now exercises the generic core through a real manufacturing path:
+  - deterministic dataset generation
+  - persisted planning horizon snapshots
+  - `HexaFactory -> HexaCore` projection
+  - vertical diagnostics and smoke execution through `mix hexafactory.smoke`
+- This replaces the earlier placeholder idea of proving separation with a dummy logistics test.
+- The main remaining separation debt is now concentrated in the railway-backed NIF surface and Rust domain/types still hosted under `HexaCore`.
+
 ## Phase 1: Elixir Namespace & Directory Restructuring
 - Create `lib/hexacore` to house agnostic components.
 - Move `lib/hexarail/dsl`, `lib/hexarail/transpiler`, and `lib/hexarail/domain/job.ex`/`problem.ex` into `lib/hexacore`.
@@ -35,4 +44,4 @@
 
 ## Phase 4: Re-Integration & TDD
 - Fix all failing tests.
-- Prove the separation by writing a dummy "Logistics" test that optimizes truck routes using `HexaCore` without touching `HexaRail` railway logic.
+- Extend the manufacturing proof and then finish moving railway-specific loaders/types behind a true `HexaRail` facade so that `HexaCore.Nif` exposes only generic optimization entrypoints.

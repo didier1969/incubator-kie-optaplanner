@@ -5,7 +5,7 @@ This repository is evolving toward an industrial-grade, high-performance optimiz
 The target architecture separates:
 *   **HexaCore:** the reusable optimization engine and orchestration platform.
 *   **HexaRail:** the railway vertical and primary showcase.
-*   **HexaFactory:** the manufacturing/job-shop vertical currently started at the domain and planning level.
+*   **HexaFactory:** the manufacturing/job-shop vertical now implemented as a real production namespace with generator, persistence, projection, diagnostics, and smoke execution path.
 
 ## Vision
 Most optimization systems simplify reality to fit mathematical models. This project takes the opposite stance: model reality with enough physical, temporal, and operational fidelity that proposed optimizations remain actionable in the real world.
@@ -26,7 +26,7 @@ HexaRail is the most advanced vertical in the repository. It serves as the techn
 ### HexaFactory
 HexaFactory is the second vertical already initiated in the repo.
 *   **Focus:** manufacturing, job-shop scheduling, setup optimization, plant capacities, and supply chain constraints
-*   **Status:** domain ontology and design documents are present under `docs/plans/hexafactory/`, and the first production namespace plus foundation/planning persistence layers and a deterministic synthetic generator now exist under `hexarail/lib/hexafactory/`
+*   **Status:** domain ontology and design documents are present under `docs/plans/hexafactory/`, and the production namespace under `hexarail/lib/hexafactory/` now includes foundation/planning persistence, deterministic dataset generation, planning-horizon snapshots, projection into `HexaCore`, vertical diagnostics, and an executable `mix hexafactory.smoke` path
 
 ## Architecture
 *   **Control Plane (Elixir/OTP):** orchestration, actor-based state management, resilience, and real-time interfaces via Phoenix LiveView

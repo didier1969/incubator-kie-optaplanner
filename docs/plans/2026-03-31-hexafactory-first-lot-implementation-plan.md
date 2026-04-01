@@ -19,6 +19,8 @@
 - Task 6 is implemented: planning horizon snapshot persistence and reload are covered by `persisted_dataset_test.exs`.
 - Task 7 is implemented: the `HexaFactory -> HexaCore` projection layer is covered by `problem_projection_test.exs`.
 - Task 8 is implemented: the vertical solver facade, decoder, and diagnostics are covered by `solver_integration_test.exs`.
+- Task 9 is implemented in its first vertical-facing form: `HexaFactory.Constraints.*` now produces due-date, setup, machine-cost, transfer, buffer, maintenance, labor, batching, and scrap diagnostics, covered by `constraint_interactions_test.exs`.
+- Task 10 is partially implemented: the operational smoke entrypoint `mix hexafactory.smoke` exists and is covered by `test/mix/tasks/hexafactory_smoke_task_test.exs`.
 
 ## Current Reality
 
@@ -34,7 +36,10 @@
   - `test/hexafactory/persisted_dataset_test.exs`
   - `test/hexafactory/problem_projection_test.exs`
   - `test/hexafactory/solver_integration_test.exs`
-- Remaining first-lot work is now concentrated on richer constraint interactions, volumetry smoke beyond the reduced slice, operational Mix tasks, and then platform closure work on `HexaRail` and the final `HexaCore` boundary cleanup.
+  - `test/hexafactory/constraint_interactions_test.exs`
+  - `test/mix/tasks/hexafactory_smoke_task_test.exs`
+- The reduced-volume industrial path is now operator-facing through `mix hexafactory.smoke --profile volumetry_smoke --seed <n> --iterations <n>`.
+- Remaining first-lot work is now concentrated on a dedicated volumetry smoke regression file, fuller score semantics in the generic solver, and then platform closure work on `HexaRail` and the final `HexaCore` boundary cleanup.
 
 ## Global Rules
 
