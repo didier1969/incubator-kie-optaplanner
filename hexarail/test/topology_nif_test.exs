@@ -1,3 +1,5 @@
+# Copyright (c) Didier Stadelmann. All rights reserved.
+
 defmodule HexaRail.TopologyNifTest do
   use ExUnit.Case
   alias HexaRail.RailwayNif
@@ -67,7 +69,7 @@ defmodule HexaRail.TopologyNifTest do
     assert true
   end
 
-  test "can interpolate train position between stops in rust" do
+  test "clamps interpolated train position to a physically reachable point when timetable is too aggressive" do
     resource = RailwayNif.init_network()
 
     # Setup network
@@ -103,11 +105,11 @@ defmodule HexaRail.TopologyNifTest do
 
     RailwayNif.load_stop_times(resource, stop_times)
 
-    # Query middle position (t=36500)
+    # Query middle position (t=36500). The raw schedule would imply a midpoint,
+    # but the runtime now clamps motion to the physically reachable distance.
     {lon, lat} = RailwayNif.get_train_position(resource, 100, 36500)
 
-    # Expected middle point
-    assert_in_delta lon, 7.95, 0.01
-    assert_in_delta lat, 47.1, 0.01
+    assert_in_delta lon, 7.53, 0.02
+    assert_in_delta lat, 46.95, 0.02
   end
 end

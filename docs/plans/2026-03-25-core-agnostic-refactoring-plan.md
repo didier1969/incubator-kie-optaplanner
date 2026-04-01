@@ -27,6 +27,17 @@
 - This replaces the earlier placeholder idea of proving separation with a dummy logistics test.
 - The main remaining separation debt is now concentrated in the railway-backed NIF surface and Rust domain/types still hosted under `HexaCore`.
 
+## Proven Slice (2026-04-01, API Boundary Closure)
+- The public Elixir NIF boundary is now split in practice:
+  - `HexaCore.Nif` exposes only generic core entrypoints
+  - `HexaRail.RailwayNif` owns the railway-facing operations
+  - `HexaRail.Native` is the internal Rustler bridge that loads the shared crate
+- This removes the railway loaders and topology operations from the public `HexaCore.Nif` surface without yet splitting the Rust crate itself.
+- The remaining P0 debt is now lower in the stack:
+  - `rustler::init!` and topology still live in `hexacore_engine`
+  - railway-specific Rust types are still compiled inside the core crate
+  - `HexaCore.Domain.Job/Resource` still carry Ecto concerns
+
 ## Phase 1: Elixir Namespace & Directory Restructuring
 - Create `lib/hexacore` to house agnostic components.
 - Move `lib/hexarail/dsl`, `lib/hexarail/transpiler`, and `lib/hexarail/domain/job.ex`/`problem.ex` into `lib/hexacore`.
@@ -41,6 +52,7 @@
 ## Phase 3: Generic NIF Bridge
 - Refactor `SolverNif` to `HexaCore.Nif`.
 - Expose a generic entity loading function `load_entities/2` instead of hardcoded `load_stops`, `load_trips`, etc.
+- Completed in public Elixir API terms through `HexaRail.Native` as the internal bridge and `HexaCore.Nif` as the generic-only facade.
 
 ## Phase 4: Re-Integration & TDD
 - Fix all failing tests.

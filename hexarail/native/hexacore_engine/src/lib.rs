@@ -390,4 +390,4 @@ fn load(env: Env, _info: Term) -> bool {
     true
 }
 
-rustler::init!("Elixir.HexaCore.Nif", load = load);
+rustler::init!("Elixir.HexaRail.Native", load = load);

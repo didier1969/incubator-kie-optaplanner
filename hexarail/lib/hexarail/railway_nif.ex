@@ -1,42 +1,44 @@
+# Copyright (c) Didier Stadelmann. All rights reserved.
+
 defmodule HexaRail.RailwayNif do
   @moduledoc """
   Railway Vertical API acting as a facade over HexaCore generic functions.
   """
 
-  alias HexaCore.Nif
+  alias HexaRail.Native
 
-  def init_network, do: Nif.init_network()
+  def init_network, do: Native.init_network()
 
-  defdelegate load_stops(resource, stops), to: Nif
-  defdelegate load_trips(resource, trips), to: Nif
-  defdelegate load_stop_times(resource, stop_times), to: Nif
-  defdelegate load_transfers(resource, transfers), to: Nif
-  defdelegate load_calendars(resource, calendars), to: Nif
-  defdelegate load_calendar_dates(resource, dates), to: Nif
-  defdelegate load_fleet(resource, profiles), to: Nif
-  defdelegate load_tracks(resource, tracks), to: Nif
-  defdelegate load_dem(resource, dem_grid), to: Nif
-  defdelegate load_perturbations(resource, perturbations), to: Nif
-  defdelegate get_system_health(resource), to: Nif
+  defdelegate load_stops(resource, stops), to: Native
+  defdelegate load_trips(resource, trips), to: Native
+  defdelegate load_stop_times(resource, stop_times), to: Native
+  defdelegate load_transfers(resource, transfers), to: Native
+  defdelegate load_calendars(resource, calendars), to: Native
+  defdelegate load_calendar_dates(resource, dates), to: Native
+  defdelegate load_fleet(resource, profiles), to: Native
+  defdelegate load_tracks(resource, tracks), to: Native
+  defdelegate load_dem(resource, dem_grid), to: Native
+  defdelegate load_perturbations(resource, perturbations), to: Native
+  defdelegate get_system_health(resource), to: Native
 
-  defdelegate load_osm_from_json(resource, path), to: Nif
-  defdelegate load_osm(resource, nodes, ways), to: Nif
-  defdelegate route_micro_path(resource, start_id, end_id), to: Nif
-  defdelegate route_micro_path_with_kinematics(resource, start_id, end_id, fleet_id), to: Nif
-  defdelegate stitch_osm_to_macro(resource), to: Nif
-  defdelegate get_train_position(resource, trip_id, time), to: Nif
-  defdelegate get_active_positions(resource, time), to: Nif
-  defdelegate finalize_temporal_graph(resource), to: Nif
-  defdelegate get_conflict_summary(resource), to: Nif
-  defdelegate freeze_state(resource, path), to: Nif
-  defdelegate thaw_state(resource, path), to: Nif
-  defdelegate inject_delay(resource, trip_id, delay_seconds), to: Nif
-  defdelegate resolve_conflict_greedy(resource), to: Nif
-  defdelegate resolve_conflict_local_search(resource), to: Nif
-  defdelegate get_all_tracks(resource), to: Nif
-  defdelegate detect_conflicts(resource), to: Nif
+  defdelegate load_osm_from_json(resource, path), to: Native
+  defdelegate load_osm(resource, nodes, ways), to: Native
+  defdelegate route_micro_path(resource, start_id, end_id), to: Native
+  defdelegate route_micro_path_with_kinematics(resource, start_id, end_id, fleet_id), to: Native
+  defdelegate stitch_osm_to_macro(resource), to: Native
+  defdelegate get_train_position(resource, trip_id, time), to: Native
+  defdelegate get_active_positions(resource, time), to: Native
+  defdelegate finalize_temporal_graph(resource), to: Native
+  defdelegate get_conflict_summary(resource), to: Native
+  defdelegate freeze_state(resource, path), to: Native
+  defdelegate thaw_state(resource, path), to: Native
+  defdelegate inject_delay(resource, trip_id, delay_seconds), to: Native
+  defdelegate resolve_conflict_greedy(resource), to: Native
+  defdelegate resolve_conflict_local_search(resource), to: Native
+  defdelegate get_all_tracks(resource), to: Native
+  defdelegate detect_conflicts(resource), to: Native
 
   # Hexacore passthroughs for tests that reference SolverNif but should use HexaCore.Nif
-  defdelegate evaluate_problem(resource, problem), to: Nif
-  defdelegate optimize_problem(resource, problem, iterations), to: Nif
+  defdelegate evaluate_problem(resource, problem), to: Native
+  defdelegate optimize_problem(resource, problem, iterations), to: Native
 end
