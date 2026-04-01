@@ -21,6 +21,7 @@
 - Bootstrap the LiveView HUD from `Engine.get_status/0` when available, with a defensive fallback for `test` and disconnected mounts.
 - Route `resolve_chaos` through `Engine.resolve_chaos/1` instead of leaving it as a UI-only placeholder.
 - Use the same configurable engine boundary for `mount`, `execute_scenario`, `resolve_chaos`, `pause`, and `resume`, which makes the LiveView testable without booting the real engine.
+- Add a headless railway operator smoke path via `mix hexarail.smoke`, exercising topology, timetable, perturbation, and resolution without the LiveView.
 
 ## Validation
 - `mix test test/hexaplanner_web/live/twin_live_test.exs`

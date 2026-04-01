@@ -22,6 +22,7 @@ The long-term goal is not a single railway product. The goal is a multi-vertical
 HexaRail is the most advanced vertical in the repository. It serves as the technical validator and showcase by modeling the **Swiss Federal Railways (CFF/SBB)** network.
 *   **Scale:** 1.19M+ trips, 19M+ stop events, 96k locations
 *   **Role:** prove that the platform can handle a zero-simplification, high-density real-world system
+*   **Operator smoke:** `mix hexarail.smoke` now exercises a deterministic railway path through topology, timetable, perturbation, and conflict resolution
 
 ### HexaFactory
 HexaFactory is the second vertical already initiated in the repo.
@@ -63,7 +64,7 @@ mix data.import
 The shell now isolates mutable state under `./.state/` and exports project-local randomized ports for the web endpoint, tests, and PostgreSQL.
 
 ## Repository Direction
-*   **Near term:** finish the remaining deep separation between `HexaCore` and the railway-specific vertical. The public Elixir NIF boundary is now split, but the Rust crate and several railway-specific types still live inside `hexacore_engine`.
+*   **Near term:** finish the remaining deep separation between `HexaCore` and the railway-specific vertical. The public Elixir NIF boundary is now split and the Rust type layer is now split between `domain.rs` and `railway_domain.rs`, but the crate still hosts both the generic core and the railway topology/runtime NIFs.
 *   **Medium term:** stabilize the agnostic APIs and prove reuse across multiple verticals
 *   **Long term:** ship a true multi-vertical optimization platform, with HexaRail as showcase and HexaFactory as the next concrete industrial implementation
 

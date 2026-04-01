@@ -9,7 +9,7 @@ defmodule Mix.Tasks.Hexafactory.Persist do
 
   @impl Mix.Task
   def run(args) do
-    Mix.Task.run("app.start")
+    CLI.bootstrap_planning_runtime!()
 
     args
     |> CLI.parse_common_opts(profile: "smoke", seed: 42)

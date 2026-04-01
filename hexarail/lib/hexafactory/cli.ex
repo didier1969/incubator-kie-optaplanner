@@ -7,6 +7,22 @@ defmodule HexaFactory.CLI do
   alias HexaFactory.Ingestion.PersistedDataset
   alias HexaFactory.Solver.Facade
 
+  @spec bootstrap_planning_runtime!() :: :ok
+  def bootstrap_planning_runtime! do
+    Application.put_env(:hexarail, :start_simulation_engine, false)
+
+    if Mix.env() != :test do
+      Mix.Task.reenable("ecto.create")
+      Mix.Task.reenable("ecto.migrate")
+      Mix.Task.run("ecto.create", ["--quiet"])
+      Mix.Task.run("ecto.migrate", ["--quiet"])
+    end
+
+    Mix.Task.reenable("app.start")
+    Mix.Task.run("app.start")
+    :ok
+  end
+
   @spec parse_common_opts([String.t()], keyword()) :: keyword()
   def parse_common_opts(args, defaults \\ []) do
     {opts, _argv, _invalid} =

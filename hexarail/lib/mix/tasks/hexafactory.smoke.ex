@@ -9,7 +9,7 @@ defmodule Mix.Tasks.Hexafactory.Smoke do
 
   @impl Mix.Task
   def run(args) do
-    Mix.Task.run("app.start")
+    CLI.bootstrap_planning_runtime!()
 
     args
     |> CLI.parse_common_opts(profile: "volumetry_smoke", seed: 1001, iterations: 200)
