@@ -113,7 +113,7 @@ defmodule HexaRail.ChaosSolverTest do
 
     perturbations = [
       %{
-        __struct__: HexaCore.Domain.Perturbation,
+        __struct__: HexaRail.Domain.Perturbation,
         id: "p1",
         perturbation_type: "infrastructure",
         target_id: "A-B",

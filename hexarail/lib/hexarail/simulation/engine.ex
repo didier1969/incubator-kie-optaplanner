@@ -130,10 +130,10 @@ defmodule HexaRail.Simulation.Engine do
   end
 
   def handle_cast({:load_scenario, scenario_data}, state) do
-    # Map raw maps to the HexaCore.Domain.Perturbation struct expected by the NIF
+    # Map raw maps to the HexaRail.Domain.Perturbation struct expected by the railway NIF
     perturbations = Enum.map(scenario_data["perturbations"] || [], fn p ->
       %{
-        __struct__: HexaCore.Domain.Perturbation,
+        __struct__: HexaRail.Domain.Perturbation,
         id: p["id"],
         perturbation_type: p["perturbation_type"],
         target_id: p["target_id"],

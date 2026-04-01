@@ -4,7 +4,7 @@ use rustler::NifStruct;
 use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, rustler::NifStruct)]
-#[module = "HexaCore.Domain.Perturbation"]
+#[module = "HexaRail.Domain.Perturbation"]
 pub struct Perturbation {
     pub id: String,
     pub perturbation_type: String, // "infrastructure" | "vehicle" | "weather"
@@ -14,7 +14,7 @@ pub struct Perturbation {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, rustler::NifStruct)]
-#[module = "HexaCore.Domain.SystemHealth"]
+#[module = "HexaRail.Domain.SystemHealth"]
 pub struct SystemHealth {
     pub total_delay_seconds: i64,
     pub active_conflicts: i32,
@@ -23,7 +23,7 @@ pub struct SystemHealth {
 }
 
 #[derive(Debug, Clone, rustler::NifStruct)]
-#[module = "HexaCore.Domain.ActivePosition"]
+#[module = "HexaRail.Domain.ActivePosition"]
 pub struct ActivePosition {
     pub trip_id: i64,
     pub head_lon: f64,
@@ -228,7 +228,7 @@ pub struct TrackSegment {
 }
 
 #[derive(Debug, Clone, NifStruct)]
-#[module = "HexaCore.Domain.EOS"]
+#[module = "HexaRail.Domain.EOS"]
 pub struct ElementaryOccupationSegment {
     pub trip_id: i64,
     pub track_id: String,
@@ -237,7 +237,7 @@ pub struct ElementaryOccupationSegment {
 }
 
 #[derive(Debug, Clone, NifStruct)]
-#[module = "HexaCore.Domain.Conflict"]
+#[module = "HexaRail.Domain.Conflict"]
 pub struct Conflict {
     pub trip_a: i64,
     pub trip_b: i64,
@@ -247,14 +247,14 @@ pub struct Conflict {
 }
 
 #[derive(Debug, Clone, NifStruct)]
-#[module = "HexaCore.Domain.ConflictSummary"]
+#[module = "HexaRail.Domain.ConflictSummary"]
 pub struct ConflictSummary {
     pub total_conflicts: usize,
     pub sample_conflicts: Vec<Conflict>,
 }
 
 #[derive(Debug, Clone, NifStruct)]
-#[module = "HexaCore.Domain.ResolutionMetrics"]
+#[module = "HexaRail.Domain.ResolutionMetrics"]
 pub struct ResolutionMetrics {
     pub status: String,
     pub trains_impacted: usize,
@@ -263,7 +263,7 @@ pub struct ResolutionMetrics {
 }
 
 #[derive(Debug, Clone, NifStruct, Serialize, Deserialize)]
-#[module = "HexaCore.Domain.CompactEOS"]
+#[module = "HexaRail.Domain.CompactEOS"]
 pub struct CompactEOS {
     pub trip_idx: u32,
     pub track_idx: u32,
