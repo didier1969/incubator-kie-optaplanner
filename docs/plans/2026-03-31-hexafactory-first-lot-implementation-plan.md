@@ -20,11 +20,14 @@
 - Task 7 is implemented: the `HexaFactory -> HexaCore` projection layer is covered by `problem_projection_test.exs`.
 - Task 8 is implemented: the vertical solver facade, decoder, and diagnostics are covered by `solver_integration_test.exs`.
 - Task 9 is implemented in its first vertical-facing form: `HexaFactory.Constraints.*` now produces due-date, setup, machine-cost, transfer, buffer, maintenance, labor, batching, and scrap diagnostics, covered by `constraint_interactions_test.exs`.
-- Task 10 is partially implemented: the operational smoke entrypoint `mix hexafactory.smoke` exists and is covered by `test/mix/tasks/hexafactory_smoke_task_test.exs`.
+- Task 10 is implemented in operator-facing form: `mix hexafactory.generate`, `mix hexafactory.persist`, `mix hexafactory.solve`, and `mix hexafactory.smoke` now exist and are exercised by dedicated Mix task tests plus `volumetry_smoke_test.exs`.
 
 ## Current Reality
 
 - The end-to-end reduced-volume path is now real: `generator -> persisted snapshot -> projection -> generic core solve -> HexaFactory-facing diagnostics`.
+- The generic `HexaCore` contract exercised by `HexaFactory` is now cleaner as well:
+  - `HexaCore.Domain.Job` and `HexaCore.Domain.Resource` are plain structs rather than Ecto schemas
+  - `test/hexacore/domain_boundary_test.exs` guards that boundary explicitly
 - The current validation scope is green under `nix develop` for:
   - `test/hexacore/core_solver_test.exs`
   - `test/hexacore/problem_contract_test.exs`
@@ -37,9 +40,15 @@
   - `test/hexafactory/problem_projection_test.exs`
   - `test/hexafactory/solver_integration_test.exs`
   - `test/hexafactory/constraint_interactions_test.exs`
+  - `test/hexafactory/volumetry_smoke_test.exs`
+  - `test/mix/tasks/hexafactory_tasks_test.exs`
   - `test/mix/tasks/hexafactory_smoke_task_test.exs`
-- The reduced-volume industrial path is now operator-facing through `mix hexafactory.smoke --profile volumetry_smoke --seed <n> --iterations <n>`.
-- Remaining first-lot work is now concentrated on a dedicated volumetry smoke regression file, fuller score semantics in the generic solver, and then platform closure work on `HexaRail` and the final `HexaCore` boundary cleanup.
+- The reduced-volume industrial path is now operator-facing through:
+  - `mix hexafactory.generate`
+  - `mix hexafactory.persist`
+  - `mix hexafactory.solve`
+  - `mix hexafactory.smoke`
+- Remaining first-lot work is now concentrated on fuller score semantics in the generic solver and then platform closure work on `HexaRail` and the final `HexaCore` boundary cleanup.
 
 ## Global Rules
 

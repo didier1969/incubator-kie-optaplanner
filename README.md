@@ -27,6 +27,7 @@ HexaRail is the most advanced vertical in the repository. It serves as the techn
 HexaFactory is the second vertical already initiated in the repo.
 *   **Focus:** manufacturing, job-shop scheduling, setup optimization, plant capacities, and supply chain constraints
 *   **Status:** domain ontology and design documents are present under `docs/plans/hexafactory/`, and the production namespace under `hexarail/lib/hexafactory/` now includes foundation/planning persistence, deterministic dataset generation, planning-horizon snapshots, projection into `HexaCore`, vertical diagnostics, and an executable `mix hexafactory.smoke` path
+*   **Operator tasks:** `mix hexafactory.generate`, `mix hexafactory.persist`, `mix hexafactory.solve`, and `mix hexafactory.smoke`
 
 ## Architecture
 *   **Control Plane (Elixir/OTP):** orchestration, actor-based state management, resilience, and real-time interfaces via Phoenix LiveView

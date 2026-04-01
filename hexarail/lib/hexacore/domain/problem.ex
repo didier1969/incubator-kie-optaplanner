@@ -1,5 +1,7 @@
+# Copyright (c) Didier Stadelmann. All rights reserved.
+
 defmodule HexaCore.Domain.Problem do
-  @moduledoc "The root aggregate holding the entire Twin state."
+  @moduledoc "The root aggregate holding a generic scheduling problem."
   defstruct [:id, resources: [], jobs: [], edges: [], score_components: []]
 
   @type t :: %__MODULE__{

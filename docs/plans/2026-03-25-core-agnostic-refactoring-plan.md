@@ -34,10 +34,13 @@
   - `HexaRail.Native` is the internal Rustler bridge that loads the shared crate
 - Railway-facing NIF structs exposed back to the BEAM now live under `HexaRail.Domain` instead of `HexaCore.Domain`.
 - This removes the railway loaders and topology operations from the public `HexaCore.Nif` surface without yet splitting the Rust crate itself.
+- A further core-domain boundary slice is now proven:
+  - `HexaCore.Domain.Job` and `HexaCore.Domain.Resource` are plain data structs and no longer export Ecto schema metadata
+  - `test/hexacore/domain_boundary_test.exs` now protects that contract explicitly
 - The remaining P0 debt is now lower in the stack:
   - `rustler::init!` and topology still live in `hexacore_engine`
   - GTFS/OSM/fleet/topology Rust types are still compiled inside the core crate
-  - `HexaCore.Domain.Job/Resource` still carry Ecto concerns
+  - `HexaCore.Domain.Problem` is clean, but the deeper Rust crate split is still missing
 
 ## Phase 1: Elixir Namespace & Directory Restructuring
 - Create `lib/hexacore` to house agnostic components.
