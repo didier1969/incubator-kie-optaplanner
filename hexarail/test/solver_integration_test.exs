@@ -1,10 +1,11 @@
+# Copyright (c) Didier Stadelmann. All rights reserved.
+
 defmodule HexaRail.SolverIntegrationTest do
   use ExUnit.Case
   alias HexaCore.Domain.{Job, Problem}
-  alias HexaRail.RailwayNif
+  alias HexaCore.Nif
 
   test "rust nif calculates penalty for unassigned jobs" do
-    resource = RailwayNif.init_network()
     problem = %Problem{
       id: "sim_1",
       resources: [],
@@ -15,11 +16,10 @@ defmodule HexaRail.SolverIntegrationTest do
     }
 
     # Should be -100 because 1 job is unassigned
-    assert RailwayNif.evaluate_problem(resource, problem) == -100
+    assert Nif.evaluate_problem_core(problem) == -100
   end
 
   test "rust nif optimizes the problem and returns mutated state" do
-    resource = RailwayNif.init_network()
     problem = %Problem{
       id: "sim_2",
       resources: [],
@@ -28,11 +28,11 @@ defmodule HexaRail.SolverIntegrationTest do
       ]
     }
 
-    assert RailwayNif.evaluate_problem(resource, problem) == -100
+    assert Nif.evaluate_problem_core(problem) == -100
 
-    optimized_problem = RailwayNif.optimize_problem(resource, problem, 10)
+    optimized_problem = Nif.optimize_problem_core(problem, 10)
 
-    assert RailwayNif.evaluate_problem(resource, optimized_problem) == 0
+    assert Nif.evaluate_problem_core(optimized_problem) == 0
     # Ensure the Rust engine actually mutated the struct and sent it back
     assert hd(optimized_problem.jobs).start_time != nil
   end

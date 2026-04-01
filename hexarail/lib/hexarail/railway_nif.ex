@@ -2,7 +2,7 @@
 
 defmodule HexaRail.RailwayNif do
   @moduledoc """
-  Railway Vertical API acting as a facade over HexaCore generic functions.
+  Railway vertical API exposing only railway-facing operations.
   """
 
   alias HexaRail.Native
@@ -37,8 +37,4 @@ defmodule HexaRail.RailwayNif do
   defdelegate resolve_conflict_local_search(resource), to: Native
   defdelegate get_all_tracks(resource), to: Native
   defdelegate detect_conflicts(resource), to: Native
-
-  # Hexacore passthroughs for tests that reference SolverNif but should use HexaCore.Nif
-  defdelegate evaluate_problem(resource, problem), to: Native
-  defdelegate optimize_problem(resource, problem, iterations), to: Native
 end

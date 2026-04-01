@@ -24,6 +24,8 @@ defmodule HexaCore.NifBoundaryTest do
     assert function_exported?(RailwayNif, :load_stops, 2)
     assert function_exported?(RailwayNif, :load_osm, 3)
     assert function_exported?(RailwayNif, :get_train_position, 3)
+    refute function_exported?(RailwayNif, :evaluate_problem, 2)
+    refute function_exported?(RailwayNif, :optimize_problem, 3)
 
     assert function_exported?(Native, :add, 2)
     assert function_exported?(Native, :init_network, 0)

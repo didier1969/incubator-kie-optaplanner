@@ -33,6 +33,7 @@
   - `HexaRail.RailwayNif` owns the railway-facing operations
   - `HexaRail.Native` is the internal Rustler bridge that loads the shared crate
 - Railway-facing NIF structs exposed back to the BEAM now live under `HexaRail.Domain` instead of `HexaCore.Domain`.
+- Railway-facing Elixir tests that were still exercising generic solve/evaluate through `HexaRail.RailwayNif` now call `HexaCore.Nif` directly.
 - This removes the railway loaders and topology operations from the public `HexaCore.Nif` surface without yet splitting the Rust crate itself.
 - A further core-domain boundary slice is now proven:
   - `HexaCore.Domain.Job` and `HexaCore.Domain.Resource` are plain data structs and no longer export Ecto schema metadata
