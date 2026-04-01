@@ -14,18 +14,26 @@ defmodule HexaRailWeb.TwinLive do
   - Real-time Progress UX for data ingestion
   """
 
+  @default_status %{
+    status: :running,
+    loading_msg: "System Live",
+    loading_percent: 100,
+    current_time: "00:00:00"
+  }
+
   def mount(_params, _session, socket) do
     if connected?(socket) do
       PubSub.subscribe(HexaRail.PubSub, "simulation:switzerland")
     end
 
-    # Phase 20: Prevent GenServer block during mount by using default state
-    socket = 
+    initial_status = initial_status()
+
+    socket =
       socket
-      |> assign(:status, :running)
-      |> assign(:loading_msg, "System Live")
-      |> assign(:loading_percent, 100)
-      |> assign(:current_time, "00:00:00")
+      |> assign(:status, initial_status.status)
+      |> assign(:loading_msg, initial_status.loading_msg)
+      |> assign(:loading_percent, initial_status.loading_percent)
+      |> assign(:current_time, initial_status.current_time)
       |> assign(:active_count, 0)
       |> assign(:sim_speed, 60)
       |> assign(:chaos_event, nil)
@@ -70,14 +78,15 @@ defmodule HexaRailWeb.TwinLive do
     # Load the Gotthard scenario JSON
     path = Path.join([:code.priv_dir(:hexarail), "scenarios", "gotthard_blackout.json"])
     scenario_data = path |> File.read!() |> Jason.decode!()
-    
-    Engine.load_scenario(scenario_data)
-    
+
+    apply_engine(:load_scenario, [scenario_data])
+
     {:noreply, assign(socket, chaos_event: normalize_chaos_event(%{resolved: false, message: "Scenario injected."}))}
   end
 
   def handle_event("resolve_chaos", %{"strategy" => strategy}, socket) do
-    # Later this will call the Rust solver. For now, we simulate resolution.
+    apply_engine(:resolve_chaos, [strategy])
+
     msg = case strategy do
       "greedy" -> "Resolving using Salsa Greedy..."
       "local_search" -> "Resolving using Local Search..."
@@ -97,14 +106,55 @@ defmodule HexaRailWeb.TwinLive do
   end
 
   def handle_event("pause", _, socket) do
-    Engine.pause()
+    apply_engine(:pause, [])
     {:noreply, socket}
   end
 
   def handle_event("resume", _, socket) do
-    Engine.resume()
+    apply_engine(:resume, [])
     {:noreply, socket}
   end
+
+  defp initial_status do
+    engine_module = engine_module()
+
+    with true <- function_exported?(engine_module, :get_status, 0),
+         engine_state <- safe_get_status(engine_module),
+         true <- is_map(engine_state) do
+      %{
+        status: Map.get(engine_state, :status, @default_status.status),
+        loading_msg: Map.get(engine_state, :message, @default_status.loading_msg),
+        loading_percent: Map.get(engine_state, :progress, @default_status.loading_percent),
+        current_time: normalize_current_time(Map.get(engine_state, :current_time, @default_status.current_time))
+      }
+    else
+      _ -> @default_status
+    end
+  end
+
+  defp safe_get_status(engine_module) do
+    engine_module.get_status()
+  catch
+    :exit, _reason -> nil
+  end
+
+  defp engine_module do
+    Application.get_env(:hexarail, :twin_live_engine_module, Engine)
+  end
+
+  defp apply_engine(function_name, args) do
+    module = engine_module()
+
+    if function_exported?(module, function_name, length(args)) do
+      apply(module, function_name, args)
+    else
+      :ok
+    end
+  end
+
+  defp normalize_current_time(time_sec) when is_integer(time_sec), do: format_time(time_sec)
+  defp normalize_current_time(time_string) when is_binary(time_string), do: time_string
+  defp normalize_current_time(_time), do: @default_status.current_time
 
   defp normalize_chaos_event(event) do
     %{

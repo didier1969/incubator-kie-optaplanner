@@ -21,6 +21,7 @@ defmodule HexaRail.Simulation.Engine do
   def get_status, do: GenServer.call(__MODULE__, :get_status)
   def pause, do: GenServer.call(__MODULE__, :pause)
   def resume, do: GenServer.call(__MODULE__, :resume)
+  def resolve_chaos(strategy), do: GenServer.call(__MODULE__, {:resolve_chaos, strategy})
   def load_scenario(scenario_data), do: GenServer.cast(__MODULE__, {:load_scenario, scenario_data})
 
   def init(_) do
@@ -153,6 +154,17 @@ defmodule HexaRail.Simulation.Engine do
   def handle_call(:resume, _from, state) do
     if state.status == :paused, do: Process.send_after(self(), :tick, @tick_interval_ms)
     {:reply, :ok, %{state | status: :running}}
+  end
+
+  def handle_call({:resolve_chaos, strategy}, _from, state) do
+    result =
+      case strategy do
+        "greedy" -> RailwayNif.resolve_conflict_greedy(state.resource)
+        "local_search" -> RailwayNif.resolve_conflict_local_search(state.resource)
+        _ -> {:error, :unsupported_strategy}
+      end
+
+    {:reply, result, state}
   end
 
   def handle_info(:data_ready, state) do
