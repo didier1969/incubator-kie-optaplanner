@@ -9,6 +9,7 @@
 
 pub mod domain;
 pub mod incremental_score;
+pub mod railway_domain;
 pub mod score;
 pub mod solver;
 pub mod topology;
@@ -67,14 +68,14 @@ fn init_network() -> ResourceArc<NetworkResource> {
 }
 
 #[rustler::nif]
-fn load_stops(resource: ResourceArc<NetworkResource>, stops: Vec<domain::GtfsStop>) -> usize {
+fn load_stops(resource: ResourceArc<NetworkResource>, stops: Vec<railway_domain::GtfsStop>) -> usize {
     let mut manager = resource.manager.write().unwrap();
     manager.load_stops(stops);
     manager.physical.station_count()
 }
 
 #[rustler::nif]
-fn load_trips(resource: ResourceArc<NetworkResource>, trips: Vec<domain::GtfsTrip>) -> usize {
+fn load_trips(resource: ResourceArc<NetworkResource>, trips: Vec<railway_domain::GtfsTrip>) -> usize {
     let mut manager = resource.manager.write().unwrap();
     manager.load_trips(trips);
     manager.trips.len()
@@ -92,48 +93,48 @@ fn build_network_graph(edges: Vec<(String, String, Vec<(f64, f64)>)>) -> usize {
 }
 
 #[rustler::nif]
-fn get_conflict_summary(resource: ResourceArc<NetworkResource>) -> domain::ConflictSummary {
+fn get_conflict_summary(resource: ResourceArc<NetworkResource>) -> railway_domain::ConflictSummary {
     let manager = resource.manager.read().unwrap();
     manager.detect_conflicts()
 }
 
 #[rustler::nif]
-fn load_stop_times(resource: ResourceArc<NetworkResource>, stop_times: Vec<domain::GtfsStopTime>) -> usize {
+fn load_stop_times(resource: ResourceArc<NetworkResource>, stop_times: Vec<railway_domain::GtfsStopTime>) -> usize {
     let mut manager = resource.manager.write().unwrap();
     manager.load_stop_times(stop_times);
     0
 }
 
 #[rustler::nif]
-fn load_transfers(resource: ResourceArc<NetworkResource>, transfers: Vec<domain::GtfsTransfer>) -> usize {
+fn load_transfers(resource: ResourceArc<NetworkResource>, transfers: Vec<railway_domain::GtfsTransfer>) -> usize {
     let mut manager = resource.manager.write().unwrap();
     manager.load_transfers(transfers);
     manager.transfers.len()
 }
 
 #[rustler::nif]
-fn load_calendars(resource: ResourceArc<NetworkResource>, calendars: Vec<domain::GtfsCalendar>) -> usize {
+fn load_calendars(resource: ResourceArc<NetworkResource>, calendars: Vec<railway_domain::GtfsCalendar>) -> usize {
     let mut manager = resource.manager.write().unwrap();
     manager.load_calendars(calendars);
     manager.calendars.len()
 }
 
 #[rustler::nif]
-fn load_calendar_dates(resource: ResourceArc<NetworkResource>, dates: Vec<domain::GtfsCalendarDate>) -> usize {
+fn load_calendar_dates(resource: ResourceArc<NetworkResource>, dates: Vec<railway_domain::GtfsCalendarDate>) -> usize {
     let mut manager = resource.manager.write().unwrap();
     manager.load_calendar_dates(dates);
     manager.calendar_dates.len()
 }
 
 #[rustler::nif]
-fn load_fleet(resource: ResourceArc<NetworkResource>, profiles: std::collections::HashMap<i64, domain::RollingStockProfile>) -> usize {
+fn load_fleet(resource: ResourceArc<NetworkResource>, profiles: std::collections::HashMap<i64, railway_domain::RollingStockProfile>) -> usize {
     let mut manager = resource.manager.write().unwrap();
     manager.load_fleet(profiles);
     manager.fleet.len()
 }
 
 #[rustler::nif]
-fn load_tracks(resource: ResourceArc<NetworkResource>, tracks: Vec<domain::TrackSegment>) -> usize {
+fn load_tracks(resource: ResourceArc<NetworkResource>, tracks: Vec<railway_domain::TrackSegment>) -> usize {
     let mut manager = resource.manager.write().unwrap();
     manager.load_tracks(tracks);
     manager.physical.track_count()
@@ -174,14 +175,14 @@ fn load_osm_from_json(resource: ResourceArc<NetworkResource>, path: String) -> R
     
     for e in data.elements {
         if e.element_type == "node" {
-            nodes.push(domain::OsmNode {
+            nodes.push(railway_domain::OsmNode {
                 id: e.id,
                 lat: e.lat.unwrap_or(0.0),
                 lon: e.lon.unwrap_or(0.0),
                 tags: e.tags.unwrap_or_default(),
             });
         } else if e.element_type == "way" {
-            ways.push(domain::OsmWay {
+            ways.push(railway_domain::OsmWay {
                 id: e.id,
                 nodes: e.nodes.unwrap_or_default(),
                 tags: e.tags.unwrap_or_default(),
@@ -194,7 +195,7 @@ fn load_osm_from_json(resource: ResourceArc<NetworkResource>, path: String) -> R
 }
 
 #[rustler::nif]
-fn load_osm(resource: ResourceArc<NetworkResource>, nodes: Vec<domain::OsmNode>, ways: Vec<domain::OsmWay>) -> usize {
+fn load_osm(resource: ResourceArc<NetworkResource>, nodes: Vec<railway_domain::OsmNode>, ways: Vec<railway_domain::OsmWay>) -> usize {
     let mut manager = resource.manager.write().unwrap();
     manager.load_osm(nodes, ways);
     manager.micro.graph.edge_count()
@@ -282,7 +283,7 @@ fn stitch_osm_to_macro(resource: ResourceArc<NetworkResource>) -> bool {
 }
 
 #[rustler::nif]
-fn get_all_tracks(resource: ResourceArc<NetworkResource>) -> Vec<domain::TrackSegment> {
+fn get_all_tracks(resource: ResourceArc<NetworkResource>) -> Vec<railway_domain::TrackSegment> {
     let manager = resource.manager.read().unwrap();
     manager.physical.all_tracks.clone()
 }
@@ -302,7 +303,7 @@ fn get_train_position(
 fn get_active_positions(
     resource: ResourceArc<NetworkResource>,
     time: i32,
-) -> Vec<domain::ActivePosition> {
+) -> Vec<railway_domain::ActivePosition> {
     let mut manager = resource.manager.write().unwrap();
     manager.apply_perturbations(time);
     manager.get_active_positions(time)
@@ -321,7 +322,7 @@ fn load_dem(
 #[rustler::nif]
 fn load_perturbations(
     resource: ResourceArc<NetworkResource>,
-    perturbations: Vec<domain::Perturbation>,
+    perturbations: Vec<railway_domain::Perturbation>,
 ) -> Atom {
     let mut manager = resource.manager.write().unwrap();
     manager.load_perturbations(perturbations);
@@ -329,7 +330,7 @@ fn load_perturbations(
 }
 
 #[rustler::nif]
-fn get_system_health(resource: ResourceArc<NetworkResource>) -> domain::SystemHealth {
+fn get_system_health(resource: ResourceArc<NetworkResource>) -> railway_domain::SystemHealth {
     let manager = resource.manager.read().unwrap();
     manager.calculate_health()
 }
@@ -341,7 +342,7 @@ fn finalize_temporal_graph(resource: ResourceArc<NetworkResource>) -> usize {
 }
 
 #[rustler::nif]
-fn detect_conflicts(resource: ResourceArc<NetworkResource>) -> domain::ConflictSummary {
+fn detect_conflicts(resource: ResourceArc<NetworkResource>) -> railway_domain::ConflictSummary {
     let manager = resource.manager.read().unwrap();
     manager.detect_conflicts()
 }
@@ -374,13 +375,13 @@ fn inject_delay(resource: ResourceArc<NetworkResource>, trip_id: i64, delay_seco
 }
 
 #[rustler::nif]
-fn resolve_conflict_greedy(resource: ResourceArc<NetworkResource>) -> domain::ResolutionMetrics {
+fn resolve_conflict_greedy(resource: ResourceArc<NetworkResource>) -> railway_domain::ResolutionMetrics {
     let mut manager = resource.manager.write().unwrap();
     manager.resolve_conflict_greedy()
 }
 
 #[rustler::nif]
-fn resolve_conflict_local_search(resource: ResourceArc<NetworkResource>) -> domain::ResolutionMetrics {
+fn resolve_conflict_local_search(resource: ResourceArc<NetworkResource>) -> railway_domain::ResolutionMetrics {
     let mut manager = resource.manager.write().unwrap();
     manager.resolve_conflict_local_search()
 }

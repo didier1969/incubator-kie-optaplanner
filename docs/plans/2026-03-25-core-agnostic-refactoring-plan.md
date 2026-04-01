@@ -40,8 +40,16 @@
   - `test/hexacore/domain_boundary_test.exs` now protects that contract explicitly
 - The remaining P0 debt is now lower in the stack:
   - `rustler::init!` and topology still live in `hexacore_engine`
-  - GTFS/OSM/fleet/topology Rust types are still compiled inside the core crate
+  - GTFS/OSM/fleet/topology runtime code is still compiled inside the core crate
   - `HexaCore.Domain.Problem` is clean, but the deeper Rust crate split is still missing
+
+## Proven Slice (2026-04-01, Rust Type Boundary)
+- Railway-specific Rust NIF structs now live in `native/hexacore_engine/src/railway_domain.rs`.
+- `native/hexacore_engine/src/domain.rs` now carries only the generic problem contract plus shared geospatial primitives.
+- This removes `HexaRail.*` Rust structs from the generic Rust domain module without yet splitting the crate or the NIF registration surface.
+- The remaining Rust-side debt is now concentrated in:
+  - `lib.rs` still hosting both generic and railway NIF entrypoints
+  - `topology.rs` still living in the same crate as the generic solver
 
 ## Phase 1: Elixir Namespace & Directory Restructuring
 - Create `lib/hexacore` to house agnostic components.

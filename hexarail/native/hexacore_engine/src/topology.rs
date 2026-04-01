@@ -10,7 +10,12 @@
 
 use petgraph::graph::{NodeIndex, UnGraph, DiGraph};
 use std::collections::HashMap;
-use crate::domain::{GtfsStop, GtfsStopTime, TrackSegment, GtfsTransfer, GtfsCalendar, GtfsCalendarDate, Conflict, ConflictSummary, CompactEOS, OsmNode, OsmWay};
+use crate::domain::DemGrid;
+use crate::railway_domain::{
+    ActivePosition, CompactEOS, Conflict, ConflictSummary, GtfsCalendar,
+    GtfsCalendarDate, GtfsStop, GtfsStopTime, GtfsTrip, OsmNode, OsmWay, Perturbation,
+    ResolutionMetrics, RollingStockProfile, SystemHealth, TrackSegment, GtfsTransfer,
+};
 use lasso::Rodeo;
 use rayon::prelude::*;
 use kdtree::KdTree;
@@ -191,14 +196,14 @@ pub struct NetworkManager {
     pub micro: MicroNetwork,
     pub temporal: TemporalNetwork,
     pub stop_times: HashMap<i64, Vec<GtfsStopTime>>,
-    pub trips: HashMap<i64, crate::domain::GtfsTrip>,
+    pub trips: HashMap<i64, GtfsTrip>,
     pub stops: HashMap<i64, GtfsStop>,
     pub transfers: Vec<GtfsTransfer>,
     pub calendars: HashMap<String, GtfsCalendar>,
     pub calendar_dates: Vec<GtfsCalendarDate>,
-    pub fleet: HashMap<i64, crate::domain::RollingStockProfile>,
-    pub dem_grid: Option<crate::domain::DemGrid>,
-    pub active_perturbations: Vec<crate::domain::Perturbation>,
+    pub fleet: HashMap<i64, RollingStockProfile>,
+    pub dem_grid: Option<DemGrid>,
+    pub active_perturbations: Vec<Perturbation>,
     
     // HPC Structures
     pub interner: Rodeo,
@@ -228,10 +233,10 @@ impl NetworkManager {
         }
     }
 
-    pub fn calculate_health(&self) -> crate::domain::SystemHealth {
+    pub fn calculate_health(&self) -> SystemHealth {
         // In a stateless engine, total delay is the sum of instantaneous delays 
         // caused by speed clamping across all active trains.
-        crate::domain::SystemHealth {
+        SystemHealth {
             total_delay_seconds: 0, // Will be populated by simulation loops
             active_conflicts: 0,
             broken_connections: 0,
@@ -245,11 +250,11 @@ impl NetworkManager {
         }
     }
 
-    pub fn load_dem(&mut self, dem: crate::domain::DemGrid) {
+    pub fn load_dem(&mut self, dem: DemGrid) {
         self.dem_grid = Some(dem);
     }
 
-    pub fn load_perturbations(&mut self, perturbations: Vec<crate::domain::Perturbation>) {
+    pub fn load_perturbations(&mut self, perturbations: Vec<Perturbation>) {
         self.active_perturbations = perturbations;
     }
 
@@ -424,7 +429,7 @@ impl NetworkManager {
         }
     }
 
-    pub fn load_trips(&mut self, trips: Vec<crate::domain::GtfsTrip>) {
+    pub fn load_trips(&mut self, trips: Vec<GtfsTrip>) {
         for trip in trips {
             self.trips.insert(trip.id, trip);
         }
@@ -469,7 +474,7 @@ impl NetworkManager {
         self.calendar_dates.extend(dates);
     }
 
-    pub fn load_fleet(&mut self, profiles: HashMap<i64, crate::domain::RollingStockProfile>) {
+    pub fn load_fleet(&mut self, profiles: HashMap<i64, RollingStockProfile>) {
         self.fleet.extend(profiles);
     }
 
@@ -642,7 +647,7 @@ impl NetworkManager {
 
         // Phase 15: Night Rostering / Block ID Linking
         // Group trips by block_id
-        let mut block_chains: HashMap<String, Vec<&crate::domain::GtfsTrip>> = HashMap::new();
+        let mut block_chains: HashMap<String, Vec<&GtfsTrip>> = HashMap::new();
         for trip in self.trips.values() {
             if let Some(block_id) = &trip.block_id {
                 block_chains.entry(block_id.clone()).or_default().push(trip);
@@ -767,7 +772,7 @@ impl NetworkManager {
     }
 
     #[must_use]
-    pub fn get_active_positions(&self, time: i32) -> Vec<crate::domain::ActivePosition> {
+    pub fn get_active_positions(&self, time: i32) -> Vec<ActivePosition> {
         // Parallel map over all trips to find active ones
         self.stop_times
             .par_iter()
@@ -784,7 +789,7 @@ impl NetworkManager {
                     if head_lon.is_nan() || head_lat.is_nan() || tail_lon.is_nan() || tail_lat.is_nan() {
                         None
                     } else {
-                        Some(crate::domain::ActivePosition {
+                        Some(ActivePosition {
                             trip_id,
                             head_lon,
                             head_lat,
@@ -1016,7 +1021,7 @@ impl NetworkManager {
         }
     }
 
-    pub fn resolve_conflict_greedy(&mut self) -> crate::domain::ResolutionMetrics {
+    pub fn resolve_conflict_greedy(&mut self) -> ResolutionMetrics {
         use std::collections::HashSet;
         let start_time_ms = std::time::Instant::now();
         let mut total_delay_added = 0;
@@ -1071,7 +1076,7 @@ impl NetworkManager {
             }
         }
 
-        crate::domain::ResolutionMetrics {
+        ResolutionMetrics {
             status: "success".to_string(),
             trains_impacted: trains_impacted.len(),
             total_delay_added,
@@ -1079,7 +1084,7 @@ impl NetworkManager {
         }
     }
 
-    pub fn resolve_conflict_local_search(&mut self) -> crate::domain::ResolutionMetrics {
+    pub fn resolve_conflict_local_search(&mut self) -> ResolutionMetrics {
         let start_time_ms = std::time::Instant::now();
         
         // 1. Rebuild STIG based on current self.stop_times to get baseline
@@ -1108,7 +1113,7 @@ impl NetworkManager {
         let trips_in_zone: Vec<i64> = impacted_trips_set.into_iter().collect();
         
         if trips_in_zone.is_empty() {
-            return crate::domain::ResolutionMetrics {
+            return ResolutionMetrics {
                 status: "success".to_string(),
                 trains_impacted: 0,
                 total_delay_added: 0,
@@ -1207,7 +1212,7 @@ impl NetworkManager {
         // Final re-sync
         self.finalize_temporal_graph();
 
-        crate::domain::ResolutionMetrics {
+        ResolutionMetrics {
             status: "success".to_string(),
             trains_impacted: trips_in_zone.len(),
             total_delay_added,
