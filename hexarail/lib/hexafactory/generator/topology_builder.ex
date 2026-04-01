@@ -41,21 +41,30 @@ defmodule HexaFactory.Generator.TopologyBuilder do
         ]
       end)
 
+    work_centers_by_plant = Enum.group_by(work_centers, & &1.plant_code)
+
     {machines, state} =
-      Enum.map_reduce(work_centers, state, fn work_center, acc_state ->
-        {hourly_cost_cents, next_state} = Seed.integer(acc_state, 9_000, 18_000)
+      Enum.map_reduce(plants, state, fn plant, acc_state ->
+        plant_work_centers = Map.fetch!(work_centers_by_plant, plant.code)
 
-        machine = %{
-          code: "#{work_center.code}-M1",
-          name: "#{work_center.name} Machine",
-          hourly_cost_cents: hourly_cost_cents,
-          active: true,
-          plant_code: work_center.plant_code,
-          work_center_code: work_center.code
-        }
+        Enum.map_reduce(1..config.machines_per_plant, acc_state, fn machine_index, machine_state ->
+          work_center = Enum.at(plant_work_centers, rem(machine_index - 1, length(plant_work_centers)))
+          {hourly_cost_cents, next_state} = Seed.integer(machine_state, 9_000, 18_000)
 
-        {machine, next_state}
+          machine = %{
+            code: "#{plant.code}-M-#{pad3(machine_index)}",
+            name: "#{work_center.name} Machine #{pad3(machine_index)}",
+            hourly_cost_cents: hourly_cost_cents,
+            active: true,
+            plant_code: work_center.plant_code,
+            work_center_code: work_center.code
+          }
+
+          {machine, next_state}
+        end)
       end)
+
+    machines = List.flatten(machines)
 
     skills = [
       %{code: "SETTER-L3", name: "Level 3 Setter"},

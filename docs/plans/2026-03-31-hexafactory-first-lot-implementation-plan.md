@@ -15,7 +15,26 @@
 - Tasks 1 and 2 are implemented: `HexaCore` now carries generic precedence, windows, release/due dates, and core constraint scoring.
 - Task 3 is implemented: `HexaFactory` foundation schemas and migration exist.
 - Task 4 is implemented: `HexaFactory` planning schemas and migration exist.
-- Task 5 is now partially implemented: a deterministic generator entrypoint and builder modules exist, validated by `generator_determinism_test.exs` and `generator_invariants_test.exs`.
+- Task 5 is implemented: the deterministic industrial generator exists, and `generator_invariants_test.exs` now proves the per-plant machine volumetry promised by the dataset profile.
+- Task 6 is implemented: planning horizon snapshot persistence and reload are covered by `persisted_dataset_test.exs`.
+- Task 7 is implemented: the `HexaFactory -> HexaCore` projection layer is covered by `problem_projection_test.exs`.
+- Task 8 is implemented: the vertical solver facade, decoder, and diagnostics are covered by `solver_integration_test.exs`.
+
+## Current Reality
+
+- The end-to-end reduced-volume path is now real: `generator -> persisted snapshot -> projection -> generic core solve -> HexaFactory-facing diagnostics`.
+- The current validation scope is green under `nix develop` for:
+  - `test/hexacore/core_solver_test.exs`
+  - `test/hexacore/problem_contract_test.exs`
+  - `test/hexacore/core_constraints_test.exs`
+  - `test/hexafactory/foundation_schema_test.exs`
+  - `test/hexafactory/planning_schema_test.exs`
+  - `test/hexafactory/generator_determinism_test.exs`
+  - `test/hexafactory/generator_invariants_test.exs`
+  - `test/hexafactory/persisted_dataset_test.exs`
+  - `test/hexafactory/problem_projection_test.exs`
+  - `test/hexafactory/solver_integration_test.exs`
+- Remaining first-lot work is now concentrated on richer constraint interactions, volumetry smoke beyond the reduced slice, operational Mix tasks, and then platform closure work on `HexaRail` and the final `HexaCore` boundary cleanup.
 
 ## Global Rules
 

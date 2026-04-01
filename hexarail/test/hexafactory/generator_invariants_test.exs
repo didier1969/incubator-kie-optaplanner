@@ -30,4 +30,26 @@ defmodule HexaFactory.GeneratorInvariantsTest do
     assert dataset.buffers != []
     assert dataset.batch_policies != []
   end
+
+  test "generator honors target machines per plant and keeps machine references coherent" do
+    dataset = Dataset.build(seed: 42, profile: :interaction)
+
+    work_center_codes = MapSet.new(dataset.work_centers, & &1.code)
+
+    machines_by_plant =
+      Enum.group_by(dataset.machines, & &1.plant_code)
+
+    assert map_size(machines_by_plant) == dataset.metadata.target_topology.plant_count
+
+    Enum.each(dataset.plants, fn plant ->
+      machines = Map.fetch!(machines_by_plant, plant.code)
+
+      assert length(machines) == dataset.metadata.target_topology.machines_per_plant
+
+      Enum.each(machines, fn machine ->
+        assert machine.plant_code == plant.code
+        assert MapSet.member?(work_center_codes, machine.work_center_code)
+      end)
+    end)
+  end
 end
