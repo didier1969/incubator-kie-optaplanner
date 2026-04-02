@@ -3,24 +3,14 @@
 defmodule HexaRail.Native do
   @moduledoc false
 
-  use Rustler, otp_app: :hexarail, crate: "hexacore_engine"
-
-  @spec add(integer(), integer()) :: integer()
-  def add(_a, _b), do: :erlang.nif_error(:nif_not_loaded)
+  use Rustler, otp_app: :hexarail, crate: "hexarail_engine"
 
   @spec evaluate_problem(reference(), HexaCore.Domain.Problem.t()) :: integer()
   def evaluate_problem(_resource, _problem), do: :erlang.nif_error(:nif_not_loaded)
 
-  @spec evaluate_problem_core(HexaCore.Domain.Problem.t()) :: integer()
-  def evaluate_problem_core(_problem), do: :erlang.nif_error(:nif_not_loaded)
-
   @spec optimize_problem(reference(), HexaCore.Domain.Problem.t(), integer()) ::
           HexaCore.Domain.Problem.t()
   def optimize_problem(_resource, _problem, _iterations), do: :erlang.nif_error(:nif_not_loaded)
-
-  @spec optimize_problem_core(HexaCore.Domain.Problem.t(), integer()) ::
-          HexaCore.Domain.Problem.t()
-  def optimize_problem_core(_problem, _iterations), do: :erlang.nif_error(:nif_not_loaded)
 
   def init_network, do: :erlang.nif_error(:nif_not_loaded)
 
@@ -35,7 +25,6 @@ defmodule HexaRail.Native do
   def load_calendar_dates(_resource, _dates), do: :erlang.nif_error(:nif_not_loaded)
   def load_fleet(_resource, _profiles), do: :erlang.nif_error(:nif_not_loaded)
   def load_tracks(_resource, _tracks), do: :erlang.nif_error(:nif_not_loaded)
-  def load_entities(_resource, _entity_type, _entities), do: :erlang.nif_error(:nif_not_loaded)
   def build_network_graph(_edges), do: :erlang.nif_error(:nif_not_loaded)
   def load_osm_from_json(_resource, _path), do: :erlang.nif_error(:nif_not_loaded)
   def load_osm(_resource, _nodes, _ways), do: :erlang.nif_error(:nif_not_loaded)

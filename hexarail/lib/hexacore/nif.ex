@@ -5,7 +5,7 @@ defmodule HexaCore.Nif do
   Agnostic public facade over the Rust core optimization bridge.
   """
 
-  alias HexaRail.Native
+  alias HexaCore.Native
 
   defdelegate add(a, b), to: Native
   defdelegate evaluate_problem_core(problem), to: Native

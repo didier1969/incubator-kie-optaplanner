@@ -3,23 +3,30 @@
 defmodule HexaCore.RustNifModuleBoundaryTest do
   use ExUnit.Case, async: true
 
-  @lib_file Path.expand("../../native/hexacore_engine/src/lib.rs", __DIR__)
-  @railway_nif_file Path.expand("../../native/hexacore_engine/src/railway_nif.rs", __DIR__)
-  @railway_topology_file Path.expand("../../native/hexacore_engine/src/railway_topology.rs", __DIR__)
+  @core_lib_file Path.expand("../../native/hexacore_engine/src/lib.rs", __DIR__)
+  @railway_lib_file Path.expand("../../native/hexarail_engine/src/lib.rs", __DIR__)
+  @railway_nif_file Path.expand("../../native/hexarail_engine/src/railway_nif.rs", __DIR__)
+  @railway_topology_file Path.expand("../../native/hexarail_engine/src/railway_topology.rs", __DIR__)
 
-  test "generic rust lib keeps only core entrypoints while railway nifs live in a dedicated module" do
-    lib_source = File.read!(@lib_file)
+  test "generic rust lib keeps only core entrypoints while railway nifs live in a dedicated crate" do
+    core_lib_source = File.read!(@core_lib_file)
 
-    assert lib_source =~ "pub mod railway_nif;"
-    assert lib_source =~ "pub mod railway_topology;"
-    refute lib_source =~ "fn load_stops("
-    refute lib_source =~ "fn load_tracks("
-    refute lib_source =~ "fn get_active_positions("
-    refute lib_source =~ "use crate::topology::"
-    refute lib_source =~ "pub struct NetworkResource"
+    refute core_lib_source =~ "pub mod railway_nif;"
+    refute core_lib_source =~ "pub mod railway_topology;"
+    refute core_lib_source =~ "fn load_stops("
+    refute core_lib_source =~ "fn load_tracks("
+    refute core_lib_source =~ "fn get_active_positions("
+    refute core_lib_source =~ "pub struct NetworkResource"
+    assert core_lib_source =~ ~s(rustler::init!("Elixir.HexaCore.Native")
 
+    assert File.exists?(@railway_lib_file)
     assert File.exists?(@railway_nif_file)
     assert File.exists?(@railway_topology_file)
+
+    railway_lib_source = File.read!(@railway_lib_file)
+    assert railway_lib_source =~ "pub mod railway_nif;"
+    assert railway_lib_source =~ "pub mod railway_topology;"
+    assert railway_lib_source =~ ~s(rustler::init!("Elixir.HexaRail.Native")
 
     railway_nif_source = File.read!(@railway_nif_file)
 

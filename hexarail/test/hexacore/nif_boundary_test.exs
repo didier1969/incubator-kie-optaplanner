@@ -4,10 +4,12 @@ defmodule HexaCore.NifBoundaryTest do
   use ExUnit.Case, async: true
 
   alias HexaCore.Nif
+  alias HexaCore.Native, as: CoreNative
   alias HexaRail.{Native, RailwayNif}
 
-  test "generic core nif exposes only agnostic entrypoints while railway facade owns railway operations" do
+  test "generic core nif exposes only agnostic entrypoints while each native module owns its crate surface" do
     assert Code.ensure_loaded?(Nif)
+    assert Code.ensure_loaded?(CoreNative)
     assert Code.ensure_loaded?(Native)
     assert Code.ensure_loaded?(RailwayNif)
 
@@ -27,8 +29,14 @@ defmodule HexaCore.NifBoundaryTest do
     refute function_exported?(RailwayNif, :evaluate_problem, 2)
     refute function_exported?(RailwayNif, :optimize_problem, 3)
 
-    assert function_exported?(Native, :add, 2)
+    assert function_exported?(CoreNative, :add, 2)
+    assert function_exported?(CoreNative, :evaluate_problem_core, 1)
+    refute function_exported?(CoreNative, :init_network, 0)
+    refute function_exported?(CoreNative, :load_stops, 2)
+
     assert function_exported?(Native, :init_network, 0)
     assert function_exported?(Native, :load_stops, 2)
+    refute function_exported?(Native, :add, 2)
+    refute function_exported?(Native, :evaluate_problem_core, 1)
   end
 end

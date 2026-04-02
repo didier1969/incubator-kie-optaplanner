@@ -74,6 +74,27 @@
   - railway runtime modules still compiled alongside the generic solver
   - the missing final physical crate split between core and railway vertical
 
+## Proven Slice (2026-04-02, Rust Physical Crate Split)
+- `HexaCore.Native` now loads `native/hexacore_engine`.
+- `HexaRail.Native` now loads `native/hexarail_engine`.
+- `native/hexacore_engine` is now a core-only crate carrying:
+  - generic domain structs
+  - incremental score engine
+  - generic score logic
+  - generic optimize/evaluate/add entrypoints
+- `native/hexarail_engine` now carries:
+  - `railway_domain.rs`
+  - `railway_nif.rs`
+  - `railway_topology.rs`
+  - railway-specific unit coverage
+- `hexacore_engine` now builds as both `cdylib` and `rlib`, with NIF exports gated behind a feature so it can be linked safely as a library by `hexarail_engine`.
+- The physical split between core and railway vertical is therefore now real, not only logical.
+- The remaining debt is now narrower:
+  - the two crates do not yet share a Cargo workspace
+  - dependency compilation is duplicated between crates
+  - some railway-internal Rust NIFs still exist even when hidden by the public Elixir facade
+  - historical generated artifacts in the repo still need cleanup
+
 ## Phase 1: Elixir Namespace & Directory Restructuring
 - Create `lib/hexacore` to house agnostic components.
 - Move `lib/hexarail/dsl`, `lib/hexarail/transpiler`, and `lib/hexarail/domain/job.ex`/`problem.ex` into `lib/hexacore`.

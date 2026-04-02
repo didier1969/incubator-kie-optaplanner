@@ -9,16 +9,8 @@
 
 pub mod domain;
 pub mod incremental_score;
-pub mod railway_domain;
-pub mod railway_nif;
-pub mod railway_topology;
 pub mod score;
 pub mod solver;
-
-#[cfg(test)]
-mod railway_topology_tests;
-
-use rustler::{Env, Term};
 
 mod atoms {
     rustler::atoms! {
@@ -27,25 +19,21 @@ mod atoms {
     }
 }
 
-#[rustler::nif]
-fn evaluate_problem_core(problem: domain::Problem) -> i64 {
+#[cfg_attr(feature = "nif_exports", rustler::nif)]
+pub fn evaluate_problem_core(problem: domain::Problem) -> i64 {
     score::calculate_score(&problem)
 }
 
-#[rustler::nif]
-fn add(a: i64, b: i64) -> i64 {
+#[cfg_attr(feature = "nif_exports", rustler::nif)]
+pub fn add(a: i64, b: i64) -> i64 {
     a + b
 }
 
-#[rustler::nif]
+#[cfg_attr(feature = "nif_exports", rustler::nif)]
 #[allow(clippy::needless_pass_by_value)]
-fn optimize_problem_core(problem: domain::Problem, iterations: i32) -> domain::Problem {
+pub fn optimize_problem_core(problem: domain::Problem, iterations: i32) -> domain::Problem {
     solver::optimize(problem, 0, iterations)
 }
 
-fn load(env: Env, _info: Term) -> bool {
-    let _ = rustler::resource!(railway_nif::NetworkResource, env);
-    true
-}
-
-rustler::init!("Elixir.HexaRail.Native", load = load);
+#[cfg(feature = "nif_exports")]
+rustler::init!("Elixir.HexaCore.Native");
