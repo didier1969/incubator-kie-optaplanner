@@ -27,3 +27,4 @@ hexarail-*.tar
 .pgdata
 native/*/target/
 native/target/
+native/*/native/target/
