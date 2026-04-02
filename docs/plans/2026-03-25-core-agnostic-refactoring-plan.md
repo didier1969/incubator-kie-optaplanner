@@ -61,6 +61,19 @@
   - the shared `NetworkResource`
   - the single `rustler::init!` surface
 
+## Proven Slice (2026-04-02, Rust Railway Runtime Boundary)
+- Railway topology/runtime code now lives in `native/hexacore_engine/src/railway_topology.rs`.
+- `NetworkResource` now belongs to `native/hexacore_engine/src/railway_nif.rs` instead of `lib.rs`.
+- `native/hexacore_engine/src/lib.rs` now registers the railway resource type but keeps only:
+  - generic core entrypoints
+  - Rustler initialization
+  - module wiring
+- The topology unit test has been moved out of the runtime file into `native/hexacore_engine/src/railway_topology_tests.rs`, keeping the railway runtime module free of embedded test scaffolding.
+- This reduces the remaining coupling to:
+  - a shared Rust crate and `rustler::init!` surface
+  - railway runtime modules still compiled alongside the generic solver
+  - the missing final physical crate split between core and railway vertical
+
 ## Phase 1: Elixir Namespace & Directory Restructuring
 - Create `lib/hexacore` to house agnostic components.
 - Move `lib/hexarail/dsl`, `lib/hexarail/transpiler`, and `lib/hexarail/domain/job.ex`/`problem.ex` into `lib/hexacore`.

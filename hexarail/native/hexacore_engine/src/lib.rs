@@ -11,23 +11,20 @@ pub mod domain;
 pub mod incremental_score;
 pub mod railway_domain;
 pub mod railway_nif;
+pub mod railway_topology;
 pub mod score;
 pub mod solver;
-pub mod topology;
+
+#[cfg(test)]
+mod railway_topology_tests;
 
 use rustler::{Env, Term};
-use std::sync::RwLock;
-use crate::topology::NetworkManager;
 
 mod atoms {
     rustler::atoms! {
         ok,
         error,
     }
-}
-
-pub struct NetworkResource {
-    pub manager: RwLock<NetworkManager>,
 }
 
 #[rustler::nif]
@@ -47,7 +44,7 @@ fn optimize_problem_core(problem: domain::Problem, iterations: i32) -> domain::P
 }
 
 fn load(env: Env, _info: Term) -> bool {
-    let _ = rustler::resource!(NetworkResource, env);
+    let _ = rustler::resource!(railway_nif::NetworkResource, env);
     true
 }
 

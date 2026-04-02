@@ -64,7 +64,7 @@ mix data.import
 The shell now isolates mutable state under `./.state/` and exports project-local randomized ports for the web endpoint, tests, and PostgreSQL.
 
 ## Repository Direction
-*   **Near term:** finish the remaining deep separation between `HexaCore` and the railway-specific vertical. The public Elixir NIF boundary is now split, the Rust type layer is split between `domain.rs` and `railway_domain.rs`, and the Rust NIF functions are split between `lib.rs` and `railway_nif.rs`, but the crate still hosts both the generic core and the railway topology/runtime implementation.
+*   **Near term:** finish the remaining deep separation between `HexaCore` and the railway-specific vertical. The public Elixir NIF boundary is now split, the Rust type layer is split between `domain.rs` and `railway_domain.rs`, the Rust NIF functions are split between `lib.rs` and `railway_nif.rs`, and the railway runtime now lives in `railway_topology.rs` with `NetworkResource` owned by the railway module. The crate still remains shared, so the final physical crate split is still ahead.
 *   **Medium term:** stabilize the agnostic APIs and prove reuse across multiple verticals
 *   **Long term:** ship a true multi-vertical optimization platform, with HexaRail as showcase and HexaFactory as the next concrete industrial implementation
 

@@ -1,8 +1,14 @@
 // Copyright (c) Didier Stadelmann. All rights reserved.
 
-use crate::{atoms, domain, railway_domain, topology, NetworkResource};
+use crate::railway_topology;
+use crate::{atoms, domain, railway_domain};
 use petgraph::algo::astar;
 use rustler::{Atom, ResourceArc};
+use std::sync::RwLock;
+
+pub struct NetworkResource {
+    pub manager: RwLock<railway_topology::NetworkManager>,
+}
 
 #[rustler::nif]
 pub fn evaluate_problem(
@@ -29,7 +35,7 @@ pub fn optimize_problem(
 #[rustler::nif]
 pub fn init_network() -> ResourceArc<NetworkResource> {
     ResourceArc::new(NetworkResource {
-        manager: std::sync::RwLock::new(topology::NetworkManager::new()),
+        manager: RwLock::new(railway_topology::NetworkManager::new()),
     })
 }
 
@@ -55,7 +61,7 @@ pub fn load_trips(
 
 #[rustler::nif]
 pub fn build_network_graph(edges: Vec<(String, String, Vec<(f64, f64)>)>) -> usize {
-    let mut network = topology::PhysicalNetwork::new();
+    let mut network = railway_topology::PhysicalNetwork::new();
     for (station_a, station_b, coords) in edges {
         let node_a = network.add_station(&station_a);
         let node_b = network.add_station(&station_b);
