@@ -3,7 +3,11 @@
 defmodule HexaRail.Native do
   @moduledoc false
 
-  use Rustler, otp_app: :hexarail, crate: "hexarail_engine"
+  use Rustler,
+    otp_app: :hexarail,
+    crate: "hexarail_engine",
+    path: "native/hexarail_engine",
+    target_dir: Path.expand("native/target", File.cwd!())
 
   @spec evaluate_problem(reference(), HexaCore.Domain.Problem.t()) :: integer()
   def evaluate_problem(_resource, _problem), do: :erlang.nif_error(:nif_not_loaded)

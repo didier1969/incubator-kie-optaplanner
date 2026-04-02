@@ -90,10 +90,19 @@
 - `hexacore_engine` now builds as both `cdylib` and `rlib`, with NIF exports gated behind a feature so it can be linked safely as a library by `hexarail_engine`.
 - The physical split between core and railway vertical is therefore now real, not only logical.
 - The remaining debt is now narrower:
-  - the two crates do not yet share a Cargo workspace
-  - dependency compilation is duplicated between crates
+  - dependency compilation is still not fully minimized even with a shared target cache
   - some railway-internal Rust NIFs still exist even when hidden by the public Elixir facade
   - historical generated artifacts in the repo still need cleanup
+
+## Proven Slice (2026-04-02, Rust Workspace And Shared Target)
+- Added `native/Cargo.toml` as a shared Cargo workspace for:
+  - `hexacore_engine`
+  - `hexarail_engine`
+- Added `native/Cargo.lock` as the single lockfile for both crates.
+- Removed per-crate lockfiles from `native/hexacore_engine/` and `native/hexarail_engine/`.
+- `HexaCore.Native` and `HexaRail.Native` now both compile into the same absolute `native/target` directory via Rustler `target_dir`.
+- `test/hexacore/rust_workspace_boundary_test.exs` now protects that contract explicitly.
+- This does not eliminate all duplicate build work yet, but it converts the multi-crate layout into a real shared Rust workspace with a single lockfile and shared artifact cache root.
 
 ## Phase 1: Elixir Namespace & Directory Restructuring
 - Create `lib/hexacore` to house agnostic components.

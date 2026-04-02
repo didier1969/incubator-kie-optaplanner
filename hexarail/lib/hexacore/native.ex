@@ -3,7 +3,11 @@
 defmodule HexaCore.Native do
   @moduledoc false
 
-  use Rustler, otp_app: :hexarail, crate: "hexacore_engine"
+  use Rustler,
+    otp_app: :hexarail,
+    crate: "hexacore_engine",
+    path: "native/hexacore_engine",
+    target_dir: Path.expand("native/target", File.cwd!())
 
   @spec add(integer(), integer()) :: integer()
   def add(_a, _b), do: :erlang.nif_error(:nif_not_loaded)

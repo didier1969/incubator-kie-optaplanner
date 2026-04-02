@@ -64,7 +64,7 @@ mix data.import
 The shell now isolates mutable state under `./.state/` and exports project-local randomized ports for the web endpoint, tests, and PostgreSQL.
 
 ## Repository Direction
-*   **Near term:** stabilize the new two-crate Rust boundary and reduce operational friction. `HexaCore.Native` now loads `native/hexacore_engine`, `HexaRail.Native` now loads `native/hexarail_engine`, and the railway structs/NIFs/topology runtime no longer live inside the core crate. The remaining work is now around workspace hygiene, duplicate dependency compilation, and residual generated artifacts, not the core-vs-railway physical split itself.
+*   **Near term:** stabilize the new two-crate Rust boundary and reduce operational friction. `HexaCore.Native` now loads `native/hexacore_engine`, `HexaRail.Native` now loads `native/hexarail_engine`, both crates now sit under a shared `native/Cargo.toml` workspace with a shared `native/Cargo.lock`, and both Rustler modules compile into the same `native/target` directory. The remaining work is now around deeper build optimization and repository hygiene, not the core-vs-railway physical split itself.
 *   **Medium term:** stabilize the agnostic APIs and prove reuse across multiple verticals
 *   **Long term:** ship a true multi-vertical optimization platform, with HexaRail as showcase and HexaFactory as the next concrete industrial implementation
 
