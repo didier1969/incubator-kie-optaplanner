@@ -48,8 +48,18 @@
 - `native/hexacore_engine/src/domain.rs` now carries only the generic problem contract plus shared geospatial primitives.
 - This removes `HexaRail.*` Rust structs from the generic Rust domain module without yet splitting the crate or the NIF registration surface.
 - The remaining Rust-side debt is now concentrated in:
-  - `lib.rs` still hosting both generic and railway NIF entrypoints
   - `topology.rs` still living in the same crate as the generic solver
+
+## Proven Slice (2026-04-01, Rust NIF Module Boundary)
+- Railway-specific Rust NIF functions now live in `native/hexacore_engine/src/railway_nif.rs`.
+- `native/hexacore_engine/src/lib.rs` now keeps only:
+  - generic core entrypoints
+  - shared resource registration
+  - Rustler initialization
+- This is still a single crate, but the remaining coupling is now substantially narrower and concentrated in:
+  - `topology.rs`
+  - the shared `NetworkResource`
+  - the single `rustler::init!` surface
 
 ## Phase 1: Elixir Namespace & Directory Restructuring
 - Create `lib/hexacore` to house agnostic components.
