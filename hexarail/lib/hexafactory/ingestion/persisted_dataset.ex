@@ -7,8 +7,8 @@ defmodule HexaFactory.Ingestion.PersistedDataset do
   alias HexaFactory.Generator.Dataset
   alias HexaFactory.RepoBridge
 
-  @spec persist!(Dataset.t()) :: map()
-  def persist!(%Dataset{} = dataset) do
+  @spec persist!(Dataset.t(), String.t()) :: map()
+  def persist!(%Dataset{} = dataset, split \\ "train") do
     repo = RepoBridge.repo()
 
     horizon =
@@ -27,7 +27,8 @@ defmodule HexaFactory.Ingestion.PersistedDataset do
             seed: dataset.metadata.seed,
             profile: Atom.to_string(dataset.metadata.profile),
             signature: dataset.signature,
-            payload: payload
+            payload: payload,
+            dataset_split: split
           })
       end
 

@@ -21,7 +21,9 @@ defmodule Mix.Tasks.Hexafactory.GenerateDataset do
 
     profile_opt = Keyword.get(opts, :profile, "curriculum")
     count = Keyword.get(opts, :count, 100)
-    iterations = Keyword.get(opts, :iterations, 128)
+    
+    # Enable Deep Solve for Expert Trajectories (10,000 iterations to approach global optimum)
+    iterations = Keyword.get(opts, :iterations, 10_000)
     
     # Ecto pool size safety (protecting PostgreSQL from connection saturation)
     db_pool_size = Application.get_env(:hexarail, Repo)[:pool_size] || 10
@@ -30,7 +32,7 @@ defmodule Mix.Tasks.Hexafactory.GenerateDataset do
     requested_concurrency = Keyword.get(opts, :concurrency, System.schedulers_online())
     concurrency = min(requested_concurrency, safe_max_concurrency)
 
-    IO.puts("Starting offline generation of #{count} Expert Trajectories (Profile: '#{profile_opt}', Concurrency: #{concurrency}, Iterations: #{iterations})...")
+    IO.puts("Starting offline generation of #{count} Expert Trajectories (Profile: '#{profile_opt}', Deep Solve Iterations: #{iterations}, DB-safe Concurrency: #{concurrency})...")
 
     start_time = System.monotonic_time()
 
@@ -44,11 +46,18 @@ defmodule Mix.Tasks.Hexafactory.GenerateDataset do
           String.to_atom(profile_opt)
         end
         
-        # 2. State Generation
-        dataset = Dataset.build(seed: seed, profile: profile)
-        persisted = PersistedDataset.persist!(dataset)
+        # 2. Dataset Split (Train/Val/Test = 80/10/10) via deterministic hash of the seed
+        split = case rem(seed, 10) do
+          0 -> "test"
+          1 -> "val"
+          _ -> "train"
+        end
         
-        # 3. Ground Truth Resolution (Expert Trajectory)
+        # 3. State Generation
+        dataset = Dataset.build(seed: seed, profile: profile)
+        persisted = PersistedDataset.persist!(dataset, split)
+        
+        # 4. Ground Truth Resolution (Deep Solve Expert Trajectory)
         reloaded = PersistedDataset.load!(persisted.dataset_ref)
         
         solved_problem = 
@@ -59,18 +68,18 @@ defmodule Mix.Tasks.Hexafactory.GenerateDataset do
         decoded = HexaFactory.Solver.ResultDecoder.decode(reloaded, solved_problem)
         metrics = decoded.score_breakdown
         
-        # 4. Expert Persistence
+        # 5. Expert Persistence
         PersistedDataset.persist_expert_trajectory!(persisted.dataset_ref, solved_problem, metrics)
         
-        {seed, profile, persisted.dataset_ref, metrics}
+        {seed, profile, split, persisted.dataset_ref, metrics}
       end,
       max_concurrency: concurrency,
       timeout: :infinity
     )
     |> Enum.reduce(0, fn
-      {:ok, {seed, actual_profile, _ref, metrics}}, acc ->
+      {:ok, {seed, actual_profile, split, _ref, metrics}}, acc ->
         if rem(acc + 1, 10) == 0 do
-          IO.puts("Generated expert trajectory #{acc + 1}/#{count} (seed: #{seed}, profile: #{actual_profile}, late_jobs: #{metrics.late_jobs}, overdue: #{metrics.overdue_minutes}m)")
+          IO.puts("Generated expert trajectory #{acc + 1}/#{count} (seed: #{seed}, profile: #{actual_profile}, split: #{split}, late_jobs: #{metrics.late_jobs}, overdue: #{metrics.overdue_minutes}m)")
         end
         acc + 1
       {:error, reason}, acc ->
