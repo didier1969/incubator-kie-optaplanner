@@ -9,13 +9,6 @@ defmodule HexaRail.Native do
     path: "native/hexarail_engine",
     target_dir: Path.expand("native/target", File.cwd!())
 
-  @spec evaluate_problem(reference(), HexaCore.Domain.Problem.t()) :: integer()
-  def evaluate_problem(_resource, _problem), do: :erlang.nif_error(:nif_not_loaded)
-
-  @spec optimize_problem(reference(), HexaCore.Domain.Problem.t(), integer()) ::
-          HexaCore.Domain.Problem.t()
-  def optimize_problem(_resource, _problem, _iterations), do: :erlang.nif_error(:nif_not_loaded)
-
   def init_network, do: :erlang.nif_error(:nif_not_loaded)
 
   def load_stops(_resource, _stops), do: :erlang.nif_error(:nif_not_loaded)

@@ -11,28 +11,6 @@ pub struct NetworkResource {
 }
 
 #[rustler::nif]
-pub fn evaluate_problem(
-    resource: ResourceArc<NetworkResource>,
-    problem: domain::Problem,
-) -> i64 {
-    let manager = resource.manager.read().unwrap();
-    let total_conflicts = manager.detect_conflicts().total_conflicts;
-    crate::score::calculate_score_with_conflicts(&problem, total_conflicts)
-}
-
-#[rustler::nif]
-#[allow(clippy::needless_pass_by_value)]
-pub fn optimize_problem(
-    resource: ResourceArc<NetworkResource>,
-    problem: domain::Problem,
-    iterations: i32,
-) -> domain::Problem {
-    let manager = resource.manager.read().unwrap();
-    let total_conflicts = manager.detect_conflicts().total_conflicts;
-    crate::solver::optimize(problem, total_conflicts, iterations)
-}
-
-#[rustler::nif]
 pub fn init_network() -> ResourceArc<NetworkResource> {
     ResourceArc::new(NetworkResource {
         manager: RwLock::new(railway_topology::NetworkManager::new()),
