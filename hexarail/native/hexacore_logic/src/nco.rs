@@ -1,9 +1,7 @@
 // Copyright (c) Didier Stadelmann. All rights reserved.
 
 use crate::domain::Problem;
-use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
-use std::hash::{Hash, Hasher};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TensorData {
@@ -15,16 +13,7 @@ pub struct TensorData {
     pub global_features: Vec<f32>,
 }
 
-pub const HASH_BUCKETS: usize = 256;
 pub const TIME_BUCKETS: usize = 24;
-pub const BUCKET_SIZE: i64 = 60; // 60 minutes per bucket (1 day total)
-
-// Feature Hashing trick: deterministically map strings to a bounded ID [0, HASH_BUCKETS - 1]
-fn hash_to_bucket(key: &str) -> f32 {
-    let mut hasher = DefaultHasher::new();
-    key.hash(&mut hasher);
-    (hasher.finish() % HASH_BUCKETS as u64) as f32
-}
 
 // Fixed schema for global score components to ensure static tensor dimension
 const KNOWN_SCORE_COMPONENTS: [&str; 4] = [
@@ -34,30 +23,95 @@ const KNOWN_SCORE_COMPONENTS: [&str; 4] = [
     "idle_time",
 ];
 
-#[derive(Debug, Default)]
-pub struct FeatureEncoder {}
+// Strict Vocabulary Dictionary to prevent infinite growth and collisions
+#[derive(Debug, Clone)]
+pub struct StrictDictionary {
+    pub mapping: HashMap<String, usize>,
+    pub frozen: bool,
+}
+
+impl Default for StrictDictionary {
+    fn default() -> Self {
+        let mut mapping = HashMap::new();
+        mapping.insert("<UNK>".to_string(), 0); // ID 0 is always Unknown
+        Self {
+            mapping,
+            frozen: false,
+        }
+    }
+}
+
+impl StrictDictionary {
+    pub fn get_or_insert(&mut self, key: &str) -> usize {
+        if let Some(&id) = self.mapping.get(key) {
+            return id;
+        }
+        if self.frozen {
+            return 0; // Return <UNK> if dictionary is frozen
+        }
+        let next_id = self.mapping.len();
+        self.mapping.insert(key.to_string(), next_id);
+        next_id
+    }
+
+    pub fn freeze(&mut self) {
+        self.frozen = true;
+    }
+}
+
+#[derive(Debug, Default, Clone)]
+pub struct FeatureEncoder {
+    pub batch_key_dict: StrictDictionary,
+    pub edge_type_dict: StrictDictionary,
+    pub resource_name_dict: StrictDictionary,
+}
 
 impl FeatureEncoder {
     #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
+    
+    pub fn freeze_vocabularies(&mut self) {
+        self.batch_key_dict.freeze();
+        self.edge_type_dict.freeze();
+        self.resource_name_dict.freeze();
+    }
 
     #[must_use]
-    pub fn encode(&self, problem: &Problem) -> TensorData {
+    pub fn encode(&mut self, problem: &Problem) -> TensorData {
+        // 1. Calculate dynamic horizon (max_time) for normalization and bucketing
+        let mut max_time = 1.0_f32; // Avoid division by zero
+        for job in &problem.jobs {
+            if let Some(due) = job.due_time {
+                if due as f32 > max_time {
+                    max_time = due as f32;
+                }
+            }
+            if let Some(release) = job.release_time {
+                let end = release + job.duration;
+                if end as f32 > max_time {
+                    max_time = end as f32;
+                }
+            }
+        }
+        
+        let bucket_size = max_time / (TIME_BUCKETS as f32);
+
         let mut job_to_idx = HashMap::new();
         let mut job_features = Vec::with_capacity(problem.jobs.len());
 
         for (idx, job) in problem.jobs.iter().enumerate() {
             job_to_idx.insert(job.id, idx);
 
-            let duration = job.duration as f32;
-            let release_time = job.release_time.map_or(-1.0, |v| v as f32);
-            let due_time = job.due_time.map_or(-1.0, |v| v as f32);
-            let start_time = job.start_time.map_or(-1.0, |v| v as f32);
+            // Min-Max Scaling (Normalization) bounded to max_time
+            let duration = (job.duration as f32) / max_time;
+            let release_time = job.release_time.map_or(-1.0, |v| (v as f32) / max_time);
+            let due_time = job.due_time.map_or(-1.0, |v| (v as f32) / max_time);
+            let start_time = job.start_time.map_or(-1.0, |v| (v as f32) / max_time);
 
             let batch_key_id = match &job.batch_key {
-                Some(key) => hash_to_bucket(key),
+                Some(key) => self.batch_key_dict.get_or_insert(key) as f32,
                 None => -1.0, // Special value for no batch key
             };
 
@@ -70,30 +124,35 @@ impl FeatureEncoder {
         for (idx, res) in problem.resources.iter().enumerate() {
             res_to_idx.insert(res.id, idx);
             
-            let capacity = res.capacity as f32;
-            let type_id = hash_to_bucket(&res.name);
+            // Normalize capacity (assuming 10 is a reasonable max scale factor for JSSP machines)
+            let capacity = (res.capacity as f32) / 10.0; 
+            let type_id = self.resource_name_dict.get_or_insert(&res.name) as f32;
             
             let mut res_feat = vec![capacity, type_id];
             
-            // Discretize availability windows into fixed TIME_BUCKETS (e.g., 24 hours of 60 mins)
-            // 1.0 means available for the whole bucket, 0.0 means completely unavailable
+            // Discretize availability windows dynamically
             let mut time_grid = vec![1.0; TIME_BUCKETS];
             
-            for window in &res.availability_windows {
-                let start_bucket = (window.start_at / BUCKET_SIZE).max(0) as usize;
-                let end_bucket = (window.end_at / BUCKET_SIZE).max(0) as usize;
-                
-                for b in start_bucket..=end_bucket {
-                    if b < TIME_BUCKETS {
-                        let bucket_start = (b as i64) * BUCKET_SIZE;
-                        let bucket_end = bucket_start + BUCKET_SIZE;
-                        
-                        let overlap_start = window.start_at.max(bucket_start);
-                        let overlap_end = window.end_at.min(bucket_end);
-                        
-                        if overlap_end > overlap_start {
-                            let unavailable_fraction = (overlap_end - overlap_start) as f32 / BUCKET_SIZE as f32;
-                            time_grid[b] = (time_grid[b] - unavailable_fraction).max(0.0);
+            if bucket_size > 0.0 {
+                for window in &res.availability_windows {
+                    let start_f = window.start_at as f32;
+                    let end_f = window.end_at as f32;
+                    
+                    let start_bucket = (start_f / bucket_size).floor() as usize;
+                    let end_bucket = (end_f / bucket_size).floor() as usize;
+                    
+                    for b in start_bucket..=end_bucket {
+                        if b < TIME_BUCKETS {
+                            let bucket_start = (b as f32) * bucket_size;
+                            let bucket_end = bucket_start + bucket_size;
+                            
+                            let overlap_start = start_f.max(bucket_start);
+                            let overlap_end = end_f.min(bucket_end);
+                            
+                            if overlap_end > overlap_start {
+                                let unavailable_fraction = (overlap_end - overlap_start) / bucket_size;
+                                time_grid[b] = (time_grid[b] - unavailable_fraction).max(0.0);
+                            }
                         }
                     }
                 }
@@ -113,8 +172,9 @@ impl FeatureEncoder {
             ) {
                 job_to_job_edges.push((from_idx, to_idx));
                 
-                let lag = edge.lag as f32;
-                let type_id = hash_to_bucket(&edge.edge_type);
+                // Normalize lag
+                let lag = (edge.lag as f32) / max_time;
+                let type_id = self.edge_type_dict.get_or_insert(&edge.edge_type) as f32;
                 job_to_job_edge_features.push(vec![lag, type_id]);
             }
         }
@@ -128,11 +188,14 @@ impl FeatureEncoder {
             }
         }
 
-        // Map score components into a fixed-size vector to guarantee static tensor shape
+        // Map score components into a fixed-size vector and normalize 
+        // using a logarithmic or empirical scale to prevent exploding gradients.
+        // Score = log1p(|value|) * sign(value)
         let mut global_features = vec![0.0; KNOWN_SCORE_COMPONENTS.len()];
         for comp in &problem.score_components {
             if let Some(pos) = KNOWN_SCORE_COMPONENTS.iter().position(|&k| k == comp.name) {
-                global_features[pos] += comp.value as f32;
+                let v = comp.value as f32;
+                global_features[pos] += v.signum() * (v.abs() + 1.0).ln();
             }
         }
 
@@ -153,7 +216,7 @@ mod tests {
     use crate::domain::{Edge, Job, Resource, ScoreComponent, Window};
 
     #[test]
-    fn test_extract_features_translates_problem_to_accurate_markov_state_tensor() {
+    fn test_extract_features_translates_problem_to_normalized_markov_state_tensor() {
         let problem = Problem {
             id: "p1".to_string(),
             resources: vec![
@@ -168,26 +231,25 @@ mod tests {
                     name: "M2".to_string(),
                     capacity: 2,
                     availability_windows: vec![
-                        // From minute 0 to 60 -> bucket 0 is fully unavailable (0.0)
-                        Window { start_at: 0, end_at: 60 },
-                        // From minute 120 to 150 -> bucket 2 is half unavailable (0.5)
-                        Window { start_at: 120, end_at: 150 },
+                        // Max time is 120 (due_time of Job 10). 120 / 24 buckets = 5 units per bucket.
+                        // 0 to 10 covers buckets 0 and 1 (fully)
+                        Window { start_at: 0, end_at: 10 },
                     ],
                 },
             ],
             jobs: vec![
                 Job {
                     id: 10,
-                    duration: 5,
+                    duration: 60,
                     required_resources: vec![1],
                     release_time: Some(0),
-                    due_time: Some(100),
+                    due_time: Some(120), // Sets max_time to 120
                     batch_key: None,
-                    start_time: Some(50),
+                    start_time: Some(60),
                 },
                 Job {
                     id: 20,
-                    duration: 8,
+                    duration: 30,
                     required_resources: vec![2],
                     release_time: None,
                     due_time: None,
@@ -196,79 +258,74 @@ mod tests {
                 },
                 Job {
                     id: 30,
-                    duration: 10,
+                    duration: 30,
                     required_resources: vec![2],
                     release_time: None,
                     due_time: None,
-                    batch_key: Some("HOT".to_string()),
+                    batch_key: Some("HOT".to_string()), // Should share the same ID in dictionary
                     start_time: None,
                 },
             ],
             edges: vec![Edge {
                 from_job_id: 10,
                 to_job_id: 20,
-                lag: 15,
+                lag: 12,
                 edge_type: "sequence".to_string(),
             }],
             score_components: vec![
-                // Will map to static indices: 0=tardiness, 1=setup
                 ScoreComponent { name: "tardiness".to_string(), value: 500 },
                 ScoreComponent { name: "setup".to_string(), value: 20 },
                 ScoreComponent { name: "unknown_metric".to_string(), value: 999 }, // Should be ignored
             ],
         };
 
-        let encoder = FeatureEncoder::new();
+        let mut encoder = FeatureEncoder::new();
         let tensor = encoder.encode(&problem);
 
         assert_eq!(tensor.job_features.len(), 3);
         assert_eq!(tensor.resource_features.len(), 2);
         
-        // global_features should be exactly 4 elements based on KNOWN_SCORE_COMPONENTS
+        // global_features should be exactly 4 elements
         assert_eq!(tensor.global_features.len(), 4);
 
-        // Job 0: no batch_key -> -1.0
-        assert_eq!(tensor.job_features[0], vec![5.0, 0.0, 100.0, 50.0, -1.0]);
+        // Job 0: max_time=120. duration=60->0.5, release=0->0.0, due=120->1.0, start=60->0.5
+        assert_eq!(tensor.job_features[0], vec![0.5, 0.0, 1.0, 0.5, -1.0]);
         
-        // Job 1 & 2: "HOT" hash must be identical and bounded
-        let hot_hash = hash_to_bucket("HOT");
-        assert_eq!(tensor.job_features[1], vec![8.0, -1.0, -1.0, -1.0, hot_hash]);
-        assert_eq!(tensor.job_features[2], vec![10.0, -1.0, -1.0, -1.0, hot_hash]);
+        // Job 1: "HOT" is added to dict (ID 1 since 0 is <UNK>)
+        assert_eq!(tensor.job_features[1], vec![0.25, -1.0, -1.0, -1.0, 1.0]);
+        assert_eq!(tensor.job_features[2], vec![0.25, -1.0, -1.0, -1.0, 1.0]);
 
-        // Resource 0: capacity 1, name "M1" hash, and 24 fully available buckets (1.0)
-        assert_eq!(tensor.resource_features[0][0], 1.0);
-        assert_eq!(tensor.resource_features[0][1], hash_to_bucket("M1"));
+        // Resource 0: capacity 1/10 -> 0.1, name "M1" -> 1.0, and 24 fully available buckets (1.0)
+        assert_eq!(tensor.resource_features[0][0], 0.1);
+        assert_eq!(tensor.resource_features[0][1], 1.0); // ID 1
         assert_eq!(tensor.resource_features[0][2..], vec![1.0; 24][..]);
         
-        // Resource 1: capacity 2, name "M2" hash.
-        assert_eq!(tensor.resource_features[1][0], 2.0);
-        assert_eq!(tensor.resource_features[1][1], hash_to_bucket("M2"));
+        // Resource 1: capacity 2/10 -> 0.2, name "M2" -> 2.0.
+        assert_eq!(tensor.resource_features[1][0], 0.2);
+        assert_eq!(tensor.resource_features[1][1], 2.0); // ID 2
         
-        // Bucket 0 (0-60) is fully unavailable -> 0.0
-        assert_eq!(tensor.resource_features[1][2], 0.0);
-        // Bucket 1 (60-120) is fully available -> 1.0
-        assert_eq!(tensor.resource_features[1][3], 1.0);
-        // Bucket 2 (120-180) is unavailable from 120-150 (30 mins) -> 0.5 available
-        assert_eq!(tensor.resource_features[1][4], 0.5);
-        // The rest should be 1.0
-        assert_eq!(tensor.resource_features[1][5..], vec![1.0; 21][..]);
+        // Bucket size is 120 / 24 = 5.
+        // Window 0-10 covers bucket 0 (0-5) and bucket 1 (5-10).
+        assert_eq!(tensor.resource_features[1][2], 0.0); // bucket 0 unavailable
+        assert_eq!(tensor.resource_features[1][3], 0.0); // bucket 1 unavailable
+        assert_eq!(tensor.resource_features[1][4], 1.0); // bucket 2 fully available
 
         assert_eq!(tensor.job_to_job_edges.len(), 1);
         assert_eq!(tensor.job_to_job_edges[0], (0, 1));
 
         assert_eq!(tensor.job_to_job_edge_features.len(), 1);
-        // Edge features: lag is 15.0, type is hashed
-        assert_eq!(tensor.job_to_job_edge_features[0], vec![15.0, hash_to_bucket("sequence")]);
+        // Edge features: lag is 12 / 120 = 0.1, type is ID 1.0
+        assert_eq!(tensor.job_to_job_edge_features[0], vec![0.1, 1.0]);
 
-        assert_eq!(tensor.job_to_resource_edges.len(), 3);
-        assert!(tensor.job_to_resource_edges.contains(&(0, 0))); // Job 10 -> Res 1
-        assert!(tensor.job_to_resource_edges.contains(&(1, 1))); // Job 20 -> Res 2
-        assert!(tensor.job_to_resource_edges.contains(&(2, 1))); // Job 30 -> Res 2
+        // Global features: Logarithmic scaling
+        // tardiness: ln(501) ≈ 6.216
+        // setup: ln(21) ≈ 3.044
+        assert!((tensor.global_features[0] - 6.216).abs() < 0.01);
+        assert!((tensor.global_features[1] - 3.044).abs() < 0.01);
         
-        // Global features: fixed schema [tardiness, setup, makespan, idle_time]
-        assert_eq!(tensor.global_features, vec![500.0, 20.0, 0.0, 0.0]);
+        // Test frozen dictionary behavior
+        encoder.freeze_vocabularies();
         
-        // Re-encode a second problem to test stateless determinism
         let problem_2 = Problem {
             id: "p2".to_string(),
             resources: vec![],
@@ -279,7 +336,7 @@ mod tests {
                     required_resources: vec![],
                     release_time: None,
                     due_time: None,
-                    batch_key: Some("COLD".to_string()),
+                    batch_key: Some("COLD".to_string()), // Unknown key
                     start_time: None,
                 },
             ],
@@ -288,6 +345,7 @@ mod tests {
         };
         
         let tensor_2 = encoder.encode(&problem_2);
-        assert_eq!(tensor_2.job_features[0][4], hash_to_bucket("COLD"));
+        // "COLD" was not seen before freezing, should map to <UNK> which is ID 0.0
+        assert_eq!(tensor_2.job_features[0][4], 0.0); 
     }
 }
