@@ -81,12 +81,14 @@ impl FeatureEncoder {
     #[must_use]
     pub fn encode(&mut self, problem: &Problem) -> TensorData {
         // 1. Calculate dynamic horizon (max_time) for normalization and bucketing
-        let mut max_time = 1.0_f32; // Avoid division by zero
+        // The theoretical worst-case makespan is the sum of all durations + sum of all lags
+        let sum_durations: i64 = problem.jobs.iter().map(|j| j.duration).sum();
+        let sum_lags: i64 = problem.edges.iter().map(|e| e.lag).sum();
+        let theoretical_worst_case = (sum_durations + sum_lags) as f32;
+
+        let mut max_time = theoretical_worst_case.max(1.0_f32); // Avoid division by zero
+
         for job in &problem.jobs {
-            let dur = job.duration as f32;
-            if dur > max_time {
-                max_time = dur;
-            }
             if let Some(due) = job.due_time {
                 if due as f32 > max_time {
                     max_time = due as f32;
@@ -300,34 +302,43 @@ mod tests {
         // global_features should be exactly 4 elements
         assert_eq!(tensor.global_features.len(), 4);
 
-        // Job 0: max_time=120. duration=60->0.5, release=0->0.0, due=120->1.0, start=60->0.5
-        assert_eq!(tensor.job_features[0], vec![0.5, 0.0, 1.0, 0.5, -1.0]);
+        // Job 0: max_time=132. duration=60->0.4545, release=0->0.0, due=120->0.909, start=60->0.4545
+        assert!((tensor.job_features[0][0] - 0.4545).abs() < 0.01);
+        assert!((tensor.job_features[0][1] - 0.0).abs() < 0.01);
+        assert!((tensor.job_features[0][2] - 0.909).abs() < 0.01);
+        assert!((tensor.job_features[0][3] - 0.4545).abs() < 0.01);
+        assert_eq!(tensor.job_features[0][4], -1.0);
         
-        // Job 1: "HOT" is added to dict (ID 1 since 0 is <UNK>)
-        assert_eq!(tensor.job_features[1], vec![0.25, -1.0, -1.0, -1.0, 1.0]);
-        assert_eq!(tensor.job_features[2], vec![0.25, -1.0, -1.0, -1.0, 1.0]);
+        // Job 1: duration=30->0.2272, "HOT" is added to dict (ID 1 since 0 is <UNK>)
+        assert!((tensor.job_features[1][0] - 0.2272).abs() < 0.01);
+        assert_eq!(tensor.job_features[1][1..5], vec![-1.0, -1.0, -1.0, 1.0][..]);
+        
+        // Job 2: duration=30->0.2272, "HOT" -> ID 1.0
+        assert!((tensor.job_features[2][0] - 0.2272).abs() < 0.01);
+        assert_eq!(tensor.job_features[2][1..5], vec![-1.0, -1.0, -1.0, 1.0][..]);
 
-        // Resource 0: capacity 1/10 -> 0.1, name "M1" -> 1.0, and 24 fully available buckets (1.0)
-        assert_eq!(tensor.resource_features[0][0], 0.1);
+        // Resource 0: capacity 1/2 -> 0.5, name "M1" -> 1.0, and 24 fully available buckets (1.0)
+        assert_eq!(tensor.resource_features[0][0], 0.5);
         assert_eq!(tensor.resource_features[0][1], 1.0); // ID 1
         assert_eq!(tensor.resource_features[0][2..], vec![1.0; 24][..]);
         
-        // Resource 1: capacity 2/10 -> 0.2, name "M2" -> 2.0.
-        assert_eq!(tensor.resource_features[1][0], 0.2);
+        // Resource 1: capacity 2/2 -> 1.0, name "M2" -> 2.0.
+        assert_eq!(tensor.resource_features[1][0], 1.0);
         assert_eq!(tensor.resource_features[1][1], 2.0); // ID 2
         
-        // Bucket size is 120 / 24 = 5.
-        // Window 0-10 covers bucket 0 (0-5) and bucket 1 (5-10).
+        // Bucket size is 132 / 24 = 5.5.
+        // Window 0-10 covers bucket 0 (0-5.5) fully, bucket 1 (5.5-11.0) partially (10-5.5=4.5 out of 5.5 => 0.818 unavailable -> 0.1818 available)
         assert_eq!(tensor.resource_features[1][2], 0.0); // bucket 0 unavailable
-        assert_eq!(tensor.resource_features[1][3], 0.0); // bucket 1 unavailable
+        assert!((tensor.resource_features[1][3] - 0.1818).abs() < 0.01); // bucket 1 partially available
         assert_eq!(tensor.resource_features[1][4], 1.0); // bucket 2 fully available
 
         assert_eq!(tensor.job_to_job_edges.len(), 1);
         assert_eq!(tensor.job_to_job_edges[0], (0, 1));
 
         assert_eq!(tensor.job_to_job_edge_features.len(), 1);
-        // Edge features: lag is 12 / 120 = 0.1, type is ID 1.0
-        assert_eq!(tensor.job_to_job_edge_features[0], vec![0.1, 1.0]);
+        // Edge features: lag is 12 / 132 = 0.0909, type is ID 1.0
+        assert!((tensor.job_to_job_edge_features[0][0] - 0.0909).abs() < 0.01);
+        assert_eq!(tensor.job_to_job_edge_features[0][1], 1.0);
 
         // Global features: Logarithmic scaling
         // tardiness: ln(501) ≈ 6.216
