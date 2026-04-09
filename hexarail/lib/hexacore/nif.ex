@@ -9,5 +9,5 @@ defmodule HexaCore.Nif do
 
   defdelegate add(a, b), to: Native
   defdelegate evaluate_problem_core(problem), to: Native
-  defdelegate optimize_problem_core(problem, iterations), to: Native
+  defdelegate optimize_problem_core(problem, strategy, iterations), to: Native
 end

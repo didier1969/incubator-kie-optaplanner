@@ -14,7 +14,7 @@ defmodule HexaFactory.Solver.Facade do
     solved_problem =
       dataset
       |> ProblemProjection.build()
-      |> Nif.optimize_problem_core(iterations)
+      |> Nif.optimize_problem_core("metaheuristic", iterations)
 
     ResultDecoder.decode(dataset, solved_problem)
   end

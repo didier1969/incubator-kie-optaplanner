@@ -30,7 +30,7 @@ defmodule HexaRail.SolverIntegrationTest do
 
     assert Nif.evaluate_problem_core(problem) == -100
 
-    optimized_problem = Nif.optimize_problem_core(problem, 10)
+    optimized_problem = Nif.optimize_problem_core(problem, "metaheuristic", 10)
 
     assert Nif.evaluate_problem_core(optimized_problem) == 0
     # Ensure the Rust engine actually mutated the struct and sent it back

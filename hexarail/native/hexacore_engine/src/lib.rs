@@ -18,8 +18,16 @@ pub fn add(a: i64, b: i64) -> i64 {
 }
 
 #[rustler::nif]
-pub fn optimize_problem_core(problem: domain::Problem, iterations: i32) -> domain::Problem {
-    hexacore_logic::optimize_problem_core(problem, iterations)
+pub fn optimize_problem_core(
+    problem: domain::Problem,
+    strategy: String,
+    iterations: i32,
+) -> Result<domain::Problem, rustler::Error> {
+    match strategy.as_str() {
+        "metaheuristic" => Ok(hexacore_logic::optimize_problem_core(problem, iterations)),
+        "nco" => Err(rustler::Error::RaiseAtom("not_implemented")),
+        _ => Err(rustler::Error::BadArg),
+    }
 }
 
 rustler::init!("Elixir.HexaCore.Native");

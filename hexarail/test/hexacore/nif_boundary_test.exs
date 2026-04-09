@@ -15,7 +15,7 @@ defmodule HexaCore.NifBoundaryTest do
 
     assert function_exported?(Nif, :add, 2)
     assert function_exported?(Nif, :evaluate_problem_core, 1)
-    assert function_exported?(Nif, :optimize_problem_core, 2)
+    assert function_exported?(Nif, :optimize_problem_core, 3)
 
     refute function_exported?(Nif, :init_network, 0)
     refute function_exported?(Nif, :load_stops, 2)
@@ -31,6 +31,7 @@ defmodule HexaCore.NifBoundaryTest do
 
     assert function_exported?(CoreNative, :add, 2)
     assert function_exported?(CoreNative, :evaluate_problem_core, 1)
+    assert function_exported?(CoreNative, :optimize_problem_core, 3)
     refute function_exported?(CoreNative, :init_network, 0)
     refute function_exported?(CoreNative, :load_stops, 2)
 

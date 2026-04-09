@@ -18,9 +18,23 @@ defmodule HexaCore.CoreSolverTest do
 
     assert Nif.evaluate_problem_core(problem) == -100
 
-    optimized_problem = Nif.optimize_problem_core(problem, 10)
+    optimized_problem = Nif.optimize_problem_core(problem, "metaheuristic", 10)
 
     assert Nif.evaluate_problem_core(optimized_problem) == 0
     assert hd(optimized_problem.jobs).start_time != nil
+  end
+
+  test "returns not_implemented for nco strategy" do
+    problem = %Problem{
+      id: "logistics_1",
+      resources: [],
+      jobs: [],
+      edges: [],
+      score_components: []
+    }
+
+    assert_raise ErlangError, ~r/not_implemented/, fn ->
+      Nif.optimize_problem_core(problem, "nco", 10)
+    end
   end
 end
