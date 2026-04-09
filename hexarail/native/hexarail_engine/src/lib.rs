@@ -7,7 +7,7 @@
 #![allow(clippy::needless_pass_by_value)]
 #![allow(clippy::type_complexity)]
 
-pub use hexacore_engine::{domain, score, solver};
+pub use hexacore_logic::{domain, score, solver};
 
 pub mod railway_domain;
 pub mod railway_nif;

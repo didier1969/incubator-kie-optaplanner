@@ -3,37 +3,23 @@
 #![deny(warnings)]
 #![deny(clippy::all)]
 #![deny(clippy::pedantic)]
-#![allow(non_local_definitions)]
 #![allow(clippy::needless_pass_by_value)]
-#![allow(clippy::type_complexity)]
 
-pub mod domain;
-pub mod incremental_score;
-pub mod score;
-pub mod solver;
+use hexacore_logic::domain;
 
-mod atoms {
-    rustler::atoms! {
-        ok,
-        error,
-    }
-}
-
-#[cfg_attr(feature = "nif_exports", rustler::nif)]
+#[rustler::nif]
 pub fn evaluate_problem_core(problem: domain::Problem) -> i64 {
-    score::calculate_score(&problem)
+    hexacore_logic::evaluate_problem_core(problem)
 }
 
-#[cfg_attr(feature = "nif_exports", rustler::nif)]
+#[rustler::nif]
 pub fn add(a: i64, b: i64) -> i64 {
-    a + b
+    hexacore_logic::add(a, b)
 }
 
-#[cfg_attr(feature = "nif_exports", rustler::nif)]
-#[allow(clippy::needless_pass_by_value)]
+#[rustler::nif]
 pub fn optimize_problem_core(problem: domain::Problem, iterations: i32) -> domain::Problem {
-    solver::optimize(problem, 0, iterations)
+    hexacore_logic::optimize_problem_core(problem, iterations)
 }
 
-#[cfg(feature = "nif_exports")]
 rustler::init!("Elixir.HexaCore.Native");

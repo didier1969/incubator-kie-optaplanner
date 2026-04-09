@@ -1,5 +1,5 @@
 # Copyright (c) Didier Stadelmann. All rights reserved.
 
 [workspace]
-members = ["hexacore_engine", "hexarail_engine"]
+members = ["hexacore_logic", "hexacore_engine", "hexarail_engine"]
 resolver = "2"
