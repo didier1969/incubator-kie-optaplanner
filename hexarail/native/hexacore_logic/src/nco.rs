@@ -8,21 +8,13 @@ use serde::{Serialize, Deserialize};
 pub struct TensorData {
     pub job_features: Vec<Vec<f32>>,
     pub resource_features: Vec<Vec<f32>>,
-    pub job_to_job_edges: Vec<(usize, usize)>,
+    pub job_to_job_edges: Vec<Vec<usize>>,
     pub job_to_job_edge_features: Vec<Vec<f32>>,
-    pub job_to_resource_edges: Vec<(usize, usize)>,
+    pub job_to_resource_edges: Vec<Vec<usize>>,
     pub global_features: Vec<f32>,
 }
 
 pub const TIME_BUCKETS: usize = 24;
-
-// Fixed schema for global score components to ensure static tensor dimension
-const KNOWN_SCORE_COMPONENTS: [&str; 4] = [
-    "tardiness",
-    "setup",
-    "makespan",
-    "idle_time",
-];
 
 // Strict Vocabulary Dictionary to prevent infinite growth and collisions
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -60,11 +52,14 @@ impl StrictDictionary {
     }
 }
 
+pub const MAX_SCORE_COMPONENTS: usize = 16;
+
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct FeatureEncoder {
     pub batch_key_dict: StrictDictionary,
     pub edge_type_dict: StrictDictionary,
     pub resource_name_dict: StrictDictionary,
+    pub score_name_dict: StrictDictionary,
 }
 
 impl FeatureEncoder {
@@ -77,6 +72,7 @@ impl FeatureEncoder {
         self.batch_key_dict.freeze();
         self.edge_type_dict.freeze();
         self.resource_name_dict.freeze();
+        self.score_name_dict.freeze();
     }
 
     pub fn export_json(&self) -> String {
@@ -193,7 +189,7 @@ impl FeatureEncoder {
                 job_to_idx.get(&edge.from_job_id),
                 job_to_idx.get(&edge.to_job_id),
             ) {
-                job_to_job_edges.push((from_idx, to_idx));
+                job_to_job_edges.push(vec![from_idx, to_idx]);
                 
                 // Normalize lag
                 let lag = (edge.lag as f32) / max_time;
@@ -206,7 +202,7 @@ impl FeatureEncoder {
         for (job_idx, job) in problem.jobs.iter().enumerate() {
             for req_res_id in &job.required_resources {
                 if let Some(&res_idx) = res_to_idx.get(req_res_id) {
-                    job_to_resource_edges.push((job_idx, res_idx));
+                    job_to_resource_edges.push(vec![job_idx, res_idx]);
                 }
             }
         }
@@ -214,9 +210,10 @@ impl FeatureEncoder {
         // Map score components into a fixed-size vector and normalize 
         // using a logarithmic or empirical scale to prevent exploding gradients.
         // Score = log1p(|value|) * sign(value)
-        let mut global_features = vec![0.0; KNOWN_SCORE_COMPONENTS.len()];
+        let mut global_features = vec![0.0; MAX_SCORE_COMPONENTS];
         for comp in &problem.score_components {
-            if let Some(pos) = KNOWN_SCORE_COMPONENTS.iter().position(|&k| k == comp.name) {
+            let pos = self.score_name_dict.get_or_insert(&comp.name);
+            if pos < MAX_SCORE_COMPONENTS {
                 let v = comp.value as f32;
                 global_features[pos] += v.signum() * (v.abs() + 1.0).ln();
             }
@@ -308,8 +305,8 @@ mod tests {
         assert_eq!(tensor.job_features.len(), 3);
         assert_eq!(tensor.resource_features.len(), 2);
         
-        // global_features should be exactly 4 elements
-        assert_eq!(tensor.global_features.len(), 4);
+        // global_features should be exactly MAX_SCORE_COMPONENTS elements
+        assert_eq!(tensor.global_features.len(), 16);
 
         // Job 0: max_time=132. duration=60->0.4545, release=0->0.0, due=120->0.909, start=60->0.4545
         assert!((tensor.job_features[0][0] - 0.4545).abs() < 0.01);
@@ -342,7 +339,7 @@ mod tests {
         assert_eq!(tensor.resource_features[1][4], 1.0); // bucket 2 fully available
 
         assert_eq!(tensor.job_to_job_edges.len(), 1);
-        assert_eq!(tensor.job_to_job_edges[0], (0, 1));
+        assert_eq!(tensor.job_to_job_edges[0], vec![0, 1]);
 
         assert_eq!(tensor.job_to_job_edge_features.len(), 1);
         // Edge features: lag is 12 / 132 = 0.0909, type is ID 1.0
@@ -350,10 +347,13 @@ mod tests {
         assert_eq!(tensor.job_to_job_edge_features[0][1], 1.0);
 
         // Global features: Logarithmic scaling
-        // tardiness: ln(501) ≈ 6.216
-        // setup: ln(21) ≈ 3.044
-        assert!((tensor.global_features[0] - 6.216).abs() < 0.01);
-        assert!((tensor.global_features[1] - 3.044).abs() < 0.01);
+        // unknown_metric is now added because we dynamically register scores. 
+        // ID 1: tardiness: ln(501) ≈ 6.216
+        // ID 2: setup: ln(21) ≈ 3.044
+        // ID 3: unknown_metric: ln(1000) ≈ 6.907
+        assert!((tensor.global_features[1] - 6.216).abs() < 0.01);
+        assert!((tensor.global_features[2] - 3.044).abs() < 0.01);
+        assert!((tensor.global_features[3] - 6.907).abs() < 0.01);
         
         // Test frozen dictionary behavior
         encoder.freeze_vocabularies();

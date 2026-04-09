@@ -65,18 +65,21 @@ defmodule Mix.Tasks.Hexafactory.GenerateDataset do
         
         abstract_problem = HexaFactory.Adapter.ProblemProjection.build(reloaded)
         
-        # ML Metric Collection: Pass through the encoder to populate the global vocabulary dictionary
-        _tensor = HexaCore.Nif.extract_features_core(encoder_ref, abstract_problem)
+        # ML Metric Collection: Extract the initial state (X) before optimization
+        tensor_x = HexaCore.Nif.extract_features_core(encoder_ref, abstract_problem)
         
         solved_problem = 
           abstract_problem
           |> HexaCore.Nif.optimize_problem_core("metaheuristic", iterations)
           
+        # ML Metric Collection: Extract the final solved state (Y) after optimization
+        tensor_y = HexaCore.Nif.extract_features_core(encoder_ref, solved_problem)
+          
         decoded = HexaFactory.Solver.ResultDecoder.decode(reloaded, solved_problem)
         metrics = decoded.score_breakdown
         
         # 5. Expert Persistence
-        PersistedDataset.persist_expert_trajectory!(persisted.dataset_ref, solved_problem, metrics)
+        PersistedDataset.persist_expert_trajectory!(persisted.dataset_ref, solved_problem, metrics, tensor_x, tensor_y)
         
         {seed, profile, split, persisted.dataset_ref, metrics}
       end,

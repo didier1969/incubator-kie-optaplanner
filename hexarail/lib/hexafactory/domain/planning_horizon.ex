@@ -15,6 +15,8 @@ defmodule HexaFactory.Domain.PlanningHorizon do
     field(:dataset_split, :string)
     field(:expert_trajectory_payload, :binary)
     field(:expert_score_metrics, :map)
+    field(:tensor_x_json, :map)
+    field(:tensor_y_json, :map)
 
     timestamps()
   end
