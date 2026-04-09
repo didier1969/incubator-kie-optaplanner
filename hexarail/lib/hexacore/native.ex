@@ -18,4 +18,7 @@ defmodule HexaCore.Native do
   @spec optimize_problem_core(HexaCore.Domain.Problem.t(), String.t(), integer()) ::
           HexaCore.Domain.Problem.t()
   def optimize_problem_core(_problem, _strategy, _iterations), do: :erlang.nif_error(:nif_not_loaded)
+
+  @spec extract_features_core(HexaCore.Domain.Problem.t()) :: map()
+  def extract_features_core(_problem), do: :erlang.nif_error(:nif_not_loaded)
 end

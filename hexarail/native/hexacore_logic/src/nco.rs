@@ -3,7 +3,7 @@
 use crate::domain::Problem;
 use std::collections::HashMap;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, rustler::NifMap)]
 pub struct TensorData {
     pub job_features: Vec<Vec<f32>>,
     pub resource_features: Vec<Vec<f32>>,
@@ -83,6 +83,10 @@ impl FeatureEncoder {
         // 1. Calculate dynamic horizon (max_time) for normalization and bucketing
         let mut max_time = 1.0_f32; // Avoid division by zero
         for job in &problem.jobs {
+            let dur = job.duration as f32;
+            if dur > max_time {
+                max_time = dur;
+            }
             if let Some(due) = job.due_time {
                 if due as f32 > max_time {
                     max_time = due as f32;
@@ -93,6 +97,14 @@ impl FeatureEncoder {
                 if end as f32 > max_time {
                     max_time = end as f32;
                 }
+            }
+        }
+        
+        let mut max_capacity = 1.0_f32;
+        for res in &problem.resources {
+            let cap = res.capacity as f32;
+            if cap > max_capacity {
+                max_capacity = cap;
             }
         }
         
@@ -124,8 +136,8 @@ impl FeatureEncoder {
         for (idx, res) in problem.resources.iter().enumerate() {
             res_to_idx.insert(res.id, idx);
             
-            // Normalize capacity (assuming 10 is a reasonable max scale factor for JSSP machines)
-            let capacity = (res.capacity as f32) / 10.0; 
+            // Normalize capacity using dynamic max_capacity
+            let capacity = (res.capacity as f32) / max_capacity; 
             let type_id = self.resource_name_dict.get_or_insert(&res.name) as f32;
             
             let mut res_feat = vec![capacity, type_id];

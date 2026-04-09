@@ -30,4 +30,12 @@ pub fn optimize_problem_core(
     }
 }
 
+#[rustler::nif]
+pub fn extract_features_core(
+    problem: domain::Problem,
+) -> Result<hexacore_logic::nco::TensorData, rustler::Error> {
+    let mut encoder = hexacore_logic::nco::FeatureEncoder::new();
+    Ok(encoder.encode(&problem))
+}
+
 rustler::init!("Elixir.HexaCore.Native");
