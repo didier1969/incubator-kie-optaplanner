@@ -9,6 +9,7 @@
 
 pub mod domain;
 pub mod incremental_score;
+pub mod nco;
 pub mod score;
 pub mod solver;
 
