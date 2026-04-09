@@ -12,6 +12,8 @@ defmodule HexaFactory.Domain.PlanningHorizon do
     field(:profile, :string)
     field(:signature, :string)
     field(:payload, :binary)
+    field(:expert_trajectory_payload, :binary)
+    field(:expert_score_metrics, :map)
 
     timestamps()
   end

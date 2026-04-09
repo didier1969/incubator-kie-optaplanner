@@ -38,6 +38,26 @@ defmodule HexaFactory.Ingestion.PersistedDataset do
     }
   end
 
+  @spec persist_expert_trajectory!(integer(), HexaCore.Domain.Problem.t(), map()) :: :ok
+  def persist_expert_trajectory!(horizon_id, %HexaCore.Domain.Problem{} = solved_problem, metrics) when is_integer(horizon_id) and is_map(metrics) do
+    repo = RepoBridge.repo()
+    horizon = repo.get!(PlanningHorizon, horizon_id)
+    
+    payload =
+      solved_problem
+      |> Map.from_struct()
+      |> :erlang.term_to_binary()
+
+    horizon
+    |> Ecto.Changeset.change(%{
+      expert_trajectory_payload: payload,
+      expert_score_metrics: metrics
+    })
+    |> repo.update!()
+
+    :ok
+  end
+
   @spec load!(integer()) :: Dataset.t()
   def load!(horizon_id) when is_integer(horizon_id) do
     repo = RepoBridge.repo()
