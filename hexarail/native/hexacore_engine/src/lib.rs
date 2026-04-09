@@ -68,6 +68,24 @@ pub fn extract_features_core(
     Ok(encoder.encode(&problem))
 }
 
+#[rustler::nif]
+pub fn export_feature_vocabularies(
+    resource: ResourceArc<EncoderResource>,
+) -> String {
+    let encoder = resource.encoder.read().unwrap();
+    encoder.export_json()
+}
+
+#[rustler::nif]
+pub fn import_feature_vocabularies(json: String) -> Result<ResourceArc<EncoderResource>, rustler::Error> {
+    match hexacore_logic::nco::FeatureEncoder::import_json(&json) {
+        Ok(encoder) => Ok(ResourceArc::new(EncoderResource {
+            encoder: RwLock::new(encoder),
+        })),
+        Err(_) => Err(rustler::Error::BadArg),
+    }
+}
+
 fn load(env: Env, _info: Term) -> bool {
     let _ = rustler::resource!(EncoderResource, env);
     true

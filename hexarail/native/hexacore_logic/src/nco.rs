@@ -2,6 +2,7 @@
 
 use crate::domain::Problem;
 use std::collections::HashMap;
+use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Clone, PartialEq, rustler::NifMap)]
 pub struct TensorData {
@@ -24,7 +25,7 @@ const KNOWN_SCORE_COMPONENTS: [&str; 4] = [
 ];
 
 // Strict Vocabulary Dictionary to prevent infinite growth and collisions
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StrictDictionary {
     pub mapping: HashMap<String, usize>,
     pub frozen: bool,
@@ -59,7 +60,7 @@ impl StrictDictionary {
     }
 }
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct FeatureEncoder {
     pub batch_key_dict: StrictDictionary,
     pub edge_type_dict: StrictDictionary,
@@ -76,6 +77,14 @@ impl FeatureEncoder {
         self.batch_key_dict.freeze();
         self.edge_type_dict.freeze();
         self.resource_name_dict.freeze();
+    }
+
+    pub fn export_json(&self) -> String {
+        serde_json::to_string(self).unwrap_or_else(|_| "{}".to_string())
+    }
+
+    pub fn import_json(json: &str) -> Result<Self, String> {
+        serde_json::from_str(json).map_err(|e| e.to_string())
     }
 
     #[must_use]

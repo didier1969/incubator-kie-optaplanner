@@ -27,4 +27,10 @@ defmodule HexaCore.Native do
 
   @spec freeze_feature_encoder(reference()) :: :ok
   def freeze_feature_encoder(_resource), do: :erlang.nif_error(:nif_not_loaded)
+
+  @spec export_feature_vocabularies(reference()) :: String.t()
+  def export_feature_vocabularies(_resource), do: :erlang.nif_error(:nif_not_loaded)
+
+  @spec import_feature_vocabularies(String.t()) :: reference()
+  def import_feature_vocabularies(_json), do: :erlang.nif_error(:nif_not_loaded)
 end

@@ -45,5 +45,19 @@ defmodule HexaCore.NCOIntegrationTest do
     # Ensure the vectors contain actual floats
     assert is_list(hd(tensor.job_features))
     assert is_float(hd(hd(tensor.job_features)))
+
+    # Verify JSON vocabulary export
+    vocab_json = Nif.export_feature_vocabularies(encoder_ref)
+    assert is_binary(vocab_json)
+    assert String.contains?(vocab_json, "batch_key_dict")
+    assert String.contains?(vocab_json, "edge_type_dict")
+    assert String.contains?(vocab_json, "resource_name_dict")
+    
+    # Verify JSON import works
+    imported_ref = Nif.import_feature_vocabularies(vocab_json)
+    assert is_reference(imported_ref)
+    
+    # The imported encoder should preserve the frozen state
+    assert Nif.export_feature_vocabularies(imported_ref) == vocab_json
   end
 end

@@ -36,6 +36,9 @@ defmodule Mix.Tasks.Hexafactory.GenerateDataset do
 
     start_time = System.monotonic_time()
 
+    # Initialize the ML Latent Space Encoder to populate global vocabularies during generation
+    encoder_ref = HexaCore.Nif.init_feature_encoder()
+
     1..count
     |> Task.async_stream(
       fn seed ->
@@ -60,9 +63,13 @@ defmodule Mix.Tasks.Hexafactory.GenerateDataset do
         # 4. Ground Truth Resolution (Deep Solve Expert Trajectory)
         reloaded = PersistedDataset.load!(persisted.dataset_ref)
         
+        abstract_problem = HexaFactory.Adapter.ProblemProjection.build(reloaded)
+        
+        # ML Metric Collection: Pass through the encoder to populate the global vocabulary dictionary
+        _tensor = HexaCore.Nif.extract_features_core(encoder_ref, abstract_problem)
+        
         solved_problem = 
-          reloaded
-          |> HexaFactory.Adapter.ProblemProjection.build()
+          abstract_problem
           |> HexaCore.Nif.optimize_problem_core("metaheuristic", iterations)
           
         decoded = HexaFactory.Solver.ResultDecoder.decode(reloaded, solved_problem)
@@ -86,6 +93,12 @@ defmodule Mix.Tasks.Hexafactory.GenerateDataset do
         IO.puts(:stderr, "Failed to generate dataset: #{inspect(reason)}")
         acc
     end)
+
+    # ML Pipeline Completion: Export and save the global vocabulary
+    HexaCore.Nif.freeze_feature_encoder(encoder_ref)
+    vocab_json = HexaCore.Nif.export_feature_vocabularies(encoder_ref)
+    File.write!("dataset_vocabularies.json", vocab_json)
+    IO.puts("Exported ML Categorical Vocabularies to dataset_vocabularies.json")
 
     end_time = System.monotonic_time()
     duration_ms = System.convert_time_unit(end_time - start_time, :native, :millisecond)

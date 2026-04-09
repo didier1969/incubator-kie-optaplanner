@@ -19,6 +19,8 @@ defmodule HexaCore.NifBoundaryTest do
     assert function_exported?(Nif, :extract_features_core, 2)
     assert function_exported?(Nif, :init_feature_encoder, 0)
     assert function_exported?(Nif, :freeze_feature_encoder, 1)
+    assert function_exported?(Nif, :export_feature_vocabularies, 1)
+    assert function_exported?(Nif, :import_feature_vocabularies, 1)
 
     refute function_exported?(Nif, :init_network, 0)
     refute function_exported?(Nif, :load_stops, 2)
@@ -38,6 +40,8 @@ defmodule HexaCore.NifBoundaryTest do
     assert function_exported?(CoreNative, :extract_features_core, 2)
     assert function_exported?(CoreNative, :init_feature_encoder, 0)
     assert function_exported?(CoreNative, :freeze_feature_encoder, 1)
+    assert function_exported?(CoreNative, :export_feature_vocabularies, 1)
+    assert function_exported?(CoreNative, :import_feature_vocabularies, 1)
     refute function_exported?(CoreNative, :init_network, 0)
     refute function_exported?(CoreNative, :load_stops, 2)
 
