@@ -10,5 +10,7 @@ defmodule HexaCore.Nif do
   defdelegate add(a, b), to: Native
   defdelegate evaluate_problem_core(problem), to: Native
   defdelegate optimize_problem_core(problem, strategy, iterations), to: Native
-  defdelegate extract_features_core(problem), to: Native
+  defdelegate init_feature_encoder(), to: Native
+  defdelegate freeze_feature_encoder(resource), to: Native
+  defdelegate extract_features_core(resource, problem), to: Native
 end

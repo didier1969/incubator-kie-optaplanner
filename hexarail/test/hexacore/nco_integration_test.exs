@@ -13,15 +13,22 @@ defmodule HexaCore.NCOIntegrationTest do
     :ok
   end
 
-  test "extract_features_core successfully parses a real industrial dataset without crashing" do
+  test "extract_features_core successfully parses a real industrial dataset statefully without crashing" do
     # Generate a realistic JSSP dataset
     dataset = Dataset.build(seed: 42, profile: :smoke)
     
     # Project to generic problem
     problem = ProblemProjection.build(dataset)
     
-    # Extract tensor data via Rust NIF
-    tensor = Nif.extract_features_core(problem)
+    # Initialize the Stateful Encoder Resource
+    encoder_ref = Nif.init_feature_encoder()
+    assert is_reference(encoder_ref)
+
+    # Freeze vocabulary to test state mutations
+    assert Nif.freeze_feature_encoder(encoder_ref) == :ok
+    
+    # Extract tensor data via Rust NIF using the initialized resource
+    tensor = Nif.extract_features_core(encoder_ref, problem)
     
     assert is_map(tensor)
     assert Map.has_key?(tensor, :job_features)
