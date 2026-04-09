@@ -12,6 +12,7 @@ pub struct TensorData {
     pub job_to_job_edge_features: Vec<Vec<f32>>,
     pub job_to_resource_edges: Vec<Vec<usize>>,
     pub global_features: Vec<f32>,
+    pub scalars: Vec<f32>,
 }
 
 pub const TIME_BUCKETS: usize = 24;
@@ -226,6 +227,7 @@ impl FeatureEncoder {
             job_to_job_edge_features,
             job_to_resource_edges,
             global_features,
+            scalars: vec![max_time, max_capacity],
         }
     }
 }
@@ -307,6 +309,11 @@ mod tests {
         
         // global_features should be exactly MAX_SCORE_COMPONENTS elements
         assert_eq!(tensor.global_features.len(), 16);
+        
+        // Verify scalars [max_time, max_capacity]
+        assert_eq!(tensor.scalars.len(), 2);
+        assert!((tensor.scalars[0] - 132.0).abs() < 0.01);
+        assert!((tensor.scalars[1] - 2.0).abs() < 0.01);
 
         // Job 0: max_time=132. duration=60->0.4545, release=0->0.0, due=120->0.909, start=60->0.4545
         assert!((tensor.job_features[0][0] - 0.4545).abs() < 0.01);

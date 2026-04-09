@@ -34,13 +34,15 @@ defmodule HexaCore.NCOIntegrationTest do
     assert Map.has_key?(tensor, :job_features)
     assert Map.has_key?(tensor, :resource_features)
     assert Map.has_key?(tensor, :global_features)
+    assert Map.has_key?(tensor, :scalars)
     
     # Verify dimensions are correct and not empty
     assert length(tensor.job_features) == length(problem.jobs)
     assert length(tensor.resource_features) == length(problem.resources)
     
     # Check fixed global features (4 metrics)
-    assert length(tensor.global_features) == 4
+    assert length(tensor.global_features) == 16
+    assert length(tensor.scalars) == 2
     
     # Ensure the vectors contain actual floats
     assert is_list(hd(tensor.job_features))
