@@ -33,8 +33,15 @@ pub fn add(a: i64, b: i64) -> i64 {
 
 
 #[allow(clippy::needless_pass_by_value)]
-pub fn optimize_problem_core(problem: domain::Problem, iterations: i32, guidance: Option<Vec<f32>>) -> domain::Problem {
-    solver::optimize(problem, 0, iterations, guidance)
+pub fn optimize_problem_core<F>(
+    problem: domain::Problem, 
+    iterations: i32, 
+    guidance_fn: Option<F>
+) -> domain::Problem 
+where
+    F: FnMut(&domain::Problem) -> Vec<f32>,
+{
+    solver::optimize(problem, 0, iterations, guidance_fn)
 }
 
 // No rustler::init here

@@ -6,7 +6,15 @@ use crate::incremental_score::{ScoreDatabase, ScoreEngine};
 const LAHC_HISTORY_SIZE: usize = 100;
 
 #[must_use]
-pub fn optimize(mut current_problem: Problem, _total_conflicts: usize, iterations: i32, guidance: Option<Vec<f32>>) -> Problem {
+pub fn optimize<F>(
+    mut current_problem: Problem,
+    _total_conflicts: usize,
+    iterations: i32,
+    mut guidance_fn: Option<F>,
+) -> Problem
+where
+    F: FnMut(&Problem) -> Vec<f32>,
+{
     // 1. Initialize Salsa Database with full problem state
     let mut db = ScoreDatabase::default();
     
@@ -41,17 +49,35 @@ pub fn optimize(mut current_problem: Problem, _total_conflicts: usize, iteration
     for i in 0..iterations {
         let v = (i as usize) % LAHC_HISTORY_SIZE;
 
+        // Dynamic State Evaluation: Call GNN inside the loop if available
+        let probs = if let Some(ref mut g_fn) = guidance_fn {
+            let p = g_fn(&current_problem);
+            if p.len() == current_problem.jobs.len() { Some(p) } else { None }
+        } else {
+            None
+        };
+
         // Selection: Pick a job to move, guided by GNN if available (Epsilon-Greedy)
-        let job_idx = if let Some(ref probs) = guidance {
-            if rng.random_bool(0.8) && !probs.is_empty() && probs.len() == current_problem.jobs.len() {
-                // Exploit GNN probabilities: pick highest prob job (simplified for prototype)
-                // In a true implementation, we would sample proportionally or pick highest valid move.
-                let mut best_idx = 0;
-                let mut max_p = -1.0;
-                for (pi, &p) in probs.iter().enumerate() {
-                    if p > max_p { max_p = p; best_idx = pi; }
+        let job_idx = if let Some(ref p_vec) = probs {
+            if rng.random_bool(0.8) {
+                // SOTA: Stochastic Sampling (Weighted Random Choice) instead of greedy Argmax
+                // Use Softmax probabilities to pick the next job
+                let sum: f32 = p_vec.iter().sum();
+                if sum > 0.0 {
+                    let mut cumulative = 0.0;
+                    let target = rng.random_range(0.0..sum);
+                    let mut selected = p_vec.len() - 1;
+                    for (pi, &p) in p_vec.iter().enumerate() {
+                        cumulative += p;
+                        if cumulative >= target {
+                            selected = pi;
+                            break;
+                        }
+                    }
+                    selected
+                } else {
+                    rng.random_range(0..current_problem.jobs.len())
                 }
-                best_idx
             } else {
                 rng.random_range(0..current_problem.jobs.len())
             }
@@ -130,7 +156,7 @@ mod tests {
             explanation: None,
         };
 
-        let optimized = optimize(problem, 0, 100, None);
+        let optimized = optimize::<fn(&Problem) -> Vec<f32>>(problem, 0, 100, None);
         
         assert!(optimized.jobs[0].start_time.is_some());
     }
