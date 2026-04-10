@@ -8,7 +8,7 @@ defmodule HexaFactory.Constraints.Transport do
     transfer_minutes =
       solved_problem.jobs
       |> Enum.filter(fn job ->
-        is_binary(job.batch_key) and String.starts_with?(job.batch_key, "transfer:")
+        is_binary(job.group_id) and String.starts_with?(job.group_id, "transfer:")
       end)
       |> Enum.reduce(0, fn job, acc -> acc + job.duration end)
 

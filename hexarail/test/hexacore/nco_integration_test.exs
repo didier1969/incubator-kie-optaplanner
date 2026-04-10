@@ -53,7 +53,7 @@ defmodule HexaCore.NCOIntegrationTest do
     # Verify JSON vocabulary export
     vocab_json = Nif.export_feature_vocabularies(encoder_ref)
     assert is_binary(vocab_json)
-    assert String.contains?(vocab_json, "batch_key_dict")
+    assert String.contains?(vocab_json, "group_id_dict")
     assert String.contains?(vocab_json, "edge_type_dict")
     assert String.contains?(vocab_json, "resource_name_dict")
     

@@ -33,7 +33,7 @@ defmodule HexaCore.CoreSolverTest do
       id: "logistics_nco",
       resources: [],
       jobs: [
-        %Job{id: 1, duration: 15, required_resources: [], release_time: nil, due_time: nil, batch_key: nil, start_time: nil}
+        %Job{id: 1, duration: 15, required_resources: [], release_time: nil, due_time: nil, group_id: nil, start_time: nil}
       ],
       edges: [],
       score_components: []

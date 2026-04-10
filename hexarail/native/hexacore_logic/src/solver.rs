@@ -249,7 +249,7 @@ mod tests {
                 required_resources: vec![],
                 release_time: None,
                 due_time: None,
-                batch_key: None,
+                group_id: None,
                 start_time: None,
             }],
             edges: vec![],

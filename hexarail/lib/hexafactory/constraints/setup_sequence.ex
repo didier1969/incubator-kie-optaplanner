@@ -26,13 +26,13 @@ defmodule HexaFactory.Constraints.SetupSequence do
           |> Enum.filter(&String.starts_with?(&1.name, "machine:"))
 
         Enum.reduce(machine_resources, acc, fn resource, machine_acc ->
-          batch_key = job.batch_key || "no-setup"
-          Map.update(machine_acc, resource.name, MapSet.new([batch_key]), &MapSet.put(&1, batch_key))
+          group_id = job.group_id || "no-setup"
+          Map.update(machine_acc, resource.name, MapSet.new([group_id]), &MapSet.put(&1, group_id))
         end)
       end)
       |> Enum.reduce(0, fn
-        {_machine, batch_keys}, acc when map_size(batch_keys) == 0 -> acc
-        {_machine, batch_keys}, acc -> acc + MapSet.size(batch_keys) * setup_duration
+        {_machine, group_ids}, acc when map_size(group_ids) == 0 -> acc
+        {_machine, group_ids}, acc -> acc + MapSet.size(group_ids) * setup_duration
       end)
 
     %{setup_minutes: setup_minutes}

@@ -94,7 +94,7 @@ pub const MAX_SCORE_COMPONENTS: usize = 16;
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct FeatureEncoder {
-    pub batch_key_dict: StrictDictionary,
+    pub group_id_dict: StrictDictionary,
     pub edge_type_dict: StrictDictionary,
     pub resource_name_dict: StrictDictionary,
     pub score_name_dict: StrictDictionary,
@@ -107,7 +107,7 @@ impl FeatureEncoder {
     }
     
     pub fn freeze_vocabularies(&self) {
-        self.batch_key_dict.freeze();
+        self.group_id_dict.freeze();
         self.edge_type_dict.freeze();
         self.resource_name_dict.freeze();
         self.score_name_dict.freeze();
@@ -180,7 +180,7 @@ impl FeatureEncoder {
         }
 
         let mut job_features = Vec::with_capacity(problem.jobs.len());
-        let batch_key_dict_size = self.batch_key_dict.len() as f32;
+        let group_id_dict_size = self.group_id_dict.len() as f32;
         for (idx, job) in problem.jobs.iter().enumerate() {
             let duration = (job.duration as f32) / max_time;
             let release_time = job.release_time.map_or(0.0, |v| (v as f32) / max_time);
@@ -188,10 +188,10 @@ impl FeatureEncoder {
             let start_time = job.start_time.map_or(0.0, |v| (v as f32) / max_time);
             let is_scheduled = if job.start_time.is_some() { 1.0 } else { 0.0 };
             
-            let batch_key_id = match &job.batch_key {
+            let group_id_id = match &job.group_id {
                 Some(key) => {
-                    let id = self.batch_key_dict.get_or_insert(key) as f32;
-                    id / (batch_key_dict_size + 1.0).max(1.0)
+                    let id = self.group_id_dict.get_or_insert(key) as f32;
+                    id / (group_id_dict_size + 1.0).max(1.0)
                 },
                 None => 0.0,
             };
@@ -203,7 +203,7 @@ impl FeatureEncoder {
 
             job_features.push(vec![
                 duration, release_time, due_time, start_time, is_scheduled,
-                batch_key_id, wait_time, remaining_time_to_due, rem_ops
+                group_id_id, wait_time, remaining_time_to_due, rem_ops
             ]);
         }
 
@@ -360,9 +360,9 @@ mod tests {
                 },
             ],
             jobs: vec![
-                Job { id: 10, duration: 60, required_resources: vec![1], release_time: Some(0), due_time: Some(120), start_time: Some(60), batch_key: None },
-                Job { id: 20, duration: 30, required_resources: vec![2], release_time: None, due_time: None, start_time: None, batch_key: Some("HOT".to_string()) },
-                Job { id: 30, duration: 30, required_resources: vec![2], release_time: None, due_time: None, start_time: None, batch_key: Some("HOT".to_string()) },
+                Job { id: 10, duration: 60, required_resources: vec![1], release_time: Some(0), due_time: Some(120), start_time: Some(60), group_id: None },
+                Job { id: 20, duration: 30, required_resources: vec![2], release_time: None, due_time: None, start_time: None, group_id: Some("HOT".to_string()) },
+                Job { id: 30, duration: 30, required_resources: vec![2], release_time: None, due_time: None, start_time: None, group_id: Some("HOT".to_string()) },
             ],
             edges: vec![Edge { from_job_id: 10, to_job_id: 20, lag: 12, edge_type: "sequence".to_string() }],
             score_components: vec![
@@ -370,6 +370,7 @@ mod tests {
                 ScoreComponent { name: "setup".to_string(), value: 20 },
                 ScoreComponent { name: "unknown_metric".to_string(), value: 999 },
             ],
+            explanation: None,
         };
 
         let encoder = FeatureEncoder::new();
@@ -403,13 +404,13 @@ mod tests {
         let problem_2 = Problem {
             id: "p2".to_string(),
             resources: vec![],
-            jobs: vec![Job { id: 40, duration: 1, required_resources: vec![], release_time: None, due_time: None, batch_key: Some("COLD".to_string()), start_time: None }],
+            jobs: vec![Job { id: 40, duration: 1, required_resources: vec![], release_time: None, due_time: None, group_id: Some("COLD".to_string()), start_time: None }],
             edges: vec![],
             score_components: vec![],
             explanation: None,
         };
         let tensor_2 = encoder.encode(&problem_2, 0.0).unwrap();
-        // batch_key_id is at index 5. HOT was 0 (mapped to 0/<size+1>), COLD is now mapped to 0 as it's frozen?
+        // group_id_id is at index 5. HOT was 0 (mapped to 0/<size+1>), COLD is now mapped to 0 as it's frozen?
         // Wait, COLD was added after freeze, so it should be UNK (0).
         assert_eq!(tensor_2.job_features[0][5], 0.0); 
     }

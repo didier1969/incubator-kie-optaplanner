@@ -55,7 +55,7 @@ defmodule HexaFactory.Adapter.JobProjection do
               required_resources: required_resources,
               release_time: 0,
               due_time: 720 + order.priority * 60,
-              batch_key: batch_key_for(order, operation),
+              group_id: group_id_for(order, operation),
               start_time: nil
             }
 
@@ -108,7 +108,7 @@ defmodule HexaFactory.Adapter.JobProjection do
           required_resources: [Map.fetch!(resource_index, {:machine, machine.code})],
           release_time: maintenance_window.start_minute,
           due_time: maintenance_window.end_minute,
-          batch_key: nil,
+          group_id: nil,
           start_time: maintenance_window.start_minute
         }
 
@@ -125,7 +125,7 @@ defmodule HexaFactory.Adapter.JobProjection do
           ],
           release_time: 0,
           due_time: 1_440,
-          batch_key: "transport:#{lane.material_code}",
+          group_id: "transport:#{lane.material_code}",
           start_time: nil
         }
 
@@ -143,8 +143,8 @@ defmodule HexaFactory.Adapter.JobProjection do
   defp lag_for("heat_treatment"), do: 30
   defp lag_for(_operation_kind), do: 0
 
-  defp batch_key_for(order, %{batchable: true}), do: "batch:#{order.material_code}"
-  defp batch_key_for(_order, _operation), do: nil
+  defp group_id_for(order, %{batchable: true}), do: "batch:#{order.material_code}"
+  defp group_id_for(_order, _operation), do: nil
 
   defp maybe_add_transfer_job(
          order_jobs,
@@ -170,7 +170,7 @@ defmodule HexaFactory.Adapter.JobProjection do
           ],
           release_time: 0,
           due_time: 1_440,
-          batch_key: "transfer:#{order.material_code}",
+          group_id: "transfer:#{order.material_code}",
           start_time: nil
         }
 

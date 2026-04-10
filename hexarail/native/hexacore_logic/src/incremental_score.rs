@@ -360,8 +360,8 @@ mod tests {
         let edge_id = 0;
 
         db.set_job_ids(vec![j1_id, j2_id]);
-        db.set_job_data(j1_id, Job { id: j1_id, duration: 10, required_resources: vec![], release_time: None, due_time: None, batch_key: None, start_time: None });
-        db.set_job_data(j2_id, Job { id: j2_id, duration: 10, required_resources: vec![], release_time: None, due_time: None, batch_key: None, start_time: None });
+        db.set_job_data(j1_id, Job { id: j1_id, duration: 10, required_resources: vec![], release_time: None, due_time: None, group_id: None, start_time: None });
+        db.set_job_data(j2_id, Job { id: j2_id, duration: 10, required_resources: vec![], release_time: None, due_time: None, group_id: None, start_time: None });
         
         db.set_edge_ids(vec![edge_id]);
         db.set_edge_data(edge_id, Edge { from_job_id: j1_id, to_job_id: j2_id, lag: 0, edge_type: "finish_to_start".to_string() });
@@ -384,7 +384,7 @@ mod tests {
         let r1_id = 1;
 
         db.set_job_ids(vec![j1_id]);
-        db.set_job_data(j1_id, Job { id: j1_id, duration: 10, required_resources: vec![r1_id], release_time: None, due_time: None, batch_key: None, start_time: None });
+        db.set_job_data(j1_id, Job { id: j1_id, duration: 10, required_resources: vec![r1_id], release_time: None, due_time: None, group_id: None, start_time: None });
         
         db.set_resource_ids(vec![r1_id]);
         db.set_resource_data(r1_id, Resource { id: r1_id, name: "M1".to_string(), capacity: 1, availability_windows: vec![Window { start_at: 0, end_at: 10 }] });

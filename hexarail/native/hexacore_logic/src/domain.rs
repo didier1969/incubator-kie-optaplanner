@@ -99,7 +99,7 @@ pub struct Job {
     pub required_resources: Vec<i64>,
     pub release_time: Option<i64>,
     pub due_time: Option<i64>,
-    pub batch_key: Option<String>,
+    pub group_id: Option<String>,
     pub start_time: Option<i64>,
 }
 
@@ -173,7 +173,7 @@ mod tests {
             required_resources: vec![],
             release_time: None,
             due_time: None,
-            batch_key: None,
+            group_id: None,
             start_time: None,
         };
         let j2 = j1.clone();
@@ -194,7 +194,7 @@ mod tests {
             required_resources: vec![1],
             release_time: None,
             due_time: None,
-            batch_key: None,
+            group_id: None,
             start_time: None,
         };
         let problem = Problem {

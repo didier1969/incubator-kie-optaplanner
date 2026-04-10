@@ -9,7 +9,7 @@ defmodule HexaCore.Domain.Job do
     :duration,
     :release_time,
     :due_time,
-    :batch_key,
+    :group_id,
     :start_time,
     required_resources: []
   ]
@@ -20,7 +20,7 @@ defmodule HexaCore.Domain.Job do
           required_resources: list(integer()),
           release_time: integer() | nil,
           due_time: integer() | nil,
-          batch_key: String.t() | nil,
+          group_id: String.t() | nil,
           start_time: integer() | nil
         }
 end

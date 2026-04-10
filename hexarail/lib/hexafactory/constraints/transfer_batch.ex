@@ -7,7 +7,7 @@ defmodule HexaFactory.Constraints.TransferBatch do
   def measure(_dataset, solved_problem) do
     transfer_batches =
       Enum.count(solved_problem.jobs, fn job ->
-        is_binary(job.batch_key) and String.starts_with?(job.batch_key, "transfer:")
+        is_binary(job.group_id) and String.starts_with?(job.group_id, "transfer:")
       end)
 
     %{transfer_batches: transfer_batches}

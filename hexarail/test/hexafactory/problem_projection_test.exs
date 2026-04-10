@@ -17,7 +17,7 @@ defmodule HexaFactory.ProblemProjectionTest do
     assert Enum.any?(problem.resources, &String.starts_with?(&1.name, "tool:"))
     assert Enum.any?(problem.resources, &String.starts_with?(&1.name, "buffer:"))
     assert Enum.any?(problem.resources, &String.starts_with?(&1.name, "transport:"))
-    assert Enum.any?(problem.jobs, &(&1.batch_key != nil))
+    assert Enum.any?(problem.jobs, &(&1.group_id != nil))
     assert Enum.any?(problem.jobs, &(not is_nil(&1.start_time)))
 
     assert Enum.any?(problem.jobs, fn job ->

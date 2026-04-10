@@ -7,7 +7,7 @@ defmodule HexaFactory.Constraints.Batching do
   def measure(_dataset, solved_problem) do
     batched_jobs =
       Enum.count(solved_problem.jobs, fn job ->
-        is_binary(job.batch_key) and String.starts_with?(job.batch_key, "batch:")
+        is_binary(job.group_id) and String.starts_with?(job.group_id, "batch:")
       end)
 
     %{batched_jobs: batched_jobs}
