@@ -24,6 +24,15 @@ pub fn optimize(
     db.set_resource_ids(current_problem.resources.iter().map(|r| r.id).collect());
     for res in &current_problem.resources {
         db.set_resource_data(res.id, res.clone());
+        
+        // SOTA O(delta) optimization: Pre-compute which jobs use this resource
+        let mut res_jobs = Vec::new();
+        for job in &current_problem.jobs {
+            if job.required_resources.contains(&res.id) {
+                res_jobs.push(job.id);
+            }
+        }
+        db.set_resource_jobs(res.id, res_jobs);
     }
 
     let edge_ids: Vec<usize> = (0..current_problem.edges.len()).collect();

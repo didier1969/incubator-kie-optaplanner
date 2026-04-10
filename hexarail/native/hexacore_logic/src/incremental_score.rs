@@ -14,6 +14,8 @@ pub trait ScoreEngine: salsa::Database {
     fn resource_ids(&self) -> Vec<i64>;
     #[salsa::input]
     fn resource_data(&self, id: i64) -> Resource;
+    #[salsa::input]
+    fn resource_jobs(&self, id: i64) -> Vec<i64>; // SOTA: O(1) job lookup per resource
 
     #[salsa::input]
     fn edge_ids(&self) -> Vec<usize>;
@@ -179,14 +181,14 @@ fn resource_score(db: &dyn ScoreEngine, id: i64) -> HardMediumSoftScore {
     let mut score = HardMediumSoftScore::zero();
     let res = db.resource_data(id);
     
-    // Find all jobs using this resource that have a start time
-    let mut assigned_intervals = Vec::new();
-    for &j_id in &db.job_ids() {
-        let job = db.job_data(j_id);
-        if job.required_resources.contains(&id) {
-            if let Some(start) = db.job_start_time(j_id) {
-                assigned_intervals.push((start, start + job.duration));
-            }
+    // SOTA O(delta): Only query the start times of the jobs that actually use this resource
+    let resource_jobs = db.resource_jobs(id);
+    let mut assigned_intervals = Vec::with_capacity(resource_jobs.len());
+    
+    for &j_id in &resource_jobs {
+        if let Some(start) = db.job_start_time(j_id) {
+            let job = db.job_data(j_id);
+            assigned_intervals.push((start, start + job.duration));
         }
     }
 
@@ -220,13 +222,14 @@ fn resource_violations(db: &dyn ScoreEngine, id: i64) -> Vec<ConstraintViolation
     let mut violations = Vec::new();
     let res = db.resource_data(id);
     
-    let mut assigned_intervals = Vec::new();
-    for &j_id in &db.job_ids() {
-        let job = db.job_data(j_id);
-        if job.required_resources.contains(&id) {
-            if let Some(start) = db.job_start_time(j_id) {
-                assigned_intervals.push((start, start + job.duration, j_id));
-            }
+    // SOTA O(delta) loop
+    let resource_jobs = db.resource_jobs(id);
+    let mut assigned_intervals = Vec::with_capacity(resource_jobs.len());
+    
+    for &j_id in &resource_jobs {
+        if let Some(start) = db.job_start_time(j_id) {
+            let job = db.job_data(j_id);
+            assigned_intervals.push((start, start + job.duration, j_id));
         }
     }
 
@@ -362,7 +365,6 @@ mod tests {
         
         db.set_edge_ids(vec![edge_id]);
         db.set_edge_data(edge_id, Edge { from_job_id: j1_id, to_job_id: j2_id, lag: 0, edge_type: "finish_to_start".to_string() });
-        db.set_extra_conflict_score(HardMediumSoftScore::zero());
 
         // Assign with violation: J1 at 0, J2 at 5 (should be at least 10)
         db.set_job_start_time(j1_id, Some(0));
@@ -386,6 +388,7 @@ mod tests {
         
         db.set_resource_ids(vec![r1_id]);
         db.set_resource_data(r1_id, Resource { id: r1_id, name: "M1".to_string(), capacity: 1, availability_windows: vec![Window { start_at: 0, end_at: 10 }] });
+        db.set_resource_jobs(r1_id, vec![j1_id]);
         db.set_edge_ids(vec![]);
 
         // Valid assignment
