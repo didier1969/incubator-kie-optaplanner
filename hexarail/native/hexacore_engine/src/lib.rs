@@ -54,7 +54,7 @@ pub fn init_feature_encoder() -> ResourceArc<EncoderResource> {
 
 #[rustler::nif]
 pub fn freeze_feature_encoder(resource: ResourceArc<EncoderResource>) -> rustler::Atom {
-    let mut encoder = resource.encoder.write().unwrap();
+    let encoder = resource.encoder.read().unwrap();
     encoder.freeze_vocabularies();
     atoms::ok()
 }
@@ -64,8 +64,8 @@ pub fn extract_features_core(
     resource: ResourceArc<EncoderResource>,
     problem: domain::Problem,
 ) -> Result<hexacore_logic::nco::TensorData, rustler::Error> {
-    let mut encoder = resource.encoder.write().unwrap();
-    Ok(encoder.encode(&problem))
+    let encoder = resource.encoder.read().unwrap();
+    encoder.encode(&problem).map_err(|e| rustler::Error::RaiseTerm(Box::new(e)))
 }
 
 #[rustler::nif]
