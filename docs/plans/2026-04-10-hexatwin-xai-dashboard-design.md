@@ -1,24 +1,24 @@
-# HexaTwin Digital Twin: Architecture & UX Design (Macro/Micro XAI)
+# HexaFactory Digital Twin: Architecture & UX Design (Macro/Micro XAI)
 
 *Date: 2026-04-10*
 *Topic: Phoenix LiveView & VizKit Integration for HexaFactory*
-*Status: Approved*
+*Status: Approved - Reality-First Revision*
 
 ## Overview
-This document outlines the architecture for the "Pillar 3" of the HexaCore platform: the Explainable AI (XAI) Digital Twin interface for the `HexaFactory` manufacturing domain. It leverages the SOTA `viz_kit` (based on SwarmEx Viz concepts) to provide a seamless, high-performance "Drill-Down" experience from global supply chain topology down to individual machine scheduling.
+This document outlines the architecture for the Explainable AI (XAI) Digital Twin interface, specifically tailored for the `HexaFactory` manufacturing vertical. It leverages the SOTA `viz_kit` (based on SwarmEx Viz concepts) to provide a seamless, high-performance "Drill-Down" experience from global supply chain topology down to individual machine scheduling.
 
-**Critical Refactoring Note:** To eliminate historical confusion, the global web namespace `HexaRailWeb` will be refactored to `HexaTwinWeb` (or `HexaCoreWeb`), cleanly separating the generic visualization engine from the specific railway or factory implementations.
+**Critical Architectural Mandate (Vertical Isolation):** The generic optimization engine (`HexaCore`) knows nothing about UX or domains. Verticals are strictly specialized implementations. Therefore, there is no monolithic `HexaCoreWeb` or `HexaTwinWeb`. `HexaFactory` will implement its own deeply specialized LiveView interface in the `HexaFactoryWeb` namespace, totally decoupled from `HexaRailWeb`.
 
 ## 1. Architecture & Front-End Components
 
-The interface is built on Phoenix LiveView, using `viz_kit` hooks for client-side rendering (avoiding massive SVG payloads over WebSockets).
+The interface is built on Phoenix LiveView in the `HexaFactoryWeb.TwinLive` module, using `viz_kit` hooks for client-side rendering (avoiding massive SVG payloads over WebSockets).
 
 *   **The Macro View (Knowledge Map):**
     *   **Engine:** `Sigma.js` (via VizKit).
-    *   **Data Mapping:** 
+    *   **Data Mapping (Domain Translation):** `HexaFactoryWeb` receives raw `Problem` scores from `HexaCore` and translates them into domain concepts.
         *   `Nodes` = `Plants` and `Work Centers`.
         *   `Edges` = `Transport Lanes` and Assembly Dependencies (BOM flow).
-    *   **Visual Encoding:** Node size/color reflects the real-time "System Health" calculated by the Salsa engine. A red node indicates critical `Hard` constraint violations (e.g., machine capacity exceeded).
+    *   **Visual Encoding:** Node size/color reflects the real-time "System Health". A red node indicates critical `Hard` constraint violations (e.g., machine capacity exceeded).
 
 *   **The Micro View (Gantt/Timeline):**
     *   **Engine:** Custom SVG/Timeline (via VizKit).
@@ -31,17 +31,17 @@ The interface is built on Phoenix LiveView, using `viz_kit` hooks for client-sid
 *   **XAI Diagnostics (Tooltip HUD):**
     *   **Engine:** `float-tooltip` (via VizKit).
     *   **Trigger:** Hovering over a Job in the Micro View.
-    *   **Data Mapping:** Displays the exact `ScoreExplanation` payload from Rust. It lists all `ConstraintViolation` objects affecting that job, categorized by severity (e.g., "Hard: Overlap on M-100", "Soft: 45m setup penalty for thermal profile change").
+    *   **Data Mapping:** Displays the exact `ScoreExplanation` payload from the Rust Core. It lists all `ConstraintViolation` objects affecting that job, categorized by severity (e.g., "Hard: Overlap on M-100", "Soft: 45m setup penalty for thermal profile change").
 
 ## 2. Data Flow (Asynchronous Reactive Pipeline)
 
 The system relies on unidirectional data flow to maintain 60 FPS rendering in the browser while the SOTA engine optimizes in the background.
 
-1.  **State Mutation (Rust/Salsa):** The NCO solver mutates the schedule and calculates $O(\delta)$ scores.
-2.  **Broadcast (Elixir/OTP):** `HexaFactory.Application` (or a dedicated simulation Ticker) broadcasts the updated JSON tensors and `ScoreExplanation` via `Phoenix.PubSub` on the `simulation:hexafactory` channel.
-3.  **LiveView Controller (`HexaTwinWeb.TwinLive`):** 
+1.  **State Mutation (Rust/Salsa):** The agnostic `HexaCore` NCO solver mutates the schedule and calculates $O(\delta)$ scores.
+2.  **Broadcast (Elixir/OTP):** `HexaFactory.Application` broadcasts the updated JSON tensors and `ScoreExplanation` via `Phoenix.PubSub` on the `simulation:hexafactory` channel.
+3.  **LiveView Controller (`HexaFactoryWeb.TwinLive`):** 
     *   Listens to the PubSub channel via `handle_info`.
-    *   Formats the raw data into VizKit primitives (`nodes`, `edges`, `events`).
+    *   **Domain Adapter:** Formats the generic `ScoreExplanation` and `Problem` into VizKit primitives (`nodes`, `edges`, `events`) decorated with Factory metadata.
     *   Pushes the payload to the client via `push_event("update_viz", payload)`.
 4.  **VizKit Hook (JavaScript):**
     *   The DOM element `<div id="factory-viz" phx-update="ignore">` prevents LiveView from thrashing the DOM.
