@@ -37,15 +37,12 @@ impl NcoBrain {
         let xs = self.layer1.forward(xs)?.relu()?;
         let xs = self.layer2.forward(&xs)?.relu()?;
         let xs = self.layer3.forward(&xs)?.relu()?;
-        // Sigmoid activation for probability [0, 1]
-        // Currently relying on Candle's native operations
+        
         let out = self.output_layer.forward(&xs)?;
         
-        // Manual Sigmoid: 1 / (1 + exp(-x))
-        let ones = Tensor::ones_like(&out)?;
-        let exp_neg_x = out.neg()?.exp()?;
-        let denom = ones.add(&exp_neg_x)?;
-        ones.broadcast_div(&denom)
+        // SOTA: Softmax over the batch dimension (num_jobs) to output a true Categorical probability distribution
+        // This ensures the probabilities sum to 1.0 and preserve relative confidence (Temperature).
+        candle_nn::ops::softmax(&out, 0)
     }
 }
 
@@ -102,7 +99,7 @@ impl NcoInferenceEngine {
             Tensor::zeros((0, 29), DType::F32, &self.device).unwrap()
         };
 
-        // 2. Differentiable Job-to-Job Message Passing (Scatter Add)
+        // 2. Differentiable Job-to-Job Message Passing (Scatter Add with Mean Aggregation)
         let jj_src_indices: Vec<u32> = tensor_data.job_to_job_edge_src.iter().map(|&x| x as u32).collect();
         let jj_dst_indices: Vec<u32> = tensor_data.job_to_job_edge_dst.iter().map(|&x| x as u32).collect();
         
@@ -116,12 +113,21 @@ impl NcoInferenceEngine {
             // Scatter Add to destination nodes
             let mut zeros = Tensor::zeros((num_jobs, 9), DType::F32, &self.device).unwrap();
             zeros = zeros.index_add(&dst_idx_tensor, &messages, 0).unwrap_or(zeros);
-            zeros
+            
+            // SOTA: Degree Normalization (Mean Aggregation) to prevent Exploding Gradients
+            let ones_messages = Tensor::ones((src_idx_tensor.dims()[0], 1), DType::F32, &self.device).unwrap();
+            let mut degrees = Tensor::zeros((num_jobs, 1), DType::F32, &self.device).unwrap();
+            degrees = degrees.index_add(&dst_idx_tensor, &ones_messages, 0).unwrap_or(degrees);
+            
+            let ones_limit = Tensor::ones((num_jobs, 1), DType::F32, &self.device).unwrap();
+            let degrees_clamped = degrees.maximum(&ones_limit).unwrap(); // Prevent division by zero
+            
+            zeros.broadcast_div(&degrees_clamped).unwrap_or(zeros)
         } else {
             Tensor::zeros((num_jobs, 9), DType::F32, &self.device).unwrap()
         };
 
-        // 3. Differentiable Resource-to-Job Message Passing
+        // 3. Differentiable Resource-to-Job Message Passing (Scatter Add with Mean Aggregation)
         // The message comes from the resource (dst in the edge array) and goes to the job (src in the edge array).
         let rj_feature_src: Vec<u32> = tensor_data.job_to_resource_edge_dst.iter().map(|&x| x as u32).collect();
         let rj_feature_dst: Vec<u32> = tensor_data.job_to_resource_edge_src.iter().map(|&x| x as u32).collect();
@@ -136,7 +142,16 @@ impl NcoInferenceEngine {
             // Scatter Add to destination nodes (Jobs)
             let mut zeros = Tensor::zeros((num_jobs, 29), DType::F32, &self.device).unwrap();
             zeros = zeros.index_add(&dst_idx_tensor, &messages, 0).unwrap_or(zeros);
-            zeros
+            
+            // SOTA: Degree Normalization (Mean Aggregation)
+            let ones_messages = Tensor::ones((src_idx_tensor.dims()[0], 1), DType::F32, &self.device).unwrap();
+            let mut degrees = Tensor::zeros((num_jobs, 1), DType::F32, &self.device).unwrap();
+            degrees = degrees.index_add(&dst_idx_tensor, &ones_messages, 0).unwrap_or(degrees);
+            
+            let ones_limit = Tensor::ones((num_jobs, 1), DType::F32, &self.device).unwrap();
+            let degrees_clamped = degrees.maximum(&ones_limit).unwrap(); // Prevent division by zero
+            
+            zeros.broadcast_div(&degrees_clamped).unwrap_or(zeros)
         } else {
             Tensor::zeros((num_jobs, 29), DType::F32, &self.device).unwrap()
         };
