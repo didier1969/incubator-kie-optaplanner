@@ -25,27 +25,23 @@ pub fn optimize_problem_core(
     iterations: i32,
 ) -> Result<domain::Problem, rustler::Error> {
     match strategy.as_str() {
-        "metaheuristic" => Ok(hexacore_logic::optimize_problem_core::<fn(&domain::Problem) -> Vec<f32>>(problem, iterations, None)),
+        "metaheuristic" => Ok(hexacore_logic::optimize_problem_core(problem, iterations, None)),
         "nco" => {
-            // 1. Instantiate the SOTA GNN Brain (dfdx) and a local encoder
+            // 1. Instantiate the SOTA GNN Brain and a local encoder
             let encoder = hexacore_logic::nco::FeatureEncoder::new();
             let brain = hexacore_logic::gnn::NcoInferenceEngine::new();
 
-            // 2. Define the dynamic evaluation closure (Dynamic State Evaluation)
-            // This closure is called INSIDE the Late Acceptance Hill Climbing loop
-            // to evaluate the desirability of the current state or available moves.
-            let guidance_closure = |p: &domain::Problem| -> Vec<f32> {
-                // In a production system, we would calculate the real current_time here
-                // For now, we pass 0.0 as the temporal anchor.
-                if let Ok(tensor_data) = encoder.encode(p, 0.0) {
-                    brain.forward_pass(&tensor_data)
-                } else {
-                    vec![]
-                }
+            // 2. SOTA: Generate Heuristic Prior ONCE before the loop (Extracted from Hot Loop)
+            // The GNN evaluates the initial factory state to rank jobs by criticality.
+            // This frees up 100% of the CPU for the Salsa LAHC solver's raw speed.
+            let guidance = if let Ok(tensor_data) = encoder.encode(&problem, 0.0) {
+                Some(brain.forward_pass(&tensor_data))
+            } else {
+                None
             };
 
-            // 3. Guided Search: Use LAHC guided by the dynamic GNN closure
-            let optimized = hexacore_logic::optimize_problem_core(problem, iterations, Some(guidance_closure));
+            // 3. Guided Search: Use LAHC guided by the static Heuristic Prior
+            let optimized = hexacore_logic::optimize_problem_core(problem, iterations, guidance);
 
             Ok(optimized)
         },

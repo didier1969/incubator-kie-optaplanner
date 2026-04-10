@@ -6,15 +6,12 @@ use crate::incremental_score::{ScoreDatabase, ScoreEngine};
 const LAHC_HISTORY_SIZE: usize = 100;
 
 #[must_use]
-pub fn optimize<F>(
+pub fn optimize(
     mut current_problem: Problem,
     _total_conflicts: usize,
     iterations: i32,
-    mut guidance_fn: Option<F>,
-) -> Problem
-where
-    F: FnMut(&Problem) -> Vec<f32>,
-{
+    guidance: Option<Vec<f32>>,
+) -> Problem {
     // 1. Initialize Salsa Database with full problem state
     let mut db = ScoreDatabase::default();
     
@@ -45,23 +42,14 @@ where
     use rand::RngExt;
     let mut rng = rand::rng();
 
-    // 2. Optimization Loop with LAHC and In-Place Mutation
+    // 2. Optimization Loop with LAHC and SOTA Move Selectors
     for i in 0..iterations {
         let v = (i as usize) % LAHC_HISTORY_SIZE;
 
-        // Dynamic State Evaluation: Call GNN inside the loop if available
-        let probs = if let Some(ref mut g_fn) = guidance_fn {
-            let p = g_fn(&current_problem);
-            if p.len() == current_problem.jobs.len() { Some(p) } else { None }
-        } else {
-            None
-        };
-
-        // Selection: Pick a job to move, guided by GNN if available (Epsilon-Greedy)
-        let job_idx = if let Some(ref p_vec) = probs {
-            if rng.random_bool(0.8) {
-                // SOTA: Stochastic Sampling (Weighted Random Choice) instead of greedy Argmax
-                // Use Softmax probabilities to pick the next job
+        // Selection: Pick a primary job to move, guided by static GNN prior if available
+        let job_idx = if let Some(ref p_vec) = guidance {
+            if rng.random_bool(0.8) && p_vec.len() == current_problem.jobs.len() {
+                // Stochastic Sampling (Weighted Random Choice)
                 let sum: f32 = p_vec.iter().sum();
                 if sum > 0.0 {
                     let mut cumulative = 0.0;
@@ -87,120 +75,133 @@ where
         
         let job_id = current_problem.jobs[job_idx].id;
         let old_time = db.job_start_time(job_id);
-        
-        // SOTA: Earliest-Fit (EST) Guided Move Selection with Resource Gap Search
-        let mut topological_est = 0;
-        
-        // 1. Physical Constraint: Release Time
-        if let Some(release) = current_problem.jobs[job_idx].release_time {
-            topological_est = topological_est.max(release);
-        }
 
-        // 2. Physical Constraint: Precedences (Incoming Edges)
-        for edge in &current_problem.edges {
-            if edge.to_job_id == job_id {
-                // Get the scheduled start time of the predecessor from the Salsa DB
-                if let Some(pred_start) = db.job_start_time(edge.from_job_id) {
-                    let pred_job = db.job_data(edge.from_job_id);
-                    let pred_end = pred_start + pred_job.duration;
-                    
-                    let required_start = match edge.edge_type.as_str() {
-                        "finish_to_start" => pred_end + edge.lag,
-                        "start_to_start" => pred_start + edge.lag,
-                        "finish_to_finish" => pred_end + edge.lag - current_problem.jobs[job_idx].duration,
-                        "start_to_finish" => pred_start + edge.lag - current_problem.jobs[job_idx].duration,
-                        _ => pred_end, // Default safe fallback
-                    };
-                    topological_est = topological_est.max(required_start);
+        // SOTA Local Search Move Selectors:
+        // Instead of only doing "Earliest-Fit" (which is a Construction Heuristic),
+        // we introduce a catalogue of moves to allow true exploration of the landscape.
+        let move_type = rng.random_range(0..100);
+        
+        let mut second_job_id = None;
+        let mut second_old_time = None;
+        
+        if move_type < 20 {
+            // SWAP MOVE (20% chance)
+            // Swap start times with another random job
+            let target_idx = rng.random_range(0..current_problem.jobs.len());
+            let target_id = current_problem.jobs[target_idx].id;
+            if target_id != job_id {
+                second_job_id = Some(target_id);
+                second_old_time = db.job_start_time(target_id);
+                
+                db.set_job_start_time(job_id, second_old_time);
+                db.set_job_start_time(target_id, old_time);
+            }
+        } else if move_type < 60 {
+            // CHANGE MOVE / SHIFT (40% chance)
+            // Shift the job's start time forward or backward randomly within a window
+            if let Some(t) = old_time {
+                // Shift by up to +/- 120 minutes
+                let shift = rng.random_range(-120..120);
+                let new_time = std::cmp::max(0, t + shift);
+                db.set_job_start_time(job_id, Some(new_time));
+            } else {
+                // If unassigned, pick a completely random time to inject it into the schedule
+                db.set_job_start_time(job_id, Some(rng.random_range(0..1440)));
+            }
+        } else {
+            // EST SNAP MOVE (40% chance)
+            // Original logic: Find the Earliest Start Time considering resources and precedences
+            let mut topological_est = 0;
+            if let Some(release) = current_problem.jobs[job_idx].release_time {
+                topological_est = topological_est.max(release);
+            }
+            for edge in &current_problem.edges {
+                if edge.to_job_id == job_id {
+                    if let Some(pred_start) = db.job_start_time(edge.from_job_id) {
+                        let pred_job = db.job_data(edge.from_job_id);
+                        let pred_end = pred_start + pred_job.duration;
+                        let required_start = match edge.edge_type.as_str() {
+                            "finish_to_start" => pred_end + edge.lag,
+                            "start_to_start" => pred_start + edge.lag,
+                            "finish_to_finish" => pred_end + edge.lag - current_problem.jobs[job_idx].duration,
+                            "start_to_finish" => pred_start + edge.lag - current_problem.jobs[job_idx].duration,
+                            _ => pred_end,
+                        };
+                        topological_est = topological_est.max(required_start);
+                    }
                 }
             }
-        }
-        
-        // 3. Physical Constraint: Resource Capacity (Gap Search)
-        // We must find the first available time slot >= topological_est where ALL required resources are free.
-        let job_duration = current_problem.jobs[job_idx].duration;
-        let mut est = topological_est;
-        let mut found_valid_slot = false;
-        
-        // Safety bound to prevent infinite loops in extremely congested scenarios
-        let max_search_horizon = topological_est + 1440 * 7; // Max search 1 week ahead
-        
-        while !found_valid_slot && est < max_search_horizon {
-            let mut all_resources_free = true;
-            let current_end = est + job_duration;
             
-            for &res_id in &current_problem.jobs[job_idx].required_resources {
-                // SOTA: Check availability windows first
-                let res = db.resource_data(res_id);
-                let mut within_window = true;
-                if !res.availability_windows.is_empty() {
-                    within_window = res.availability_windows.iter().any(|w| {
-                        est >= w.start_at && current_end <= w.end_at
-                    });
-                }
-                
-                if !within_window {
-                    all_resources_free = false;
-                    // Jump to the start of the next availability window (simplified: just bump by 1 for now)
-                    est += 1;
-                    break;
-                }
-
-                // Check collisions with other jobs on this resource
-                // (In a highly optimized SOTA engine, this is an Interval Tree query O(log N). 
-                // Here we do a linear scan over currently assigned jobs sharing this resource).
-                let mut concurrent_count = 1; // Count ourselves
-                let mut next_conflict_end = 0;
-                
-                for &other_j_id in &db.job_ids() {
-                    if other_j_id == job_id { continue; }
-                    let other_job = db.job_data(other_j_id);
-                    if other_job.required_resources.contains(&res_id) {
-                        if let Some(other_start) = db.job_start_time(other_j_id) {
-                            let other_end = other_start + other_job.duration;
-                            // Check overlap: start1 < end2 && start2 < end1
-                            if est < other_end && other_start < current_end {
-                                concurrent_count += 1;
-                                next_conflict_end = next_conflict_end.max(other_end);
+            let job_duration = current_problem.jobs[job_idx].duration;
+            let mut est = topological_est;
+            let mut found_valid_slot = false;
+            let max_search_horizon = topological_est + 1440 * 7;
+            
+            while !found_valid_slot && est < max_search_horizon {
+                let mut all_resources_free = true;
+                let current_end = est + job_duration;
+                for &res_id in &current_problem.jobs[job_idx].required_resources {
+                    let res = db.resource_data(res_id);
+                    let mut within_window = true;
+                    if !res.availability_windows.is_empty() {
+                        within_window = res.availability_windows.iter().any(|w| est >= w.start_at && current_end <= w.end_at);
+                    }
+                    if !within_window {
+                        all_resources_free = false;
+                        est += 1;
+                        break;
+                    }
+                    let mut concurrent_count = 1;
+                    let mut next_conflict_end = 0;
+                    for &other_j_id in &db.job_ids() {
+                        if other_j_id == job_id { continue; }
+                        let other_job = db.job_data(other_j_id);
+                        if other_job.required_resources.contains(&res_id) {
+                            if let Some(other_start) = db.job_start_time(other_j_id) {
+                                let other_end = other_start + other_job.duration;
+                                if est < other_end && other_start < current_end {
+                                    concurrent_count += 1;
+                                    next_conflict_end = next_conflict_end.max(other_end);
+                                }
                             }
                         }
                     }
+                    if concurrent_count > res.capacity {
+                        all_resources_free = false;
+                        est = est.max(next_conflict_end);
+                        break;
+                    }
                 }
-                
-                if concurrent_count > res.capacity {
-                    all_resources_free = false;
-                    // Fast-forward to the end of the conflict to save CPU cycles
-                    est = est.max(next_conflict_end);
-                    break;
-                }
+                if all_resources_free { found_valid_slot = true; }
             }
-            
-            if all_resources_free {
-                found_valid_slot = true;
-            }
+            db.set_job_start_time(job_id, Some(est));
         }
         
-        let new_time = Some(est);
-        
-        // Apply Move
-        db.set_job_start_time(job_id, new_time);
         let neighbor_score = db.total_score();
 
-        // LAHC Acceptance criterion: Accept if better than or equal to current, 
-        // OR better than or equal to the score in history L steps ago.
+        // LAHC Acceptance criterion
         if neighbor_score >= current_score || neighbor_score >= fitness_array[v] {
             // Accept move
             current_score = neighbor_score;
-            current_problem.jobs[job_idx].start_time = new_time;
+            
+            // Sync the accepted move to the problem representation
+            current_problem.jobs[job_idx].start_time = db.job_start_time(job_id);
+            if let Some(s_id) = second_job_id {
+                if let Some(s_job) = current_problem.jobs.iter_mut().find(|j| j.id == s_id) {
+                    s_job.start_time = db.job_start_time(s_id);
+                }
+            }
 
             if neighbor_score > best_score {
                 best_score = neighbor_score;
-                // Only clone when we find a new global best
                 best_problem = current_problem.clone();
             }
         } else {
             // Reject: Undo Move in Salsa
             db.set_job_start_time(job_id, old_time);
+            if let Some(s_id) = second_job_id {
+                db.set_job_start_time(s_id, second_old_time);
+            }
         }
 
         // Update history
