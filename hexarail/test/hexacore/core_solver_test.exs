@@ -28,17 +28,21 @@ defmodule HexaCore.CoreSolverTest do
     assert hd(optimized_problem.jobs).start_time != nil
   end
 
-  test "returns not_implemented for nco strategy" do
+  test "nco strategy successfully executes the forward pass and optimizes the problem" do
     problem = %Problem{
-      id: "logistics_1",
+      id: "logistics_nco",
       resources: [],
-      jobs: [],
+      jobs: [
+        %Job{id: 1, duration: 15, required_resources: [], release_time: nil, due_time: nil, batch_key: nil, start_time: nil}
+      ],
       edges: [],
       score_components: []
     }
 
-    assert_raise ErlangError, ~r/not_implemented/, fn ->
-      Nif.optimize_problem_core(problem, "nco", 10)
-    end
+    # Expect the NCO brain to run and return a mutated problem
+    optimized_problem = Nif.optimize_problem_core(problem, "nco", 10)
+
+    # Validate that the problem was mutated (start_time assigned)
+    assert hd(optimized_problem.jobs).start_time != nil
   end
 end

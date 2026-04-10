@@ -387,7 +387,6 @@ mod tests {
         db.set_resource_ids(vec![r1_id]);
         db.set_resource_data(r1_id, Resource { id: r1_id, name: "M1".to_string(), capacity: 1, availability_windows: vec![Window { start_at: 0, end_at: 10 }] });
         db.set_edge_ids(vec![]);
-        db.set_extra_conflict_score(HardMediumSoftScore::zero());
 
         // Valid assignment
         db.set_job_start_time(j1_id, Some(0));

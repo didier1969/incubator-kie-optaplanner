@@ -203,6 +203,7 @@ mod tests {
             jobs: vec![j1],
             edges: vec![],
             score_components: vec![],
+            explanation: None,
         };
         
         assert_eq!(problem.jobs.len(), 1);

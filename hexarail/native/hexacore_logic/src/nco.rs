@@ -406,6 +406,7 @@ mod tests {
             jobs: vec![Job { id: 40, duration: 1, required_resources: vec![], release_time: None, due_time: None, batch_key: Some("COLD".to_string()), start_time: None }],
             edges: vec![],
             score_components: vec![],
+            explanation: None,
         };
         let tensor_2 = encoder.encode(&problem_2, 0.0).unwrap();
         // batch_key_id is at index 5. HOT was 0 (mapped to 0/<size+1>), COLD is now mapped to 0 as it's frozen?

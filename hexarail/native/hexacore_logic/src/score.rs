@@ -121,7 +121,7 @@ pub fn calculate_score_with_conflicts(problem: &Problem, total_conflicts: usize)
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::domain::{Edge, Job, Resource, Window};
+    use crate::domain::Job;
 
     #[test]
     fn test_unassigned_job_penalty() {
@@ -140,6 +140,7 @@ mod tests {
             jobs: vec![j1],
             edges: vec![],
             score_components: vec![],
+            explanation: None,
         };
         let score = calculate_score(&problem);
         assert_eq!(score.medium, -1); 
@@ -160,6 +161,7 @@ mod tests {
             jobs: vec![],
             edges: vec![],
             score_components: vec![],
+            explanation: None,
         };
         let score = calculate_score_with_conflicts(&problem, 2);
         assert_eq!(score.hard, -20);

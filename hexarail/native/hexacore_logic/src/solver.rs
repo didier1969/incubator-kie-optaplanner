@@ -111,6 +111,7 @@ mod tests {
             }],
             edges: vec![],
             score_components: vec![],
+            explanation: None,
         };
 
         let optimized = optimize(problem, 0, 100);

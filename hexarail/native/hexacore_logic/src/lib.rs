@@ -12,6 +12,7 @@ pub mod incremental_score;
 pub mod nco;
 pub mod score;
 pub mod solver;
+pub mod gnn;
 
 mod atoms {
     rustler::atoms! {
