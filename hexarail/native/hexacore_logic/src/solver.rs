@@ -218,9 +218,9 @@ pub fn optimize(
             fitness_array[v] = current_score;
         }
 
-        if best_score.hard == 0 && best_score.medium == 0 {
-            break;
-        }
+        // SOTA: Removed Early Termination Fraud.
+        // We must continue optimizing the Soft score (makespan, tardiness, setups)
+        // even if Hard constraints (feasibility) are met. The search continues until `iterations` is reached.
     }
 
     // 3. XAI: Provide final score explanation for the best solution found

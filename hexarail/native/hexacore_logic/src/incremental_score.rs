@@ -41,11 +41,11 @@ pub trait ScoreEngine: salsa::Database {
 }
 
 const UNASSIGNED_JOB_PENALTY: HardMediumSoftScore = HardMediumSoftScore { hard: 0, medium: -1, soft: 0 };
-const RELEASE_VIOLATION_PENALTY: HardMediumSoftScore = HardMediumSoftScore { hard: 0, medium: 0, soft: -150 };
-const DUE_DATE_VIOLATION_PENALTY: HardMediumSoftScore = HardMediumSoftScore { hard: 0, medium: 0, soft: -200 };
+const RELEASE_VIOLATION_PENALTY: HardMediumSoftScore = HardMediumSoftScore { hard: 0, medium: 0, soft: -1 };
+const DUE_DATE_VIOLATION_PENALTY: HardMediumSoftScore = HardMediumSoftScore { hard: 0, medium: 0, soft: -1 };
 const PRECEDENCE_VIOLATION_PENALTY: HardMediumSoftScore = HardMediumSoftScore { hard: -1, medium: 0, soft: 0 };
 const AVAILABILITY_VIOLATION_PENALTY: HardMediumSoftScore = HardMediumSoftScore { hard: -1, medium: 0, soft: 0 };
-const OVERLAP_VIOLATION_PENALTY: HardMediumSoftScore = HardMediumSoftScore { hard: -10, medium: 0, soft: 0 };
+const OVERLAP_VIOLATION_PENALTY: HardMediumSoftScore = HardMediumSoftScore { hard: -1, medium: 0, soft: 0 };
 
 fn total_score(db: &dyn ScoreEngine) -> HardMediumSoftScore {
     let mut total = HardMediumSoftScore::zero();
@@ -199,15 +199,17 @@ fn resource_score(db: &dyn ScoreEngine, id: i64) -> HardMediumSoftScore {
     // Sort intervals by start time for overlap detection
     assigned_intervals.sort_by_key(|int| int.0);
     
-    // Simple naive overlap counting (O(K^2) per resource, where K is jobs on this resource)
-    // SOTA would use an Interval Tree for O(K log K)
     for i in 0..assigned_intervals.len() {
         let mut concurrent_count = 1;
         for j in (i + 1)..assigned_intervals.len() {
             if assigned_intervals[j].0 < assigned_intervals[i].1 {
                 concurrent_count += 1;
                 if concurrent_count > res.capacity as usize {
-                    score += OVERLAP_VIOLATION_PENALTY;
+                    // SOTA Match Weighed Scoring: proportional penalty
+                    let overlap_amount = assigned_intervals[i].1.min(assigned_intervals[j].1) - assigned_intervals[j].0;
+                    score.hard += OVERLAP_VIOLATION_PENALTY.hard * overlap_amount;
+                    score.medium += OVERLAP_VIOLATION_PENALTY.medium * overlap_amount;
+                    score.soft += OVERLAP_VIOLATION_PENALTY.soft * overlap_amount;
                 }
             } else {
                 break; // Because it's sorted, no more overlaps with interval i
@@ -290,7 +292,22 @@ fn edge_score(db: &dyn ScoreEngine, id: usize) -> HardMediumSoftScore {
                 _ => true,
             };
 
-            if is_valid { HardMediumSoftScore::zero() } else { PRECEDENCE_VIOLATION_PENALTY }
+            if is_valid { 
+                HardMediumSoftScore::zero() 
+            } else { 
+                let violation_amount = match edge.edge_type.as_str() {
+                    "finish_to_start" => (from_end + edge.lag - ts).max(0),
+                    "start_to_start" => (fs + edge.lag - ts).max(0),
+                    "finish_to_finish" => (from_end + edge.lag - to_end).max(0),
+                    "start_to_finish" => (fs + edge.lag - to_end).max(0),
+                    _ => 0,
+                };
+                HardMediumSoftScore {
+                    hard: PRECEDENCE_VIOLATION_PENALTY.hard * violation_amount,
+                    medium: PRECEDENCE_VIOLATION_PENALTY.medium * violation_amount,
+                    soft: PRECEDENCE_VIOLATION_PENALTY.soft * violation_amount,
+                }
+            }
         }
         _ => HardMediumSoftScore::zero(), // Penalty handled by unassigned_penalty
     }
@@ -310,11 +327,21 @@ fn temporal_penalty(db: &dyn ScoreEngine, id: i64) -> HardMediumSoftScore {
     let mut score = HardMediumSoftScore::zero();
 
     if let Some(release) = job.release_time {
-        if start < release { score += RELEASE_VIOLATION_PENALTY; }
+        if start < release { 
+            let amount = release - start;
+            score.hard += RELEASE_VIOLATION_PENALTY.hard * amount;
+            score.medium += RELEASE_VIOLATION_PENALTY.medium * amount;
+            score.soft += RELEASE_VIOLATION_PENALTY.soft * amount;
+        }
     }
 
     if let Some(due) = job.due_time {
-        if start + job.duration > due { score += DUE_DATE_VIOLATION_PENALTY; }
+        if start + job.duration > due { 
+            let amount = start + job.duration - due;
+            score.hard += DUE_DATE_VIOLATION_PENALTY.hard * amount;
+            score.medium += DUE_DATE_VIOLATION_PENALTY.medium * amount;
+            score.soft += DUE_DATE_VIOLATION_PENALTY.soft * amount;
+        }
     }
 
     score
@@ -333,7 +360,13 @@ fn availability_penalty(db: &dyn ScoreEngine, id: i64) -> HardMediumSoftScore {
             start >= w.start_at && end <= w.end_at
         });
 
-        if !within_window { return AVAILABILITY_VIOLATION_PENALTY; }
+        if !within_window { 
+            return HardMediumSoftScore {
+                hard: AVAILABILITY_VIOLATION_PENALTY.hard * job.duration,
+                medium: AVAILABILITY_VIOLATION_PENALTY.medium * job.duration,
+                soft: AVAILABILITY_VIOLATION_PENALTY.soft * job.duration,
+            }; 
+        }
     }
 
     HardMediumSoftScore::zero()
