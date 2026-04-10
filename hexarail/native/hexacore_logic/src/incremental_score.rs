@@ -20,9 +20,6 @@ pub trait ScoreEngine: salsa::Database {
     #[salsa::input]
     fn edge_data(&self, id: usize) -> Edge;
 
-    #[salsa::input]
-    fn extra_conflict_score(&self) -> HardMediumSoftScore;
-
     // --- Derived Queries (Memoized) ---
     fn total_score(&self) -> HardMediumSoftScore;
     fn score_explanation(&self) -> ScoreExplanation;
@@ -33,9 +30,40 @@ pub trait ScoreEngine: salsa::Database {
     fn edge_score(&self, id: usize) -> HardMediumSoftScore;
     fn edge_violations(&self, id: usize) -> Vec<ConstraintViolation>;
     
+    fn resource_score(&self, id: i64) -> HardMediumSoftScore;
+    fn resource_violations(&self, id: i64) -> Vec<ConstraintViolation>;
+    
     fn unassigned_penalty(&self, id: i64) -> HardMediumSoftScore;
     fn temporal_penalty(&self, id: i64) -> HardMediumSoftScore;
     fn availability_penalty(&self, id: i64) -> HardMediumSoftScore;
+}
+
+const UNASSIGNED_JOB_PENALTY: HardMediumSoftScore = HardMediumSoftScore { hard: 0, medium: -1, soft: 0 };
+const RELEASE_VIOLATION_PENALTY: HardMediumSoftScore = HardMediumSoftScore { hard: 0, medium: 0, soft: -150 };
+const DUE_DATE_VIOLATION_PENALTY: HardMediumSoftScore = HardMediumSoftScore { hard: 0, medium: 0, soft: -200 };
+const PRECEDENCE_VIOLATION_PENALTY: HardMediumSoftScore = HardMediumSoftScore { hard: -1, medium: 0, soft: 0 };
+const AVAILABILITY_VIOLATION_PENALTY: HardMediumSoftScore = HardMediumSoftScore { hard: -1, medium: 0, soft: 0 };
+const OVERLAP_VIOLATION_PENALTY: HardMediumSoftScore = HardMediumSoftScore { hard: -10, medium: 0, soft: 0 };
+
+fn total_score(db: &dyn ScoreEngine) -> HardMediumSoftScore {
+    let mut total = HardMediumSoftScore::zero();
+    
+    // Aggregation of memoized job scores
+    for &id in &db.job_ids() {
+        total += db.job_score(id);
+    }
+    
+    // Aggregation of memoized edge scores
+    for &id in &db.edge_ids() {
+        total += db.edge_score(id);
+    }
+
+    // Aggregation of memoized resource overlap scores
+    for &id in &db.resource_ids() {
+        total += db.resource_score(id);
+    }
+
+    total
 }
 
 fn score_explanation(db: &dyn ScoreEngine) -> ScoreExplanation {
@@ -45,6 +73,9 @@ fn score_explanation(db: &dyn ScoreEngine) -> ScoreExplanation {
     }
     for &id in &db.edge_ids() {
         violations.extend(db.edge_violations(id));
+    }
+    for &id in &db.resource_ids() {
+        violations.extend(db.resource_violations(id));
     }
     ScoreExplanation {
         score: db.total_score(),
@@ -144,27 +175,88 @@ fn edge_violations(db: &dyn ScoreEngine, id: usize) -> Vec<ConstraintViolation> 
     violations
 }
 
-const UNASSIGNED_JOB_PENALTY: HardMediumSoftScore = HardMediumSoftScore { hard: 0, medium: -1, soft: 0 };
-const RELEASE_VIOLATION_PENALTY: HardMediumSoftScore = HardMediumSoftScore { hard: 0, medium: 0, soft: -150 };
-const DUE_DATE_VIOLATION_PENALTY: HardMediumSoftScore = HardMediumSoftScore { hard: 0, medium: 0, soft: -200 };
-const PRECEDENCE_VIOLATION_PENALTY: HardMediumSoftScore = HardMediumSoftScore { hard: -1, medium: 0, soft: 0 };
-const AVAILABILITY_VIOLATION_PENALTY: HardMediumSoftScore = HardMediumSoftScore { hard: -1, medium: 0, soft: 0 };
-
-fn total_score(db: &dyn ScoreEngine) -> HardMediumSoftScore {
-    let mut total = HardMediumSoftScore::zero();
+fn resource_score(db: &dyn ScoreEngine, id: i64) -> HardMediumSoftScore {
+    let mut score = HardMediumSoftScore::zero();
+    let res = db.resource_data(id);
     
-    // Aggregation of memoized job scores
-    for &id in &db.job_ids() {
-        total += db.job_score(id);
-    }
-    
-    // Aggregation of memoized edge scores
-    for &id in &db.edge_ids() {
-        total += db.edge_score(id);
+    // Find all jobs using this resource that have a start time
+    let mut assigned_intervals = Vec::new();
+    for &j_id in &db.job_ids() {
+        let job = db.job_data(j_id);
+        if job.required_resources.contains(&id) {
+            if let Some(start) = db.job_start_time(j_id) {
+                assigned_intervals.push((start, start + job.duration));
+            }
+        }
     }
 
-    total += db.extra_conflict_score();
-    total
+    if assigned_intervals.len() <= res.capacity as usize {
+        return score; // Not enough jobs to exceed capacity
+    }
+
+    // Sort intervals by start time for overlap detection
+    assigned_intervals.sort_by_key(|int| int.0);
+    
+    // Simple naive overlap counting (O(K^2) per resource, where K is jobs on this resource)
+    // SOTA would use an Interval Tree for O(K log K)
+    for i in 0..assigned_intervals.len() {
+        let mut concurrent_count = 1;
+        for j in (i + 1)..assigned_intervals.len() {
+            if assigned_intervals[j].0 < assigned_intervals[i].1 {
+                concurrent_count += 1;
+                if concurrent_count > res.capacity as usize {
+                    score += OVERLAP_VIOLATION_PENALTY;
+                }
+            } else {
+                break; // Because it's sorted, no more overlaps with interval i
+            }
+        }
+    }
+
+    score
+}
+
+fn resource_violations(db: &dyn ScoreEngine, id: i64) -> Vec<ConstraintViolation> {
+    let mut violations = Vec::new();
+    let res = db.resource_data(id);
+    
+    let mut assigned_intervals = Vec::new();
+    for &j_id in &db.job_ids() {
+        let job = db.job_data(j_id);
+        if job.required_resources.contains(&id) {
+            if let Some(start) = db.job_start_time(j_id) {
+                assigned_intervals.push((start, start + job.duration, j_id));
+            }
+        }
+    }
+
+    if assigned_intervals.len() <= res.capacity as usize {
+        return violations;
+    }
+
+    assigned_intervals.sort_by_key(|int| int.0);
+    
+    for i in 0..assigned_intervals.len() {
+        let mut concurrent_count = 1;
+        for j in (i + 1)..assigned_intervals.len() {
+            if assigned_intervals[j].0 < assigned_intervals[i].1 {
+                concurrent_count += 1;
+                if concurrent_count > res.capacity as usize {
+                    violations.push(ConstraintViolation {
+                        name: "resource_overlap".to_string(),
+                        severity: "hard".to_string(),
+                        message: format!("Capacity exceeded on resource {}", id),
+                        job_id: Some(assigned_intervals[j].2),
+                        resource_id: Some(id),
+                    });
+                }
+            } else {
+                break;
+            }
+        }
+    }
+    
+    violations
 }
 
 fn job_score(db: &dyn ScoreEngine, id: i64) -> HardMediumSoftScore {

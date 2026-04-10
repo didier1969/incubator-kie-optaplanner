@@ -3,8 +3,10 @@
 use crate::domain::Problem;
 use crate::incremental_score::{ScoreDatabase, ScoreEngine};
 
+const LAHC_HISTORY_SIZE: usize = 100;
+
 #[must_use]
-pub fn optimize(mut current_problem: Problem, total_conflicts: usize, iterations: i32) -> Problem {
+pub fn optimize(mut current_problem: Problem, _total_conflicts: usize, iterations: i32) -> Problem {
     // 1. Initialize Salsa Database with full problem state
     let mut db = ScoreDatabase::default();
     
@@ -25,17 +27,20 @@ pub fn optimize(mut current_problem: Problem, total_conflicts: usize, iterations
         db.set_edge_data(id, current_problem.edges[id].clone());
     }
 
-    #[allow(clippy::cast_possible_wrap)]
-    let extra_score = crate::domain::HardMediumSoftScore::new(-(total_conflicts as i64) * 10, 0, 0);
-    db.set_extra_conflict_score(extra_score);
-
     let mut current_score = db.total_score();
+    let mut best_score = current_score;
+    let mut best_problem = current_problem.clone();
+
+    // Late Acceptance Hill Climbing (LAHC) history array
+    let mut fitness_array = vec![current_score; LAHC_HISTORY_SIZE];
 
     use rand::RngExt;
     let mut rng = rand::rng();
 
-    // 2. Optimization Loop with In-Place Mutation and Undo-Move (O(delta))
-    for _i in 0..iterations {
+    // 2. Optimization Loop with LAHC and In-Place Mutation
+    for i in 0..iterations {
+        let v = (i as usize) % LAHC_HISTORY_SIZE;
+
         // Selection: Pick a job to move
         let job_idx = rng.random_range(0..current_problem.jobs.len());
         let job_id = current_problem.jobs[job_idx].id;
@@ -48,24 +53,41 @@ pub fn optimize(mut current_problem: Problem, total_conflicts: usize, iterations
         db.set_job_start_time(job_id, new_time);
         let neighbor_score = db.total_score();
 
-        // Hill Climbing / Late Acceptance logic
-        if neighbor_score >= current_score {
+        // LAHC Acceptance criterion: Accept if better than or equal to current, 
+        // OR better than or equal to the score in history L steps ago.
+        if neighbor_score >= current_score || neighbor_score >= fitness_array[v] {
+            // Accept move
             current_score = neighbor_score;
             current_problem.jobs[job_idx].start_time = new_time;
+
+            if neighbor_score > best_score {
+                best_score = neighbor_score;
+                // Only clone when we find a new global best
+                best_problem = current_problem.clone();
+            }
         } else {
-            // Undo Move: Restore state in Salsa (O(1) logic change)
+            // Reject: Undo Move in Salsa
             db.set_job_start_time(job_id, old_time);
         }
 
-        if current_score.hard == 0 && current_score.medium == 0 {
+        // Update history
+        if current_score > fitness_array[v] {
+            fitness_array[v] = current_score;
+        }
+
+        if best_score.hard == 0 && best_score.medium == 0 {
             break;
         }
     }
 
-    // 3. XAI: Provide final score explanation
-    current_problem.explanation = Some(db.score_explanation());
+    // 3. XAI: Provide final score explanation for the best solution found
+    // We need to restore the Salsa state to the best problem to get its explanation
+    for job in &best_problem.jobs {
+        db.set_job_start_time(job.id, job.start_time);
+    }
+    best_problem.explanation = Some(db.score_explanation());
 
-    current_problem
+    best_problem
 }
 
 #[cfg(test)]
