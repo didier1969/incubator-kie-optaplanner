@@ -38,7 +38,9 @@ defmodule HexaCore.NCOIntegrationTest do
     
     # Verify dimensions are correct and not empty
     assert length(tensor.job_features) == length(problem.jobs)
+    assert length(hd(tensor.job_features)) == 9
     assert length(tensor.resource_features) == length(problem.resources)
+    assert length(hd(tensor.resource_features)) == 29
     
     # Check fixed global features (1 current_time + 16 metrics)
     assert length(tensor.global_features) == 17

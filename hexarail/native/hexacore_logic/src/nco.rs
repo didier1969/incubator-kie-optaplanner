@@ -161,13 +161,22 @@ impl FeatureEncoder {
             }
         }
 
-        let mut remaining_ops = vec![0usize; problem.jobs.len()];
-        for i in (0..problem.jobs.len()).rev() {
-            let mut max_child_ops = 0;
-            for &child in &adj[i] {
-                max_child_ops = max_child_ops.max(remaining_ops[child] + 1);
+        fn get_remaining_ops(idx: usize, adj: &[Vec<usize>], memo: &mut Vec<Option<usize>>) -> usize {
+            if let Some(val) = memo[idx] {
+                return val;
             }
-            remaining_ops[i] = max_child_ops;
+            let mut max_child_ops = 0;
+            for &child in &adj[idx] {
+                max_child_ops = max_child_ops.max(get_remaining_ops(child, adj, memo) + 1);
+            }
+            memo[idx] = Some(max_child_ops);
+            max_child_ops
+        }
+
+        let mut memo = vec![None; problem.jobs.len()];
+        let mut remaining_ops = vec![0usize; problem.jobs.len()];
+        for i in 0..problem.jobs.len() {
+            remaining_ops[i] = get_remaining_ops(i, &adj, &mut memo);
         }
 
         let mut job_features = Vec::with_capacity(problem.jobs.len());
@@ -198,14 +207,60 @@ impl FeatureEncoder {
             ]);
         }
 
-        let mut resource_features = Vec::with_capacity(problem.resources.len());
         let mut res_to_idx = HashMap::new();
-        let resource_name_dict_size = self.resource_name_dict.len() as f32;
         for (idx, res) in problem.resources.iter().enumerate() {
             res_to_idx.insert(res.id, idx);
+        }
+
+        // Machine Occupancy State (SOTA)
+        let mut resource_scheduled_duration = vec![0.0f32; problem.resources.len()];
+        let mut resource_is_busy = vec![0.0f32; problem.resources.len()];
+        let mut resource_current_task_end = vec![0.0f32; problem.resources.len()];
+
+        for job in &problem.jobs {
+            if let Some(start) = job.start_time {
+                let start_f = start as f32;
+                let duration_f = job.duration as f32;
+                let end_f = start_f + duration_f;
+                
+                for res_id in &job.required_resources {
+                    if let Some(&res_idx) = res_to_idx.get(res_id) {
+                        // Sum of durations of tasks that have at least started (scheduled or in-progress)
+                        if start_f < current_time {
+                            resource_scheduled_duration[res_idx] += duration_f;
+                        }
+
+                        // Check if any task is running at current_time
+                        if current_time >= start_f && current_time < end_f {
+                            resource_is_busy[res_idx] = 1.0;
+                            resource_current_task_end[res_idx] = resource_current_task_end[res_idx].max(end_f);
+                        }
+                    }
+                }
+            }
+        }
+
+        let mut resource_features = Vec::with_capacity(problem.resources.len());
+        let resource_name_dict_size = self.resource_name_dict.len() as f32;
+        for (idx, res) in problem.resources.iter().enumerate() {
             let capacity = (res.capacity as f32) / max_capacity; 
             let type_id = (self.resource_name_dict.get_or_insert(&res.name) as f32) / (resource_name_dict_size + 1.0).max(1.0);
-            let mut res_feat = vec![capacity, type_id];
+            
+            // SOTA Dynamic Occupancy Features
+            let utilization_ratio = if current_time > 0.0 {
+                (resource_scheduled_duration[idx] / (res.capacity as f32 * current_time)).min(1.0)
+            } else {
+                0.0
+            };
+            let is_busy = resource_is_busy[idx];
+            let remaining_busy_time = if is_busy > 0.5 {
+                ((resource_current_task_end[idx] - current_time) / max_time).min(1.0).max(0.0)
+            } else {
+                0.0
+            };
+
+            let mut res_feat = vec![capacity, type_id, utilization_ratio, is_busy, remaining_busy_time];
+            
             let mut time_grid = vec![1.0; TIME_BUCKETS];
             if bucket_size > 0.0 {
                 for window in &res.availability_windows {
@@ -323,6 +378,7 @@ mod tests {
         assert_eq!(tensor.job_features.len(), 3);
         assert_eq!(tensor.job_features[0].len(), 9);
         assert_eq!(tensor.resource_features.len(), 2);
+        assert_eq!(tensor.resource_features[0].len(), 29); // 5 + 24
         assert_eq!(tensor.global_features.len(), 17); // 1 + 16
         assert_eq!(tensor.scalars.len(), 2);
         assert!((tensor.scalars[0] - 132.0).abs() < 0.01);
@@ -331,6 +387,12 @@ mod tests {
         assert!((tensor.job_features[0][8] - 0.3333).abs() < 0.01);
         // Wait time: (60 - 0) / 132 = 0.4545
         assert!((tensor.job_features[0][6] - 0.4545).abs() < 0.01);
+
+        // Machine occupancy: M1 (id 1) has job 10 (start 60, dur 60). At t=60, it's busy.
+        // is_busy (idx 3) should be 1.0
+        assert_eq!(tensor.resource_features[0][3], 1.0);
+        // remaining_busy_time (idx 4): (120 - 60) / 132 = 0.4545
+        assert!((tensor.resource_features[0][4] - 0.4545).abs() < 0.01);
 
         assert_eq!(tensor.job_to_job_edge_src, vec![0]);
         assert_eq!(tensor.job_to_job_edge_dst, vec![1]);
