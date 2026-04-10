@@ -2,10 +2,12 @@
 
 use crate::domain::Problem;
 use crate::incremental_score::{ScoreDatabase, ScoreEngine};
+use rand::RngExt;
 
 const LAHC_HISTORY_SIZE: usize = 100;
 
 #[must_use]
+#[allow(clippy::too_many_lines, clippy::cast_sign_loss, clippy::cast_possible_truncation, clippy::cast_precision_loss)]
 pub fn optimize(
     mut current_problem: Problem,
     _total_conflicts: usize,
@@ -48,7 +50,6 @@ pub fn optimize(
     // Late Acceptance Hill Climbing (LAHC) history array
     let mut fitness_array = vec![current_score; LAHC_HISTORY_SIZE];
 
-    use rand::RngExt;
     let mut rng = rand::rng();
 
     // 2. Optimization Loop with LAHC and SOTA Move Selectors
@@ -264,7 +265,7 @@ mod tests {
             explanation: None,
         };
 
-        let optimized = optimize::<fn(&Problem) -> Vec<f32>>(problem, 0, 100, None);
+        let optimized = optimize(problem, 0, 100, None);
         
         assert!(optimized.jobs[0].start_time.is_some());
     }

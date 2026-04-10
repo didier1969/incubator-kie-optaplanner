@@ -5,6 +5,25 @@ use crate::{atoms, domain, railway_domain};
 use petgraph::algo::astar;
 use rustler::{Atom, ResourceArc};
 use std::sync::RwLock;
+use std::collections::HashMap;
+use std::fs::File;
+use std::io::BufReader;
+
+#[derive(serde::Deserialize)]
+struct OsmElement {
+    #[serde(rename = "type")]
+    element_type: String,
+    id: i64,
+    lat: Option<f64>,
+    lon: Option<f64>,
+    nodes: Option<Vec<i64>>,
+    tags: Option<HashMap<String, String>>,
+}
+
+#[derive(serde::Deserialize)]
+struct OsmData {
+    elements: Vec<OsmElement>,
+}
 
 pub struct NetworkResource {
     pub manager: RwLock<railway_topology::NetworkManager>,
@@ -122,26 +141,6 @@ pub fn load_osm_from_json(
     path: String,
 ) -> Result<usize, String> {
     let mut manager = resource.manager.write().unwrap();
-
-    use std::collections::HashMap;
-    use std::fs::File;
-    use std::io::BufReader;
-
-    #[derive(serde::Deserialize)]
-    struct OsmElement {
-        #[serde(rename = "type")]
-        element_type: String,
-        id: i64,
-        lat: Option<f64>,
-        lon: Option<f64>,
-        nodes: Option<Vec<i64>>,
-        tags: Option<HashMap<String, String>>,
-    }
-
-    #[derive(serde::Deserialize)]
-    struct OsmData {
-        elements: Vec<OsmElement>,
-    }
 
     let file = File::open(path).map_err(|e: std::io::Error| e.to_string())?;
     let reader = BufReader::new(file);
@@ -351,7 +350,7 @@ pub fn freeze_state(
 ) -> Result<String, rustler::Error> {
     let manager = resource.manager.read().unwrap();
     match manager.freeze_state(&path) {
-        Ok(_) => Ok("ok".to_string()),
+        Ok(()) => Ok("ok".to_string()),
         Err(error) => Err(rustler::Error::Term(Box::new(error))),
     }
 }
@@ -363,7 +362,7 @@ pub fn thaw_state(
 ) -> Result<String, rustler::Error> {
     let mut manager = resource.manager.write().unwrap();
     match manager.thaw_state(&path) {
-        Ok(_) => Ok("ok".to_string()),
+        Ok(()) => Ok("ok".to_string()),
         Err(error) => Err(rustler::Error::Term(Box::new(error))),
     }
 }
@@ -376,7 +375,7 @@ pub fn inject_delay(
 ) -> rustler::Atom {
     let mut manager = resource.manager.write().unwrap();
     match manager.inject_delay(trip_id, delay_seconds) {
-        Ok(_) => rustler::types::atom::ok(),
+        Ok(()) => rustler::types::atom::ok(),
         Err(_) => rustler::types::atom::error(),
     }
 }

@@ -20,6 +20,8 @@ pub struct NcoBrain {
 impl NcoBrain {
     // Input Dimension: 64
     // 9 (Job) + 9 (Job-to-Job Agg) + 29 (Res-to-Job Agg) + 17 (Global) = 64
+    /// # Errors
+    /// Returns an error if the model initialization fails (e.g. invalid layer dimensions).
     pub fn new(vb: VarBuilder) -> candle_core::Result<Self> {
         let layer1 = candle_nn::linear(64, 128, vb.pp("layer1"))?;
         let layer2 = candle_nn::linear(128, 64, vb.pp("layer2"))?;
@@ -33,6 +35,8 @@ impl NcoBrain {
         })
     }
 
+    /// # Errors
+    /// Returns an error if the tensor operations (linear, relu, add, `broadcast_div`) fail due to dimension mismatch or internal Candle errors.
     pub fn forward(&self, xs: &Tensor) -> candle_core::Result<Tensor> {
         let xs = self.layer1.forward(xs)?.relu()?;
         let xs = self.layer2.forward(&xs)?.relu()?;
@@ -76,8 +80,12 @@ impl NcoInferenceEngine {
         Self::default()
     }
 
-    /// Runs a forward pass using HuggingFace Candle.
+    /// Runs a forward pass using `HuggingFace` Candle.
     /// Ingests the Bipartite Graph matrices and computes branching probabilities.
+    ///
+    /// # Panics
+    /// Panics if tensor creation fails.
+    #[allow(clippy::cast_possible_truncation)]
     pub fn forward_pass(&self, tensor_data: &TensorData) -> Vec<f32> {
         let num_jobs = tensor_data.job_features.len();
         let num_resources = tensor_data.resource_features.len();
@@ -89,10 +97,10 @@ impl NcoInferenceEngine {
         // --- SOTA: True Differentiable Message Passing with Candle ---
         
         // 1. Convert raw features to Tensors first
-        let job_features_flat: Vec<f32> = tensor_data.job_features.iter().flat_map(|v| v.clone()).collect();
+        let job_features_flat: Vec<f32> = tensor_data.job_features.iter().flat_map(std::clone::Clone::clone).collect();
         let x_jobs = Tensor::from_vec(job_features_flat, (num_jobs, 9), &self.device).unwrap_or_else(|_| Tensor::zeros((num_jobs, 9), DType::F32, &self.device).unwrap());
 
-        let res_features_flat: Vec<f32> = tensor_data.resource_features.iter().flat_map(|v| v.clone()).collect();
+        let res_features_flat: Vec<f32> = tensor_data.resource_features.iter().flat_map(std::clone::Clone::clone).collect();
         let x_res = if num_resources > 0 {
             Tensor::from_vec(res_features_flat, (num_resources, 29), &self.device).unwrap_or_else(|_| Tensor::zeros((num_resources, 29), DType::F32, &self.device).unwrap())
         } else {
@@ -103,7 +111,9 @@ impl NcoInferenceEngine {
         let jj_src_indices: Vec<u32> = tensor_data.job_to_job_edge_src.iter().map(|&x| x as u32).collect();
         let jj_dst_indices: Vec<u32> = tensor_data.job_to_job_edge_dst.iter().map(|&x| x as u32).collect();
         
-        let jj_agg = if !jj_src_indices.is_empty() {
+        let jj_agg = if jj_src_indices.is_empty() {
+            Tensor::zeros((num_jobs, 9), DType::F32, &self.device).unwrap()
+        } else {
             let src_idx_tensor = Tensor::from_vec(jj_src_indices, (tensor_data.job_to_job_edge_src.len(),), &self.device).unwrap();
             let dst_idx_tensor = Tensor::from_vec(jj_dst_indices, (tensor_data.job_to_job_edge_dst.len(),), &self.device).unwrap();
             
@@ -123,8 +133,6 @@ impl NcoInferenceEngine {
             let degrees_clamped = degrees.maximum(&ones_limit).unwrap(); // Prevent division by zero
             
             zeros.broadcast_div(&degrees_clamped).unwrap_or(zeros)
-        } else {
-            Tensor::zeros((num_jobs, 9), DType::F32, &self.device).unwrap()
         };
 
         // 3. Differentiable Resource-to-Job Message Passing (Scatter Add with Mean Aggregation)

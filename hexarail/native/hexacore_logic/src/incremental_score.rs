@@ -94,7 +94,7 @@ fn job_violations(db: &dyn ScoreEngine, id: i64) -> Vec<ConstraintViolation> {
         violations.push(ConstraintViolation {
             name: "unassigned".to_string(),
             severity: "medium".to_string(),
-            message: format!("Job {} is not assigned", id),
+            message: format!("Job {id} is not assigned"),
             job_id: Some(id),
             resource_id: None,
         });
@@ -105,7 +105,7 @@ fn job_violations(db: &dyn ScoreEngine, id: i64) -> Vec<ConstraintViolation> {
                 violations.push(ConstraintViolation {
                     name: "release_violation".to_string(),
                     severity: "soft".to_string(),
-                    message: format!("Job {} starts at {} before release {}", id, start, release),
+                    message: format!("Job {id} starts at {start} before release {release}"),
                     job_id: Some(id),
                     resource_id: None,
                 });
@@ -134,7 +134,7 @@ fn job_violations(db: &dyn ScoreEngine, id: i64) -> Vec<ConstraintViolation> {
                     violations.push(ConstraintViolation {
                         name: "availability_violation".to_string(),
                         severity: "hard".to_string(),
-                        message: format!("Job {} on resource {} is outside availability windows", id, res_id),
+                        message: format!("Job {id} on resource {res_id} is outside availability windows"),
                         job_id: Some(id),
                         resource_id: Some(res_id),
                     });
@@ -169,7 +169,7 @@ fn edge_violations(db: &dyn ScoreEngine, id: usize) -> Vec<ConstraintViolation> 
             violations.push(ConstraintViolation {
                 name: "precedence_violation".to_string(),
                 severity: "hard".to_string(),
-                message: format!("Precedence violation between {} and {} (type: {})", edge.from_job_id, edge.to_job_id, edge.edge_type),
+                message: format!("Precedence violation between {from} and {to} (type: {etype})", from=edge.from_job_id, to=edge.to_job_id, etype=edge.edge_type),
                 job_id: Some(edge.to_job_id),
                 resource_id: None,
             });
@@ -206,7 +206,7 @@ fn resource_score(db: &dyn ScoreEngine, id: i64) -> HardMediumSoftScore {
         for j in (i + 1)..assigned_intervals.len() {
             if assigned_intervals[j].0 < assigned_intervals[i].1 {
                 concurrent_count += 1;
-                if concurrent_count > res.capacity as usize {
+                if concurrent_count > usize::try_from(res.capacity).unwrap_or(0) {
                     // SOTA Match Weighed Scoring: proportional penalty
                     let overlap_amount = assigned_intervals[i].1.min(assigned_intervals[j].1) - assigned_intervals[j].0;
                     score.hard += OVERLAP_VIOLATION_PENALTY.hard * overlap_amount;
@@ -260,11 +260,11 @@ fn resource_violations(db: &dyn ScoreEngine, id: i64) -> Vec<ConstraintViolation
         for j in (i + 1)..assigned_intervals.len() {
             if assigned_intervals[j].0 < assigned_intervals[i].1 {
                 concurrent_count += 1;
-                if concurrent_count > res.capacity as usize {
+                if concurrent_count > usize::try_from(res.capacity).unwrap_or(0) {
                     violations.push(ConstraintViolation {
                         name: "resource_overlap".to_string(),
                         severity: "hard".to_string(),
-                        message: format!("Capacity exceeded on resource {}", id),
+                        message: format!("Capacity exceeded on resource {id}"),
                         job_id: Some(assigned_intervals[j].2),
                         resource_id: Some(id),
                     });
@@ -283,7 +283,7 @@ fn resource_violations(db: &dyn ScoreEngine, id: i64) -> Vec<ConstraintViolation
                     violations.push(ConstraintViolation {
                         name: "setup_transition".to_string(),
                         severity: "soft".to_string(),
-                        message: format!("Setup transition on resource {} from group {} to {}", id, pg, cg),
+                        message: format!("Setup transition on resource {id} from group {pg} to {cg}"),
                         job_id: Some(assigned_intervals[i].2),
                         resource_id: Some(id),
                     });

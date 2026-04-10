@@ -16,6 +16,8 @@ pub struct DemGrid {
 }
 
 impl DemGrid {
+    #[must_use]
+    #[allow(clippy::cast_precision_loss, clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     pub fn get_elevation(&self, lon: f64, lat: f64) -> f64 {
         if lon < self.lon_min || lon > self.lon_max || lat < self.lat_min || lat > self.lat_max {
             return 400.0; // Default off-grid
@@ -38,10 +40,10 @@ impl DemGrid {
         let cols = self.lon_steps + 1;
         
         // Bilinear interpolation
-        let e00 = self.elevations[y0 * cols + x0] as f64;
-        let e10 = self.elevations[y0 * cols + x1] as f64;
-        let e01 = self.elevations[y1 * cols + x0] as f64;
-        let e11 = self.elevations[y1 * cols + x1] as f64;
+        let e00 = f64::from(self.elevations[y0 * cols + x0]);
+        let e10 = f64::from(self.elevations[y0 * cols + x1]);
+        let e01 = f64::from(self.elevations[y1 * cols + x0]);
+        let e11 = f64::from(self.elevations[y1 * cols + x1]);
         
         let e0 = e00 * (1.0 - dx) + e10 * dx;
         let e1 = e01 * (1.0 - dx) + e11 * dx;

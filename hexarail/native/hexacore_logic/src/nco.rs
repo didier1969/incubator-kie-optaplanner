@@ -65,6 +65,9 @@ impl<'de> Deserialize<'de> for StrictDictionary {
 }
 
 impl StrictDictionary {
+    /// # Panics
+    ///
+    /// Panics if the internal `RwLock` is poisoned.
     pub fn get_or_insert(&self, key: &str) -> usize {
         if let Some(&id) = self.inner.read().unwrap().mapping.get(key) {
             return id;
@@ -81,17 +84,39 @@ impl StrictDictionary {
         next_id
     }
 
+    /// # Panics
+    ///
+    /// Panics if the internal `RwLock` is poisoned.
     pub fn freeze(&self) {
         self.inner.write().unwrap().frozen = true;
     }
 
+    /// # Panics
+    ///
+    /// Panics if the internal `RwLock` is poisoned.
+    #[must_use]
     pub fn len(&self) -> usize {
         self.inner.read().unwrap().mapping.len()
+    }
+
+    /// # Panics
+    ///
+    /// Panics if the internal `RwLock` is poisoned.
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 }
 
 pub const MAX_SCORE_COMPONENTS: usize = 16;
 
+#[allow(
+    clippy::cast_precision_loss,
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    clippy::too_many_lines,
+    clippy::float_cmp
+)]
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct FeatureEncoder {
     pub group_id_dict: StrictDictionary,
@@ -113,15 +138,48 @@ impl FeatureEncoder {
         self.score_name_dict.freeze();
     }
 
+    #[must_use]
     pub fn export_json(&self) -> String {
         serde_json::to_string(self).unwrap_or_else(|_| "{}".to_string())
     }
 
+    /// # Errors
+    ///
+    /// Returns an error if the JSON string cannot be parsed.
+    #[allow(
+        clippy::cast_precision_loss,
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss,
+        clippy::too_many_lines,
+        clippy::float_cmp
+    )]
     pub fn import_json(json: &str) -> Result<Self, String> {
         serde_json::from_str(json).map_err(|e| e.to_string())
     }
 
+    /// # Errors
+    ///
+    /// Returns an error if the number of score components exceeds `MAX_SCORE_COMPONENTS`.
+    #[allow(
+        clippy::cast_precision_loss,
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss,
+        clippy::too_many_lines,
+        clippy::float_cmp
+    )]
     pub fn encode(&self, problem: &Problem, current_time: f32) -> Result<TensorData, String> {
+        fn get_remaining_ops(idx: usize, adj: &[Vec<usize>], memo: &mut [Option<usize>]) -> usize {
+            if let Some(val) = memo[idx] {
+                return val;
+            }
+            let mut max_child_ops = 0;
+            for &child in &adj[idx] {
+                max_child_ops = max_child_ops.max(get_remaining_ops(child, adj, memo) + 1);
+            }
+            memo[idx] = Some(max_child_ops);
+            max_child_ops
+        }
+
         let sum_durations: i64 = problem.jobs.iter().map(|j| j.duration).sum();
         let sum_lags: i64 = problem.edges.iter().map(|e| e.lag).sum();
         let theoretical_worst_case = (sum_durations + sum_lags) as f32;
@@ -161,22 +219,10 @@ impl FeatureEncoder {
             }
         }
 
-        fn get_remaining_ops(idx: usize, adj: &[Vec<usize>], memo: &mut Vec<Option<usize>>) -> usize {
-            if let Some(val) = memo[idx] {
-                return val;
-            }
-            let mut max_child_ops = 0;
-            for &child in &adj[idx] {
-                max_child_ops = max_child_ops.max(get_remaining_ops(child, adj, memo) + 1);
-            }
-            memo[idx] = Some(max_child_ops);
-            max_child_ops
-        }
-
         let mut memo = vec![None; problem.jobs.len()];
         let mut remaining_ops = vec![0usize; problem.jobs.len()];
-        for i in 0..problem.jobs.len() {
-            remaining_ops[i] = get_remaining_ops(i, &adj, &mut memo);
+        for (i, ops) in remaining_ops.iter_mut().enumerate().take(problem.jobs.len()) {
+            *ops = get_remaining_ops(i, &adj, &mut memo);
         }
 
         let mut job_features = Vec::with_capacity(problem.jobs.len());
@@ -254,7 +300,7 @@ impl FeatureEncoder {
             };
             let is_busy = resource_is_busy[idx];
             let remaining_busy_time = if is_busy > 0.5 {
-                ((resource_current_task_end[idx] - current_time) / max_time).min(1.0).max(0.0)
+                ((resource_current_task_end[idx] - current_time) / max_time).clamp(0.0, 1.0)
             } else {
                 0.0
             };
@@ -268,7 +314,7 @@ impl FeatureEncoder {
                     let end_f = window.end_at as f32;
                     let start_bucket = (start_f / bucket_size).floor() as usize;
                     let end_bucket = (end_f / bucket_size).floor() as usize;
-                    for b in start_bucket..=end_bucket {
+                    for (b, time_grid_b) in time_grid.iter_mut().enumerate().take(end_bucket + 1).skip(start_bucket) {
                         if b < TIME_BUCKETS {
                             let bucket_start = (b as f32) * bucket_size;
                             let bucket_end = bucket_start + bucket_size;
@@ -276,7 +322,7 @@ impl FeatureEncoder {
                             let overlap_end = end_f.min(bucket_end);
                             if overlap_end > overlap_start {
                                 let unavailable_fraction = (overlap_end - overlap_start) / bucket_size;
-                                time_grid[b] = (time_grid[b] - unavailable_fraction).max(0.0);
+                                *time_grid_b = (*time_grid_b - unavailable_fraction).max(0.0);
                             }
                         }
                     }
@@ -344,6 +390,7 @@ impl FeatureEncoder {
 }
 
 #[cfg(test)]
+#[allow(clippy::float_cmp)]
 mod tests {
     use super::*;
     use crate::domain::{Edge, Job, Resource, ScoreComponent, Window};

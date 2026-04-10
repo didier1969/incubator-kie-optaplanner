@@ -22,17 +22,20 @@ mod atoms {
 }
 
 
+#[must_use]
 pub fn evaluate_problem_core(problem: domain::Problem) -> domain::HardMediumSoftScore {
     score::calculate_score(&problem)
 }
 
 
+#[must_use]
 pub fn add(a: i64, b: i64) -> i64 {
     a + b
 }
 
 
 #[allow(clippy::needless_pass_by_value)]
+#[must_use]
 pub fn optimize_problem_core(
     problem: domain::Problem, 
     iterations: i32, 

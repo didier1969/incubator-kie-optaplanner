@@ -233,6 +233,7 @@ impl NetworkManager {
         }
     }
 
+    #[must_use]
     pub fn calculate_health(&self) -> SystemHealth {
         // In a stateless engine, total delay is the sum of instantaneous delays 
         // caused by speed clamping across all active trains.
@@ -264,19 +265,17 @@ impl NetworkManager {
         self.physical.disabled_edges.clear();
 
         for p in &self.active_perturbations {
-            if time >= p.start_time && time < (p.start_time + p.duration) {
-                match p.perturbation_type.as_str() {
-                    "infrastructure" => {
-                        if p.target_id.contains('-') {
-                            let parts: Vec<&str> = p.target_id.split('-').collect();
-                            if parts.len() == 2 {
-                                self.physical.disabled_edges.insert((parts[0].to_string(), parts[1].to_string()));
-                            }
-                        } else {
-                            self.physical.disabled_stations.insert(p.target_id.clone());
-                        }
+            if time >= p.start_time
+                && time < (p.start_time + p.duration)
+                && p.perturbation_type.as_str() == "infrastructure"
+            {
+                if p.target_id.contains('-') {
+                    let parts: Vec<&str> = p.target_id.split('-').collect();
+                    if parts.len() == 2 {
+                        self.physical.disabled_edges.insert((parts[0].to_string(), parts[1].to_string()));
                     }
-                    _ => {}
+                } else {
+                    self.physical.disabled_stations.insert(p.target_id.clone());
                 }
             }
         }
@@ -387,10 +386,10 @@ impl NetworkManager {
                         self.micro.graph.add_edge(u_idx, v_idx, accumulated_routing_weight);
                         
                         // Inject edges into Unified Physical Network
-                        let p_u_id = format!("OSM-{}", last_key_node_id);
-                        let p_v_id = format!("OSM-{}", current_node_id);
-                        let a = self.physical.add_station(&p_u_id);
-                        let b = self.physical.add_station(&p_v_id);
+                        let osm_node_u = format!("OSM-{}", last_key_node_id);
+                        let osm_node_v = format!("OSM-{}", current_node_id);
+                        let a = self.physical.add_station(&osm_node_u);
+                        let b = self.physical.add_station(&osm_node_v);
                         
                         let maxspeed = way.tags.get("maxspeed").and_then(|s| s.parse::<f64>().ok()).unwrap_or(120.0);
                         
@@ -821,7 +820,7 @@ impl NetworkManager {
         // Phase 19: Tilting capability increases curve speed
         // If the train doesn't have the property, default to false (not tilting)
         // Since we don't have is_tilting in the struct yet, we will just use a heuristic based on model name for now
-        let is_tilting = profile.map_or(false, |p| p.model.contains("ICN") || p.model.contains("Giruno") || p.model.contains("RABe 501"));
+        let is_tilting = profile.is_some_and(|p| p.model.contains("ICN") || p.model.contains("Giruno") || p.model.contains("RABe 501"));
         let speed_multiplier = if is_tilting { 1.2 } else { 1.0 };
 
         for i in 0..events.len() - 1 {
@@ -960,7 +959,7 @@ impl NetworkManager {
                 let stop = self.stops.get(&event.stop_id)?;
                 let (lon, lat) = stop.location.coordinates;
                 // At station, head and tail are roughly the same point for now (or could be offset by train_len)
-                let tail_lat = lat - (train_len / 111320.0);
+                let tail_lat = lat - (train_len / 111_320.0);
                 return Some((lon, lat, lon, tail_lat, 400.0, 0.0, 0.0, 0.0, 0.0));
             }
         }
@@ -993,6 +992,8 @@ impl NetworkManager {
         (p1.0 + (p2.0 - p1.0) * local_progress, p1.1 + (p2.1 - p1.1) * local_progress)
     }
 
+    /// # Errors
+    /// Returns an error if the file cannot be created or if serialization fails.
     pub fn freeze_state(&self, path: &str) -> Result<(), String> {
         let file = File::create(path).map_err(|e| e.to_string())?;
         let writer = BufWriter::new(file);
@@ -1001,6 +1002,8 @@ impl NetworkManager {
         Ok(())
     }
 
+    /// # Errors
+    /// Returns an error if the file cannot be opened or if deserialization fails.
     pub fn thaw_state(&mut self, path: &str) -> Result<(), String> {
         let file = File::open(path).map_err(|e| e.to_string())?;
         let reader = BufReader::new(file);
@@ -1009,6 +1012,8 @@ impl NetworkManager {
         self.eos_buffer = eos_buffer;
         Ok(())
     }
+    /// # Errors
+    /// Returns an error if the `trip_id` is not found in the stop times.
     pub fn inject_delay(&mut self, trip_id: i64, delay_seconds: i32) -> Result<(), String> {
         if let Some(events) = self.stop_times.get_mut(&trip_id) {
             for event in events.iter_mut() {
@@ -1085,6 +1090,7 @@ impl NetworkManager {
     }
 
     pub fn resolve_conflict_local_search(&mut self) -> ResolutionMetrics {
+        use rand::RngExt;
         let start_time_ms = std::time::Instant::now();
         
         // 1. Rebuild STIG based on current self.stop_times to get baseline
@@ -1123,7 +1129,6 @@ impl NetworkManager {
 
         // 3. Custom High-Performance Hill Climbing (Local Search)
         // Bypassing external localsearch crate for maximum zero-copy resilience and zero dependency conflicts.
-        use rand::RngExt;
         let mut rng = rand::rng();
 
         let mut best_delays: HashMap<i64, i32> = trips_in_zone.iter().map(|&id| (id, 0)).collect();
@@ -1149,7 +1154,7 @@ impl NetworkManager {
             }
 
             for trip_id in &trips_in_zone {
-                total_delay_penalty += delays.get(trip_id).copied().unwrap_or(0) as i64;
+                total_delay_penalty += i64::from(delays.get(trip_id).copied().unwrap_or(0));
             }
 
             temp_eos.sort_by(|a, b| a.start_time.cmp(&b.start_time));
@@ -1167,7 +1172,7 @@ impl NetworkManager {
 
             // Hard: Overlaps (collisions)
             // Soft: Total delay added
-            hexacore_logic::domain::HardMediumSoftScore::new(-(overlaps as i64), 0, -total_delay_penalty)
+            hexacore_logic::domain::HardMediumSoftScore::new(-i64::from(overlaps), 0, -total_delay_penalty)
         };
 
         best_score = evaluate(&best_delays);
@@ -1188,7 +1193,7 @@ impl NetworkManager {
 
             // Lexicographical comparison via Ord trait
             if trial_score > best_score {
-                best_delays = trial.clone();
+                best_delays.clone_from(&trial);
                 best_score = trial_score;
                 current_delays = trial;
             } else if rng.random_bool(0.1) {
