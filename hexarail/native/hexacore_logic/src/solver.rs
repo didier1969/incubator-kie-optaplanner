@@ -88,12 +88,12 @@ where
         let job_id = current_problem.jobs[job_idx].id;
         let old_time = db.job_start_time(job_id);
         
-        // SOTA: Earliest-Fit (EST) Guided Move Selection
-        let mut est = 0;
+        // SOTA: Earliest-Fit (EST) Guided Move Selection with Resource Gap Search
+        let mut topological_est = 0;
         
         // 1. Physical Constraint: Release Time
         if let Some(release) = current_problem.jobs[job_idx].release_time {
-            est = est.max(release);
+            topological_est = topological_est.max(release);
         }
 
         // 2. Physical Constraint: Precedences (Incoming Edges)
@@ -111,8 +111,72 @@ where
                         "start_to_finish" => pred_start + edge.lag - current_problem.jobs[job_idx].duration,
                         _ => pred_end, // Default safe fallback
                     };
-                    est = est.max(required_start);
+                    topological_est = topological_est.max(required_start);
                 }
+            }
+        }
+        
+        // 3. Physical Constraint: Resource Capacity (Gap Search)
+        // We must find the first available time slot >= topological_est where ALL required resources are free.
+        let job_duration = current_problem.jobs[job_idx].duration;
+        let mut est = topological_est;
+        let mut found_valid_slot = false;
+        
+        // Safety bound to prevent infinite loops in extremely congested scenarios
+        let max_search_horizon = topological_est + 1440 * 7; // Max search 1 week ahead
+        
+        while !found_valid_slot && est < max_search_horizon {
+            let mut all_resources_free = true;
+            let current_end = est + job_duration;
+            
+            for &res_id in &current_problem.jobs[job_idx].required_resources {
+                // SOTA: Check availability windows first
+                let res = db.resource_data(res_id);
+                let mut within_window = true;
+                if !res.availability_windows.is_empty() {
+                    within_window = res.availability_windows.iter().any(|w| {
+                        est >= w.start_at && current_end <= w.end_at
+                    });
+                }
+                
+                if !within_window {
+                    all_resources_free = false;
+                    // Jump to the start of the next availability window (simplified: just bump by 1 for now)
+                    est += 1;
+                    break;
+                }
+
+                // Check collisions with other jobs on this resource
+                // (In a highly optimized SOTA engine, this is an Interval Tree query O(log N). 
+                // Here we do a linear scan over currently assigned jobs sharing this resource).
+                let mut concurrent_count = 1; // Count ourselves
+                let mut next_conflict_end = 0;
+                
+                for &other_j_id in &db.job_ids() {
+                    if other_j_id == job_id { continue; }
+                    let other_job = db.job_data(other_j_id);
+                    if other_job.required_resources.contains(&res_id) {
+                        if let Some(other_start) = db.job_start_time(other_j_id) {
+                            let other_end = other_start + other_job.duration;
+                            // Check overlap: start1 < end2 && start2 < end1
+                            if est < other_end && other_start < current_end {
+                                concurrent_count += 1;
+                                next_conflict_end = next_conflict_end.max(other_end);
+                            }
+                        }
+                    }
+                }
+                
+                if concurrent_count > res.capacity {
+                    all_resources_free = false;
+                    // Fast-forward to the end of the conflict to save CPU cycles
+                    est = est.max(next_conflict_end);
+                    break;
+                }
+            }
+            
+            if all_resources_free {
+                found_valid_slot = true;
             }
         }
         
