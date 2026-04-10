@@ -33,7 +33,7 @@ HexaFactory is the manufacturing, job-shop scheduling vertical.
 ## Architecture & SOTA Capabilities
 *   **Control Plane (Elixir/OTP):** orchestration, actor-based state management, resilience, and real-time interfaces via Phoenix LiveView. Massive parallel ingestion and dataset generation.
 *   **Data Plane (Rust):** incremental computation via **Salsa (O(delta))**, graph analysis, Late Acceptance Hill Climbing (LAHC), and performance-critical simulation logic.
-*   **SOTA NCO (Latent Space):** The Rust Data Plane extracts an exact, normalized Markov Decision Process (MDP) state of the factory (Heterogeneous COO Graph, Dynamic Machine Occupancy, Categorical Dictionaries) ready for PyTorch/dfdx Graph Neural Networks.
+*   **SOTA NCO (Latent Space & GNN Brain):** The Rust Data Plane extracts an exact, normalized Markov Decision Process (MDP) state of the factory. We use **dfdx** (Rust-native Deep Learning) to run a Forward Pass with CPU/GPU Message Passing directly inside the Native Implemented Function (NIF), emitting a Branching Probability Map that guides the search heuristics.
 *   **Explainable AI (XAI):** The system returns a prioritized `HardMediumSoftScore` along with a detailed `ScoreExplanation` mapping every constraint violation back to the physical source.
 *   **Persistence (PostgreSQL/PostGIS):** storage for large geospatial, temporal, operational datasets, and JSONB tensors.
 
@@ -59,8 +59,8 @@ mix data.import
 The shell now isolates mutable state under `./.state/` and exports project-local randomized ports for the web endpoint, tests, and PostgreSQL.
 
 ## Repository Direction
-*   **Near term:** integrate `dfdx` or `tch-rs` to provide the neural network (Brain Infill) that consumes the generated NCO tensors to predict Branching Probability Maps.
-*   **Medium term:** port all constraints to the Salsa reactive engine to allow <1ms "What-if" score recalculations in the UI.
+*   **Near term:** port all remaining constraints to the Salsa reactive engine to allow <1ms "What-if" score recalculations in the UI. Train the `dfdx` GNN offline using the generated PyTorch-compatible JSON datasets.
+*   **Medium term:** stabilize the agnostic APIs and prove reuse across multiple verticals.
 *   **Long term:** ship a true multi-vertical optimization platform, blending exact Operations Research with Neural Combinatorial Optimization.
 
 ## Mandates
