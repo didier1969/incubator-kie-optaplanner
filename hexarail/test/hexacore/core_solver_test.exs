@@ -16,11 +16,15 @@ defmodule HexaCore.CoreSolverTest do
       ]
     }
 
-    assert Nif.evaluate_problem_core(problem) == -100
+    score = Nif.evaluate_problem_core(problem)
+    assert score.hard == 0
+    assert score.medium == -1
 
     optimized_problem = Nif.optimize_problem_core(problem, "metaheuristic", 10)
 
-    assert Nif.evaluate_problem_core(optimized_problem) == 0
+    score_after = Nif.evaluate_problem_core(optimized_problem)
+    assert score_after.hard == 0
+    assert score_after.medium == 0
     assert hd(optimized_problem.jobs).start_time != nil
   end
 

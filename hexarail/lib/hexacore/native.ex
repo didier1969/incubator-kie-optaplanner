@@ -12,7 +12,8 @@ defmodule HexaCore.Native do
   @spec add(integer(), integer()) :: integer()
   def add(_a, _b), do: :erlang.nif_error(:nif_not_loaded)
 
-  @spec evaluate_problem_core(HexaCore.Domain.Problem.t()) :: integer()
+  @spec evaluate_problem_core(HexaCore.Domain.Problem.t()) ::
+          HexaCore.Domain.HardMediumSoftScore.t()
   def evaluate_problem_core(_problem), do: :erlang.nif_error(:nif_not_loaded)
 
   @spec optimize_problem_core(HexaCore.Domain.Problem.t(), String.t(), integer()) ::

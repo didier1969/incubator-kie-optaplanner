@@ -40,6 +40,9 @@ defmodule HexaCore.CoreConstraintsTest do
       ]
     }
 
-    assert Nif.evaluate_problem_core(problem) < 0
+    score = Nif.evaluate_problem_core(problem)
+    assert score.hard < 0
+    assert score.soft < 0
+    assert score.medium == 0
   end
 end

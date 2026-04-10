@@ -15,8 +15,8 @@ defmodule HexaRail.SolverIntegrationTest do
       ]
     }
 
-    # Should be -100 because 1 job is unassigned
-    assert Nif.evaluate_problem_core(problem) == -100
+    # Should have medium penalty of -1 because 1 job is unassigned
+    assert Nif.evaluate_problem_core(problem).medium == -1
   end
 
   test "rust nif optimizes the problem and returns mutated state" do
@@ -28,11 +28,11 @@ defmodule HexaRail.SolverIntegrationTest do
       ]
     }
 
-    assert Nif.evaluate_problem_core(problem) == -100
+    assert Nif.evaluate_problem_core(problem).medium == -1
 
     optimized_problem = Nif.optimize_problem_core(problem, "metaheuristic", 10)
 
-    assert Nif.evaluate_problem_core(optimized_problem) == 0
+    assert Nif.evaluate_problem_core(optimized_problem).medium == 0
     # Ensure the Rust engine actually mutated the struct and sent it back
     assert hd(optimized_problem.jobs).start_time != nil
   end

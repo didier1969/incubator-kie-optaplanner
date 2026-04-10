@@ -50,6 +50,38 @@ impl DemGrid {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, NifStruct)]
+#[module = "HexaCore.Domain.HardMediumSoftScore"]
+pub struct HardMediumSoftScore {
+    pub hard: i64,
+    pub medium: i64,
+    pub soft: i64,
+}
+
+impl HardMediumSoftScore {
+    #[must_use]
+    pub fn new(hard: i64, medium: i64, soft: i64) -> Self {
+        Self {
+            hard,
+            medium,
+            soft,
+        }
+    }
+
+    #[must_use]
+    pub fn zero() -> Self {
+        Self::new(0, 0, 0)
+    }
+}
+
+impl std::ops::AddAssign for HardMediumSoftScore {
+    fn add_assign(&mut self, other: Self) {
+        self.hard += other.hard;
+        self.medium += other.medium;
+        self.soft += other.soft;
+    }
+}
+
 #[derive(Debug, Clone, NifStruct)]
 #[module = "HexaCore.Domain.Resource"]
 pub struct Resource {
@@ -101,6 +133,23 @@ pub struct GeoPoint {
     pub srid: Option<i32>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, NifStruct)]
+#[module = "HexaCore.Domain.ConstraintViolation"]
+pub struct ConstraintViolation {
+    pub name: String,
+    pub severity: String, // "hard", "medium", "soft"
+    pub message: String,
+    pub job_id: Option<i64>,
+    pub resource_id: Option<i64>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, NifStruct)]
+#[module = "HexaCore.Domain.ScoreExplanation"]
+pub struct ScoreExplanation {
+    pub score: HardMediumSoftScore,
+    pub violations: Vec<ConstraintViolation>,
+}
+
 #[derive(Debug, Clone, NifStruct)]
 #[module = "HexaCore.Domain.Problem"]
 pub struct Problem {
@@ -109,6 +158,7 @@ pub struct Problem {
     pub jobs: Vec<Job>,
     pub edges: Vec<Edge>,
     pub score_components: Vec<ScoreComponent>,
+    pub explanation: Option<ScoreExplanation>,
 }
 
 #[cfg(test)]

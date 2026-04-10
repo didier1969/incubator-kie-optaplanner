@@ -9,7 +9,7 @@
 use hexacore_logic::domain;
 
 #[rustler::nif]
-pub fn evaluate_problem_core(problem: domain::Problem) -> i64 {
+pub fn evaluate_problem_core(problem: domain::Problem) -> domain::HardMediumSoftScore {
     hexacore_logic::evaluate_problem_core(problem)
 }
 

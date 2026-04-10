@@ -1125,12 +1125,12 @@ impl NetworkManager {
         // Bypassing external localsearch crate for maximum zero-copy resilience and zero dependency conflicts.
         use rand::RngExt;
         let mut rng = rand::rng();
-        
+
         let mut best_delays: HashMap<i64, i32> = trips_in_zone.iter().map(|&id| (id, 0)).collect();
         let mut best_score;
-        
-        // Inline evaluation function
-        let evaluate = |delays: &HashMap<i64, i32>| -> i64 {
+
+        // Inline evaluation function using SOTA Multi-Level Scoring
+        let evaluate = |delays: &HashMap<i64, i32>| -> hexacore_logic::domain::HardMediumSoftScore {
             let mut temp_eos = Vec::with_capacity(self.eos_buffer.len());
             let mut total_delay_penalty = 0;
 
@@ -1147,7 +1147,7 @@ impl NetworkManager {
                     }
                 }
             }
-            
+
             for trip_id in &trips_in_zone {
                 total_delay_penalty += delays.get(trip_id).copied().unwrap_or(0) as i64;
             }
@@ -1165,26 +1165,29 @@ impl NetworkManager {
                 occupancy.insert(eos.track_idx, eos.end_time);
             }
 
-            (overlaps * 1_000_000) as i64 + total_delay_penalty
+            // Hard: Overlaps (collisions)
+            // Soft: Total delay added
+            hexacore_logic::domain::HardMediumSoftScore::new(-(overlaps as i64), 0, -total_delay_penalty)
         };
-        
+
         best_score = evaluate(&best_delays);
         let mut current_delays = best_delays.clone();
 
         for _ in 0..100 {
-            if best_score == 0 { break; } // Optimal found
-            
+            if best_score.hard == 0 && best_score.soft == 0 { break; } // Optimal found
+
             let mut trial = current_delays.clone();
             let trip_idx = rng.random_range(0..trips_in_zone.len());
             let trip_id = trips_in_zone[trip_idx];
             let added_delay = rng.random_range(10..=60);
-            
+
             let current_delay = trial.get(&trip_id).copied().unwrap_or(0);
             trial.insert(trip_id, current_delay + added_delay);
-            
+
             let trial_score = evaluate(&trial);
-            
-            if trial_score < best_score {
+
+            // Lexicographical comparison via Ord trait
+            if trial_score > best_score {
                 best_delays = trial.clone();
                 best_score = trial_score;
                 current_delays = trial;
@@ -1192,7 +1195,6 @@ impl NetworkManager {
                 current_delays = trial; // Escape local optima
             }
         }
-
         // Apply best solution to real manager
         let mut total_delay_added = 0;
         for trip_id in trips_in_zone.clone() {

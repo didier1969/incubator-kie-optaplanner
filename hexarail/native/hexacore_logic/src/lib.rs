@@ -21,7 +21,7 @@ mod atoms {
 }
 
 
-pub fn evaluate_problem_core(problem: domain::Problem) -> i64 {
+pub fn evaluate_problem_core(problem: domain::Problem) -> domain::HardMediumSoftScore {
     score::calculate_score(&problem)
 }
 
