@@ -157,21 +157,28 @@ pub fn optimize(
                     }
                     if !within_window {
                         all_resources_free = false;
-                        est += 1;
+                        // SOTA: Fast-Forward to the next available window instead of busy-waiting 1 minute at a time
+                        let mut next_start = est + 1; // Fallback
+                        for w in &res.availability_windows {
+                            if w.start_at > est {
+                                next_start = w.start_at;
+                                break;
+                            }
+                        }
+                        est = next_start;
                         break;
                     }
                     let mut concurrent_count = 1;
                     let mut next_conflict_end = 0;
-                    for &other_j_id in &db.job_ids() {
+                    // SOTA O(delta): Only loop over jobs sharing this specific resource, not the whole factory
+                    for &other_j_id in &db.resource_jobs(res_id) {
                         if other_j_id == job_id { continue; }
                         let other_job = db.job_data(other_j_id);
-                        if other_job.required_resources.contains(&res_id) {
-                            if let Some(other_start) = db.job_start_time(other_j_id) {
-                                let other_end = other_start + other_job.duration;
-                                if est < other_end && other_start < current_end {
-                                    concurrent_count += 1;
-                                    next_conflict_end = next_conflict_end.max(other_end);
-                                }
+                        if let Some(other_start) = db.job_start_time(other_j_id) {
+                            let other_end = other_start + other_job.duration;
+                            if est < other_end && other_start < current_end {
+                                concurrent_count += 1;
+                                next_conflict_end = next_conflict_end.max(other_end);
                             }
                         }
                     }
