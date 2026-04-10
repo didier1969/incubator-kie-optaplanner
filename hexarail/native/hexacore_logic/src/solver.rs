@@ -39,8 +39,22 @@ pub fn optimize(
 
     let edge_ids: Vec<usize> = (0..current_problem.edges.len()).collect();
     db.set_edge_ids(edge_ids.clone());
+    for id in &edge_ids {
+        db.set_edge_data(*id, current_problem.edges[*id].clone());
+    }
+
+    // SOTA: Precompute adjacency lists for O(1) true delta scoring
+    let mut job_edges: std::collections::HashMap<i64, Vec<usize>> = std::collections::HashMap::new();
+    let mut job_resources: std::collections::HashMap<i64, Vec<i64>> = std::collections::HashMap::new();
+
+    for job in &current_problem.jobs {
+        job_resources.insert(job.id, job.required_resources.clone());
+    }
+
     for id in edge_ids {
-        db.set_edge_data(id, current_problem.edges[id].clone());
+        let edge = &current_problem.edges[id];
+        job_edges.entry(edge.from_job_id).or_default().push(id);
+        job_edges.entry(edge.to_job_id).or_default().push(id);
     }
 
     let mut current_score = db.total_score();
@@ -93,30 +107,31 @@ pub fn optimize(
         
         let mut second_job_id = None;
         let mut second_old_time = None;
+        let mut second_new_time = None;
+        let new_time;
         
         if move_type < 20 {
             // SWAP MOVE (20% chance)
             // Swap start times with another random job
             let target_idx = rng.random_range(0..current_problem.jobs.len());
             let target_id = current_problem.jobs[target_idx].id;
-            if target_id != job_id {
-                second_job_id = Some(target_id);
-                second_old_time = db.job_start_time(target_id);
-                
-                db.set_job_start_time(job_id, second_old_time);
-                db.set_job_start_time(target_id, old_time);
+            if target_id == job_id {
+                continue; // Skip invalid move
             }
+            second_job_id = Some(target_id);
+            second_old_time = db.job_start_time(target_id);
+            new_time = second_old_time;
+            second_new_time = old_time;
         } else if move_type < 60 {
             // CHANGE MOVE / SHIFT (40% chance)
             // Shift the job's start time forward or backward randomly within a window
             if let Some(t) = old_time {
                 // Shift by up to +/- 120 minutes
                 let shift = rng.random_range(-120..120);
-                let new_time = std::cmp::max(0, t + shift);
-                db.set_job_start_time(job_id, Some(new_time));
+                new_time = Some(std::cmp::max(0, t + shift));
             } else {
                 // If unassigned, pick a completely random time to inject it into the schedule
-                db.set_job_start_time(job_id, Some(rng.random_range(0..1440)));
+                new_time = Some(rng.random_range(0..1440));
             }
         } else {
             // EST SNAP MOVE (40% chance)
@@ -191,10 +206,45 @@ pub fn optimize(
                 }
                 if all_resources_free { found_valid_slot = true; }
             }
-            db.set_job_start_time(job_id, Some(est));
+            new_time = Some(est);
         }
         
-        let neighbor_score = db.total_score();
+        // SOTA: True Incremental Delta Scoring
+        // Calculate score of affected components BEFORE move
+        let mut old_local_score = crate::domain::HardMediumSoftScore::zero();
+        let mut affected_edges = std::collections::HashSet::new();
+        let mut affected_resources = std::collections::HashSet::new();
+
+        old_local_score += db.job_score(job_id);
+        if let Some(edges) = job_edges.get(&job_id) { affected_edges.extend(edges); }
+        if let Some(res) = job_resources.get(&job_id) { affected_resources.extend(res); }
+
+        if let Some(s_id) = second_job_id {
+            old_local_score += db.job_score(s_id);
+            if let Some(edges) = job_edges.get(&s_id) { affected_edges.extend(edges); }
+            if let Some(res) = job_resources.get(&s_id) { affected_resources.extend(res); }
+        }
+
+        for &e_id in &affected_edges { old_local_score += db.edge_score(e_id); }
+        for &r_id in &affected_resources { old_local_score += db.resource_score(r_id); }
+
+        // Apply Move
+        db.set_job_start_time(job_id, new_time);
+        if let Some(s_id) = second_job_id {
+            db.set_job_start_time(s_id, second_new_time);
+        }
+
+        // Calculate score of affected components AFTER move
+        let mut new_local_score = crate::domain::HardMediumSoftScore::zero();
+        new_local_score += db.job_score(job_id);
+        if let Some(s_id) = second_job_id {
+            new_local_score += db.job_score(s_id);
+        }
+        for &e_id in &affected_edges { new_local_score += db.edge_score(e_id); }
+        for &r_id in &affected_resources { new_local_score += db.resource_score(r_id); }
+
+        // Delta evaluation: O(K) where K is the local neighborhood, completely bypassing O(N) total_score loops!
+        let neighbor_score = current_score - old_local_score + new_local_score;
 
         // LAHC Acceptance criterion
         if neighbor_score >= current_score || neighbor_score >= fitness_array[v] {

@@ -84,6 +84,36 @@ impl std::ops::AddAssign for HardMediumSoftScore {
     }
 }
 
+impl std::ops::Add for HardMediumSoftScore {
+    type Output = Self;
+    fn add(self, other: Self) -> Self {
+        Self {
+            hard: self.hard + other.hard,
+            medium: self.medium + other.medium,
+            soft: self.soft + other.soft,
+        }
+    }
+}
+
+impl std::ops::Sub for HardMediumSoftScore {
+    type Output = Self;
+    fn sub(self, other: Self) -> Self {
+        Self {
+            hard: self.hard - other.hard,
+            medium: self.medium - other.medium,
+            soft: self.soft - other.soft,
+        }
+    }
+}
+
+impl std::ops::SubAssign for HardMediumSoftScore {
+    fn sub_assign(&mut self, other: Self) {
+        self.hard -= other.hard;
+        self.medium -= other.medium;
+        self.soft -= other.soft;
+    }
+}
+
 #[derive(Debug, Clone, NifStruct)]
 #[module = "HexaCore.Domain.Resource"]
 pub struct Resource {
