@@ -1,50 +1,45 @@
-# HexaCore Platform with HexaRail Showcase
+# HexaCore Platform with HexaRail & HexaFactory Showcases
 
-This repository is evolving toward an industrial-grade, high-performance optimization and digital twin platform built around an agnostic core.
+This repository is an industrial-grade, high-performance optimization and digital twin platform built around an agnostic core, functionally equivalent to TimeFold (OptaPlanner) but powered by SOTA Neural Combinatorial Optimization (NCO).
 
-The target architecture separates:
-*   **HexaCore:** the reusable optimization engine and orchestration platform.
-*   **HexaRail:** the railway vertical and primary showcase.
-*   **HexaFactory:** the manufacturing/job-shop vertical now implemented as a real production namespace with generator, persistence, projection, diagnostics, and smoke execution path.
+The architecture separates:
+*   **HexaCore:** the reusable optimization engine, orchestration platform, Salsa-based reactive scoring, and PyTorch-ready NCO feature extractor.
+*   **HexaRail:** the railway vertical and primary showcase (SBB network).
+*   **HexaFactory:** the manufacturing/job-shop vertical implemented as a real production namespace with generator, persistence, projection, diagnostics, and a massive offline dataset generator for Deep Learning.
 
 ## Vision
 Most optimization systems simplify reality to fit mathematical models. This project takes the opposite stance: model reality with enough physical, temporal, and operational fidelity that proposed optimizations remain actionable in the real world.
 
-The long-term goal is not a single railway product. The goal is a multi-vertical platform that can support domains such as:
+The long-term goal is a multi-vertical platform that can support domains such as:
 *   Rail operations and disruption management
-*   Manufacturing / job-shop scheduling
+*   Manufacturing / Job-Shop scheduling (JSSP)
 *   Logistics and supply chain flows
 *   Workforce and rostering problems
 
 ## Current Vertical Status
 
 ### HexaRail
-HexaRail is the most advanced vertical in the repository. It serves as the technical validator and showcase by modeling the **Swiss Federal Railways (CFF/SBB)** network.
+HexaRail serves as the technical validator and showcase by modeling the **Swiss Federal Railways (CFF/SBB)** network.
 *   **Scale:** 1.19M+ trips, 19M+ stop events, 96k locations
 *   **Role:** prove that the platform can handle a zero-simplification, high-density real-world system
-*   **Operator smoke:** `mix hexarail.smoke` now exercises a deterministic railway path through topology, timetable, perturbation, and conflict resolution
+*   **Operator smoke:** `mix hexarail.smoke` exercises a deterministic railway path through topology, timetable, perturbation, and conflict resolution.
 
 ### HexaFactory
-HexaFactory is the second vertical already initiated in the repo.
-*   **Focus:** manufacturing, job-shop scheduling, setup optimization, plant capacities, and supply chain constraints
-*   **Status:** domain ontology and design documents are present under `docs/plans/hexafactory/`, and the production namespace under `hexarail/lib/hexafactory/` now includes foundation/planning persistence, deterministic dataset generation, planning-horizon snapshots, projection into `HexaCore`, vertical diagnostics, and an executable `mix hexafactory.smoke` path
-*   **Operator tasks:** `mix hexafactory.generate`, `mix hexafactory.persist`, `mix hexafactory.solve`, and `mix hexafactory.smoke`
+HexaFactory is the manufacturing, job-shop scheduling vertical.
+*   **Focus:** setup optimization, plant capacities, supply chain constraints, and AI dataset generation.
+*   **Status:** domain ontology, production namespace, deterministic curriculum generation, and offline Reinforcement Learning expert trajectories generator.
+*   **Operator tasks:** `mix hexafactory.generate_dataset` (generates 10k+ expert scenarios in JSON for PyTorch), `mix hexafactory.persist`, `mix hexafactory.solve`, and `mix hexafactory.smoke`.
 
-## Architecture
-*   **Control Plane (Elixir/OTP):** orchestration, actor-based state management, resilience, and real-time interfaces via Phoenix LiveView
-*   **Data Plane (Rust):** incremental computation, graph analysis, heuristics, and performance-critical simulation logic
-*   **Persistence (PostgreSQL/PostGIS):** storage for large geospatial, temporal, and operational datasets
-
-## Core Capabilities
-*   **Agnostic optimization core:** reusable solver, DSL, transpilation, and incremental score engine
-*   **Massive ingestion:** high-volume import pipelines for dense industrial datasets
-*   **Zero-copy boundaries:** efficient transfer between the BEAM and Rust
-*   **Real-time visualization:** operational dashboards and scenario playback
-*   **Scenario-based planning:** support for live replanning and what-if simulation
+## Architecture & SOTA Capabilities
+*   **Control Plane (Elixir/OTP):** orchestration, actor-based state management, resilience, and real-time interfaces via Phoenix LiveView. Massive parallel ingestion and dataset generation.
+*   **Data Plane (Rust):** incremental computation via **Salsa (O(delta))**, graph analysis, Late Acceptance Hill Climbing (LAHC), and performance-critical simulation logic.
+*   **SOTA NCO (Latent Space):** The Rust Data Plane extracts an exact, normalized Markov Decision Process (MDP) state of the factory (Heterogeneous COO Graph, Dynamic Machine Occupancy, Categorical Dictionaries) ready for PyTorch/dfdx Graph Neural Networks.
+*   **Explainable AI (XAI):** The system returns a prioritized `HardMediumSoftScore` along with a detailed `ScoreExplanation` mapping every constraint violation back to the physical source.
+*   **Persistence (PostgreSQL/PostGIS):** storage for large geospatial, temporal, operational datasets, and JSONB tensors.
 
 ## Getting Started
 
-### Railway Showcase
+### Showcase
 ```bash
 direnv allow
 nix develop
@@ -64,11 +59,11 @@ mix data.import
 The shell now isolates mutable state under `./.state/` and exports project-local randomized ports for the web endpoint, tests, and PostgreSQL.
 
 ## Repository Direction
-*   **Near term:** stabilize the new two-crate Rust boundary and reduce operational friction. `HexaCore.Native` now loads `native/hexacore_engine`, `HexaRail.Native` now loads `native/hexarail_engine`, both crates now sit under a shared `native/Cargo.toml` workspace with a shared `native/Cargo.lock`, and both Rustler modules compile into the same `native/target` directory. The remaining work is now around deeper build optimization and repository hygiene, not the core-vs-railway physical split itself.
-*   **Medium term:** stabilize the agnostic APIs and prove reuse across multiple verticals
-*   **Long term:** ship a true multi-vertical optimization platform, with HexaRail as showcase and HexaFactory as the next concrete industrial implementation
+*   **Near term:** integrate `dfdx` or `tch-rs` to provide the neural network (Brain Infill) that consumes the generated NCO tensors to predict Branching Probability Maps.
+*   **Medium term:** port all constraints to the Salsa reactive engine to allow <1ms "What-if" score recalculations in the UI.
+*   **Long term:** ship a true multi-vertical optimization platform, blending exact Operations Research with Neural Combinatorial Optimization.
 
 ## Mandates
-*   **Zero Simplification:** model the world as it is, not as the math prefers it
-*   **Framework First:** verticals must sit on a reusable agnostic core
-*   **Zero Warning Policy:** strict testing and static analysis standards
+*   **Zero Simplification:** model the world as it is, not as the math prefers it.
+*   **Framework First:** verticals must sit on a reusable agnostic core.
+*   **Zero Warning Policy:** strict testing and static analysis standards.
