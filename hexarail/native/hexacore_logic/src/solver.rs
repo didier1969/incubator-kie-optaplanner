@@ -88,8 +88,35 @@ where
         let job_id = current_problem.jobs[job_idx].id;
         let old_time = db.job_start_time(job_id);
         
-        // Random move logic (In a more advanced SOTA version, this would be a guided selector)
-        let new_time = Some(rng.random_range(0..1440));
+        // SOTA: Earliest-Fit (EST) Guided Move Selection
+        let mut est = 0;
+        
+        // 1. Physical Constraint: Release Time
+        if let Some(release) = current_problem.jobs[job_idx].release_time {
+            est = est.max(release);
+        }
+
+        // 2. Physical Constraint: Precedences (Incoming Edges)
+        for edge in &current_problem.edges {
+            if edge.to_job_id == job_id {
+                // Get the scheduled start time of the predecessor from the Salsa DB
+                if let Some(pred_start) = db.job_start_time(edge.from_job_id) {
+                    let pred_job = db.job_data(edge.from_job_id);
+                    let pred_end = pred_start + pred_job.duration;
+                    
+                    let required_start = match edge.edge_type.as_str() {
+                        "finish_to_start" => pred_end + edge.lag,
+                        "start_to_start" => pred_start + edge.lag,
+                        "finish_to_finish" => pred_end + edge.lag - current_problem.jobs[job_idx].duration,
+                        "start_to_finish" => pred_start + edge.lag - current_problem.jobs[job_idx].duration,
+                        _ => pred_end, // Default safe fallback
+                    };
+                    est = est.max(required_start);
+                }
+            }
+        }
+        
+        let new_time = Some(est);
         
         // Apply Move
         db.set_job_start_time(job_id, new_time);
