@@ -46,6 +46,7 @@ const DUE_DATE_VIOLATION_PENALTY: HardMediumSoftScore = HardMediumSoftScore { ha
 const PRECEDENCE_VIOLATION_PENALTY: HardMediumSoftScore = HardMediumSoftScore { hard: -1, medium: 0, soft: 0 };
 const AVAILABILITY_VIOLATION_PENALTY: HardMediumSoftScore = HardMediumSoftScore { hard: -1, medium: 0, soft: 0 };
 const OVERLAP_VIOLATION_PENALTY: HardMediumSoftScore = HardMediumSoftScore { hard: -1, medium: 0, soft: 0 };
+const SETUP_VIOLATION_PENALTY: HardMediumSoftScore = HardMediumSoftScore { hard: 0, medium: 0, soft: -45 };
 
 fn total_score(db: &dyn ScoreEngine) -> HardMediumSoftScore {
     let mut total = HardMediumSoftScore::zero();
@@ -188,18 +189,19 @@ fn resource_score(db: &dyn ScoreEngine, id: i64) -> HardMediumSoftScore {
     for &j_id in &resource_jobs {
         if let Some(start) = db.job_start_time(j_id) {
             let job = db.job_data(j_id);
-            assigned_intervals.push((start, start + job.duration));
+            assigned_intervals.push((start, start + job.duration, job.group_id));
         }
     }
 
-    if assigned_intervals.len() <= res.capacity as usize {
-        return score; // Not enough jobs to exceed capacity
+    if assigned_intervals.is_empty() {
+        return score; 
     }
 
-    // Sort intervals by start time for overlap detection
+    // Sort intervals by start time for overlap detection and sequence setup detection
     assigned_intervals.sort_by_key(|int| int.0);
     
     for i in 0..assigned_intervals.len() {
+        // 1. Overlap Checking
         let mut concurrent_count = 1;
         for j in (i + 1)..assigned_intervals.len() {
             if assigned_intervals[j].0 < assigned_intervals[i].1 {
@@ -213,6 +215,17 @@ fn resource_score(db: &dyn ScoreEngine, id: i64) -> HardMediumSoftScore {
                 }
             } else {
                 break; // Because it's sorted, no more overlaps with interval i
+            }
+        }
+        
+        // 2. Sequence-Dependent Setup Time Checking
+        if i > 0 {
+            let prev_group = &assigned_intervals[i - 1].2;
+            let current_group = &assigned_intervals[i].2;
+            if let (Some(pg), Some(cg)) = (prev_group, current_group) {
+                if pg != cg {
+                    score += SETUP_VIOLATION_PENALTY;
+                }
             }
         }
     }
@@ -231,17 +244,18 @@ fn resource_violations(db: &dyn ScoreEngine, id: i64) -> Vec<ConstraintViolation
     for &j_id in &resource_jobs {
         if let Some(start) = db.job_start_time(j_id) {
             let job = db.job_data(j_id);
-            assigned_intervals.push((start, start + job.duration, j_id));
+            assigned_intervals.push((start, start + job.duration, j_id, job.group_id));
         }
     }
 
-    if assigned_intervals.len() <= res.capacity as usize {
+    if assigned_intervals.is_empty() {
         return violations;
     }
 
     assigned_intervals.sort_by_key(|int| int.0);
     
     for i in 0..assigned_intervals.len() {
+        // 1. Overlap Checking
         let mut concurrent_count = 1;
         for j in (i + 1)..assigned_intervals.len() {
             if assigned_intervals[j].0 < assigned_intervals[i].1 {
@@ -257,6 +271,23 @@ fn resource_violations(db: &dyn ScoreEngine, id: i64) -> Vec<ConstraintViolation
                 }
             } else {
                 break;
+            }
+        }
+
+        // 2. Sequence-Dependent Setup Time Checking
+        if i > 0 {
+            let prev_group = &assigned_intervals[i - 1].3;
+            let current_group = &assigned_intervals[i].3;
+            if let (Some(pg), Some(cg)) = (prev_group, current_group) {
+                if pg != cg {
+                    violations.push(ConstraintViolation {
+                        name: "setup_transition".to_string(),
+                        severity: "soft".to_string(),
+                        message: format!("Setup transition on resource {} from group {} to {}", id, pg, cg),
+                        job_id: Some(assigned_intervals[i].2),
+                        resource_id: Some(id),
+                    });
+                }
             }
         }
     }
