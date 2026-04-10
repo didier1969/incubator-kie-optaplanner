@@ -14,5 +14,5 @@ defmodule HexaCore.Nif do
   defdelegate freeze_feature_encoder(resource), to: Native
   defdelegate export_feature_vocabularies(resource), to: Native
   defdelegate import_feature_vocabularies(json), to: Native
-  defdelegate extract_features_core(resource, problem), to: Native
+  defdelegate extract_features_core(resource, problem, current_time), to: Native
 end

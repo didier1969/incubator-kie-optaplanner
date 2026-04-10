@@ -63,9 +63,10 @@ pub fn freeze_feature_encoder(resource: ResourceArc<EncoderResource>) -> rustler
 pub fn extract_features_core(
     resource: ResourceArc<EncoderResource>,
     problem: domain::Problem,
+    current_time: f32,
 ) -> Result<hexacore_logic::nco::TensorData, rustler::Error> {
     let encoder = resource.encoder.read().unwrap();
-    encoder.encode(&problem).map_err(|e| rustler::Error::RaiseTerm(Box::new(e)))
+    encoder.encode(&problem, current_time).map_err(|e| rustler::Error::RaiseTerm(Box::new(e)))
 }
 
 #[rustler::nif]

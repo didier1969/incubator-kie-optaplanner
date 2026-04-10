@@ -28,7 +28,7 @@ defmodule HexaCore.NCOIntegrationTest do
     assert Nif.freeze_feature_encoder(encoder_ref) == :ok
     
     # Extract tensor data via Rust NIF using the initialized resource
-    tensor = Nif.extract_features_core(encoder_ref, problem)
+    tensor = Nif.extract_features_core(encoder_ref, problem, 0.0)
     
     assert is_map(tensor)
     assert Map.has_key?(tensor, :job_features)
@@ -40,8 +40,8 @@ defmodule HexaCore.NCOIntegrationTest do
     assert length(tensor.job_features) == length(problem.jobs)
     assert length(tensor.resource_features) == length(problem.resources)
     
-    # Check fixed global features (4 metrics)
-    assert length(tensor.global_features) == 16
+    # Check fixed global features (1 current_time + 16 metrics)
+    assert length(tensor.global_features) == 17
     assert length(tensor.scalars) == 2
     
     # Ensure the vectors contain actual floats

@@ -65,15 +65,22 @@ defmodule Mix.Tasks.Hexafactory.GenerateDataset do
         
         abstract_problem = HexaFactory.Adapter.ProblemProjection.build(reloaded)
         
-        # ML Metric Collection: Extract the initial state (X) before optimization
-        tensor_x = HexaCore.Nif.extract_features_core(encoder_ref, abstract_problem)
+        # ML Metric Collection: Extract the initial state (X) before optimization (t=0)
+        tensor_x = HexaCore.Nif.extract_features_core(encoder_ref, abstract_problem, 0.0)
         
         solved_problem = 
           abstract_problem
           |> HexaCore.Nif.optimize_problem_core("metaheuristic", iterations)
           
         # ML Metric Collection: Extract the final solved state (Y) after optimization
-        tensor_y = HexaCore.Nif.extract_features_core(encoder_ref, solved_problem)
+        # For the final state, we use the makespan as the current time 't'
+        final_time = 
+          solved_problem.jobs
+          |> Enum.map(&((&1.start_time || 0) + &1.duration))
+          |> Enum.max(fn -> 0 end)
+          |> then(&(&1 * 1.0))
+          
+        tensor_y = HexaCore.Nif.extract_features_core(encoder_ref, solved_problem, final_time)
           
         decoded = HexaFactory.Solver.ResultDecoder.decode(reloaded, solved_problem)
         metrics = decoded.score_breakdown
