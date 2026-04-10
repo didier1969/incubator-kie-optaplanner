@@ -25,9 +25,8 @@ pub fn optimize_problem_core(
     iterations: i32,
 ) -> Result<domain::Problem, rustler::Error> {
     match strategy.as_str() {
-        "metaheuristic" => Ok(hexacore_logic::optimize_problem_core(problem, iterations)),
+        "metaheuristic" => Ok(hexacore_logic::optimize_problem_core(problem, iterations, None)),
         "nco" => {
-            let mut problem = problem;
             // 1. Extract Features (Local ephemeral encoder for this basic test)
             let encoder = hexacore_logic::nco::FeatureEncoder::new();
             let tensor_data = encoder.encode(&problem, 0.0).map_err(|e| rustler::Error::RaiseTerm(Box::new(e)))?;
@@ -38,21 +37,10 @@ pub fn optimize_problem_core(
             // 3. Forward Pass: Get branching probabilities
             let probabilities = brain.forward_pass(&tensor_data);
 
-            // 4. Guided Search (Stub): Pick the job with highest probability and schedule it at t=0
-            if !probabilities.is_empty() {
-                let mut best_job_idx = 0;
-                let mut max_prob = -1.0;
-                for (i, &prob) in probabilities.iter().enumerate() {
-                    if prob > max_prob {
-                        max_prob = prob;
-                        best_job_idx = i;
-                    }
-                }
-                // Mutate the problem to satisfy the test condition
-                problem.jobs[best_job_idx].start_time = Some(0);
-            }
+            // 4. Guided Search: Use LAHC guided by GNN probabilities
+            let optimized = hexacore_logic::optimize_problem_core(problem, iterations, Some(probabilities));
 
-            Ok(problem)
+            Ok(optimized)
         },
         _ => Err(rustler::Error::BadArg),
     }

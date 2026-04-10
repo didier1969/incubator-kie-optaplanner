@@ -6,7 +6,7 @@ use crate::incremental_score::{ScoreDatabase, ScoreEngine};
 const LAHC_HISTORY_SIZE: usize = 100;
 
 #[must_use]
-pub fn optimize(mut current_problem: Problem, _total_conflicts: usize, iterations: i32) -> Problem {
+pub fn optimize(mut current_problem: Problem, _total_conflicts: usize, iterations: i32, guidance: Option<Vec<f32>>) -> Problem {
     // 1. Initialize Salsa Database with full problem state
     let mut db = ScoreDatabase::default();
     
@@ -41,8 +41,24 @@ pub fn optimize(mut current_problem: Problem, _total_conflicts: usize, iteration
     for i in 0..iterations {
         let v = (i as usize) % LAHC_HISTORY_SIZE;
 
-        // Selection: Pick a job to move
-        let job_idx = rng.random_range(0..current_problem.jobs.len());
+        // Selection: Pick a job to move, guided by GNN if available (Epsilon-Greedy)
+        let job_idx = if let Some(ref probs) = guidance {
+            if rng.random_bool(0.8) && !probs.is_empty() && probs.len() == current_problem.jobs.len() {
+                // Exploit GNN probabilities: pick highest prob job (simplified for prototype)
+                // In a true implementation, we would sample proportionally or pick highest valid move.
+                let mut best_idx = 0;
+                let mut max_p = -1.0;
+                for (pi, &p) in probs.iter().enumerate() {
+                    if p > max_p { max_p = p; best_idx = pi; }
+                }
+                best_idx
+            } else {
+                rng.random_range(0..current_problem.jobs.len())
+            }
+        } else {
+            rng.random_range(0..current_problem.jobs.len())
+        };
+        
         let job_id = current_problem.jobs[job_idx].id;
         let old_time = db.job_start_time(job_id);
         
@@ -114,7 +130,7 @@ mod tests {
             explanation: None,
         };
 
-        let optimized = optimize(problem, 0, 100);
+        let optimized = optimize(problem, 0, 100, None);
         
         assert!(optimized.jobs[0].start_time.is_some());
     }
