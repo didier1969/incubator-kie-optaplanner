@@ -23,7 +23,7 @@ defmodule HexaCore.ProblemContractTest do
           required_resources: [1],
           release_time: 0,
           due_time: 240,
-          batch_key: "heat-a"
+          group_id: "heat-a"
         },
         %Job{
           id: 11,
@@ -31,7 +31,7 @@ defmodule HexaCore.ProblemContractTest do
           required_resources: [1],
           release_time: 150,
           due_time: 360,
-          batch_key: "heat-a"
+          group_id: "heat-a"
         }
       ],
       edges: [

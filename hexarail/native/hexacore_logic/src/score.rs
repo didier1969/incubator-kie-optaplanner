@@ -2,7 +2,7 @@
 
 use crate::domain::{HardMediumSoftScore, Problem};
 
-const UNASSIGNED_JOB_PENALTY: HardMediumSoftScore = HardMediumSoftScore { hard: 0, medium: -1, soft: 0 };
+const UNASSIGNED_JOB_PENALTY: HardMediumSoftScore = HardMediumSoftScore { hard: -1_000_000, medium: 0, soft: 0 };
 const RELEASE_VIOLATION_PENALTY: HardMediumSoftScore = HardMediumSoftScore { hard: 0, medium: 0, soft: -150 };
 const DUE_DATE_VIOLATION_PENALTY: HardMediumSoftScore = HardMediumSoftScore { hard: 0, medium: 0, soft: -200 };
 const PRECEDENCE_VIOLATION_PENALTY: HardMediumSoftScore = HardMediumSoftScore { hard: -1, medium: 0, soft: 0 };
@@ -139,11 +139,12 @@ mod tests {
             resources: vec![],
             jobs: vec![j1],
             edges: vec![],
+            setup_transitions: vec![],
             score_components: vec![],
             explanation: None,
         };
         let score = calculate_score(&problem);
-        assert_eq!(score.medium, -1); 
+        assert_eq!(score.hard, -1_000_000); 
     }
 
     #[test]
@@ -160,6 +161,7 @@ mod tests {
             resources: vec![],
             jobs: vec![],
             edges: vec![],
+            setup_transitions: vec![],
             score_components: vec![],
             explanation: None,
         };

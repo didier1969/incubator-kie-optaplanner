@@ -39,10 +39,11 @@ pub fn add(a: i64, b: i64) -> i64 {
 pub fn optimize_problem_core(
     problem: domain::Problem, 
     iterations: i32, 
-    guidance: Option<Vec<f32>>
+    guidance: Option<Vec<f32>>,
+    config: &domain::SolverConfig,
 ) -> domain::Problem 
 {
-    solver::optimize(problem, 0, iterations, guidance)
+    solver::optimize(problem, 0, iterations, guidance, config)
 }
 
 // No rustler::init here

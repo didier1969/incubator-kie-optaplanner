@@ -225,6 +225,19 @@ impl FeatureEncoder {
             *ops = get_remaining_ops(i, &adj, &mut memo);
         }
 
+        // Pre-pass to populate dictionaries
+        for job in &problem.jobs {
+            if let Some(key) = &job.group_id {
+                self.group_id_dict.get_or_insert(key);
+            }
+        }
+        for res in &problem.resources {
+            self.resource_name_dict.get_or_insert(&res.name);
+        }
+        for edge in &problem.edges {
+            self.edge_type_dict.get_or_insert(&edge.edge_type);
+        }
+
         let mut job_features = Vec::with_capacity(problem.jobs.len());
         let group_id_dict_size = self.group_id_dict.len() as f32;
         for (idx, job) in problem.jobs.iter().enumerate() {
@@ -412,6 +425,7 @@ mod tests {
                 Job { id: 30, duration: 30, required_resources: vec![2], release_time: None, due_time: None, start_time: None, group_id: Some("HOT".to_string()) },
             ],
             edges: vec![Edge { from_job_id: 10, to_job_id: 20, lag: 12, edge_type: "sequence".to_string() }],
+            setup_transitions: vec![],
             score_components: vec![
                 ScoreComponent { name: "tardiness".to_string(), value: 500 },
                 ScoreComponent { name: "setup".to_string(), value: 20 },
@@ -453,6 +467,7 @@ mod tests {
             resources: vec![],
             jobs: vec![Job { id: 40, duration: 1, required_resources: vec![], release_time: None, due_time: None, group_id: Some("COLD".to_string()), start_time: None }],
             edges: vec![],
+            setup_transitions: vec![],
             score_components: vec![],
             explanation: None,
         };

@@ -17,8 +17,8 @@ defmodule HexaCore.CoreSolverTest do
     }
 
     score = Nif.evaluate_problem_core(problem)
-    assert score.hard == 0
-    assert score.medium == -1
+    assert score.hard == -1_000_000
+    assert score.medium == 0
 
     optimized_problem = Nif.optimize_problem_core(problem, "metaheuristic", 10)
 

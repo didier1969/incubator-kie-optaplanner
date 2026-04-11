@@ -9,7 +9,7 @@ defmodule HexaCore.Nif do
 
   defdelegate add(a, b), to: Native
   defdelegate evaluate_problem_core(problem), to: Native
-  defdelegate optimize_problem_core(problem, strategy, iterations), to: Native
+  defdelegate optimize_problem_core(problem, strategy, iterations, config \\ %HexaCore.Domain.SolverConfig{}), to: Native
   defdelegate init_feature_encoder(), to: Native
   defdelegate freeze_feature_encoder(resource), to: Native
   defdelegate export_feature_vocabularies(resource), to: Native

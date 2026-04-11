@@ -3,6 +3,26 @@
 use rustler::NifStruct;
 use serde::{Serialize, Deserialize};
 
+#[derive(Debug, Clone, NifStruct)]
+#[module = "HexaCore.Domain.SolverConfig"]
+pub struct SolverConfig {
+    pub lahc_history_size: usize,
+    pub swap_move_prob: u8,
+    pub shift_move_prob: u8,
+    pub shift_window: i32,
+}
+
+impl Default for SolverConfig {
+    fn default() -> Self {
+        Self {
+            lahc_history_size: 100,
+            swap_move_prob: 20,
+            shift_move_prob: 40,
+            shift_window: 120,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, rustler::NifStruct)]
 #[module = "HexaCore.Domain.DemGrid"]
 pub struct DemGrid {
@@ -183,6 +203,14 @@ pub struct ScoreExplanation {
 }
 
 #[derive(Debug, Clone, NifStruct)]
+#[module = "HexaCore.Domain.SetupTransition"]
+pub struct SetupTransition {
+    pub from_group: String,
+    pub to_group: String,
+    pub duration: i64,
+}
+
+#[derive(Debug, Clone, NifStruct)]
 #[module = "HexaCore.Domain.Problem"]
 pub struct Problem {
     pub id: String,
@@ -190,6 +218,7 @@ pub struct Problem {
     pub jobs: Vec<Job>,
     pub edges: Vec<Edge>,
     pub score_components: Vec<ScoreComponent>,
+    pub setup_transitions: Vec<SetupTransition>,
     pub explanation: Option<ScoreExplanation>,
 }
 
@@ -234,6 +263,7 @@ mod tests {
             resources: vec![r1],
             jobs: vec![j1],
             edges: vec![],
+            setup_transitions: vec![],
             score_components: vec![],
             explanation: None,
         };

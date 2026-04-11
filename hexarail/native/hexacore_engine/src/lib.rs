@@ -23,9 +23,10 @@ pub fn optimize_problem_core(
     problem: domain::Problem,
     strategy: String,
     iterations: i32,
+    config: domain::SolverConfig,
 ) -> Result<domain::Problem, rustler::Error> {
     match strategy.as_str() {
-        "metaheuristic" => Ok(hexacore_logic::optimize_problem_core(problem, iterations, None)),
+        "metaheuristic" => Ok(hexacore_logic::optimize_problem_core(problem, iterations, None, &config)),
         "nco" => {
             // 1. Instantiate the SOTA GNN Brain and a local encoder
             let encoder = hexacore_logic::nco::FeatureEncoder::new();
@@ -45,7 +46,7 @@ pub fn optimize_problem_core(
             };
 
             // 3. Guided Search: Use LAHC guided by the static Heuristic Prior
-            let optimized = hexacore_logic::optimize_problem_core(problem, iterations, guidance);
+            let optimized = hexacore_logic::optimize_problem_core(problem, iterations, guidance, &config);
 
             Ok(optimized)
         },

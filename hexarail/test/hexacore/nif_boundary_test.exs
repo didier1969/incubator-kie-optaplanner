@@ -36,7 +36,7 @@ defmodule HexaCore.NifBoundaryTest do
 
     assert function_exported?(CoreNative, :add, 2)
     assert function_exported?(CoreNative, :evaluate_problem_core, 1)
-    assert function_exported?(CoreNative, :optimize_problem_core, 3)
+    assert function_exported?(CoreNative, :optimize_problem_core, 4)
     assert function_exported?(CoreNative, :extract_features_core, 3)
     assert function_exported?(CoreNative, :init_feature_encoder, 0)
     assert function_exported?(CoreNative, :freeze_feature_encoder, 1)

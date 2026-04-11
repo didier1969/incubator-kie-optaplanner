@@ -4,8 +4,6 @@ use crate::domain::Problem;
 use crate::incremental_score::{ScoreDatabase, ScoreEngine};
 use rand::RngExt;
 
-const LAHC_HISTORY_SIZE: usize = 100;
-
 #[must_use]
 #[allow(clippy::too_many_lines, clippy::cast_sign_loss, clippy::cast_possible_truncation, clippy::cast_precision_loss)]
 pub fn optimize(
@@ -13,7 +11,10 @@ pub fn optimize(
     _total_conflicts: usize,
     iterations: i32,
     guidance: Option<Vec<f32>>,
+    config: &crate::domain::SolverConfig,
 ) -> Problem {
+    let max_horizon = current_problem.jobs.iter().map(|j| j.duration).sum::<i64>() + 1440 * 7;
+
     // 1. Initialize Salsa Database with full problem state
     let mut db = ScoreDatabase::default();
     
@@ -43,6 +44,13 @@ pub fn optimize(
         db.set_edge_data(*id, current_problem.edges[*id].clone());
     }
 
+    for transition in &current_problem.setup_transitions {
+        db.set_setup_transition_duration(
+            format!("{}|{}", transition.from_group, transition.to_group),
+            Some(transition.duration),
+        );
+    }
+
     // SOTA: Precompute adjacency lists for O(1) true delta scoring
     let mut job_edges: std::collections::HashMap<i64, Vec<usize>> = std::collections::HashMap::new();
     let mut job_resources: std::collections::HashMap<i64, Vec<i64>> = std::collections::HashMap::new();
@@ -62,13 +70,13 @@ pub fn optimize(
     let mut best_problem = current_problem.clone();
 
     // Late Acceptance Hill Climbing (LAHC) history array
-    let mut fitness_array = vec![current_score; LAHC_HISTORY_SIZE];
+    let mut fitness_array = vec![current_score; config.lahc_history_size];
 
     let mut rng = rand::rng();
 
     // 2. Optimization Loop with LAHC and SOTA Move Selectors
     for i in 0..iterations {
-        let v = (i as usize) % LAHC_HISTORY_SIZE;
+        let v = (i as usize) % config.lahc_history_size;
 
         // Selection: Pick a primary job to move, guided by static GNN prior if available
         let job_idx = if let Some(ref p_vec) = guidance {
@@ -112,8 +120,32 @@ pub fn optimize(
         
         if move_type < 20 {
             // SWAP MOVE (20% chance)
-            // Swap start times with another random job
-            let target_idx = rng.random_range(0..current_problem.jobs.len());
+            // Swap start times with another job. SOTA: Guided by GNN probabilities if available.
+            let target_idx = if let Some(ref p_vec) = guidance {
+                if rng.random_bool(0.8) && p_vec.len() == current_problem.jobs.len() {
+                    let sum: f32 = p_vec.iter().sum();
+                    if sum > 0.0 {
+                        let mut cumulative = 0.0;
+                        let target = rng.random_range(0.0..sum);
+                        let mut selected = p_vec.len() - 1;
+                        for (pi, &p) in p_vec.iter().enumerate() {
+                            cumulative += p;
+                            if cumulative >= target {
+                                selected = pi;
+                                break;
+                            }
+                        }
+                        selected
+                    } else {
+                        rng.random_range(0..current_problem.jobs.len())
+                    }
+                } else {
+                    rng.random_range(0..current_problem.jobs.len())
+                }
+            } else {
+                rng.random_range(0..current_problem.jobs.len())
+            };
+
             let target_id = current_problem.jobs[target_idx].id;
             if target_id == job_id {
                 continue; // Skip invalid move
@@ -131,7 +163,7 @@ pub fn optimize(
                 new_time = Some(std::cmp::max(0, t + shift));
             } else {
                 // If unassigned, pick a completely random time to inject it into the schedule
-                new_time = Some(rng.random_range(0..1440));
+                new_time = Some(rng.random_range(0..max_horizon));
             }
         } else {
             // EST SNAP MOVE (40% chance)
@@ -140,19 +172,23 @@ pub fn optimize(
             if let Some(release) = current_problem.jobs[job_idx].release_time {
                 topological_est = topological_est.max(release);
             }
-            for edge in &current_problem.edges {
-                if edge.to_job_id == job_id {
-                    if let Some(pred_start) = db.job_start_time(edge.from_job_id) {
-                        let pred_job = db.job_data(edge.from_job_id);
-                        let pred_end = pred_start + pred_job.duration;
-                        let required_start = match edge.edge_type.as_str() {
-                            "finish_to_start" => pred_end + edge.lag,
-                            "start_to_start" => pred_start + edge.lag,
-                            "finish_to_finish" => pred_end + edge.lag - current_problem.jobs[job_idx].duration,
-                            "start_to_finish" => pred_start + edge.lag - current_problem.jobs[job_idx].duration,
-                            _ => pred_end,
-                        };
-                        topological_est = topological_est.max(required_start);
+            // SOTA O(delta): Use precomputed job_edges to only evaluate incoming edges in O(K) time
+            if let Some(edges) = job_edges.get(&job_id) {
+                for &e_id in edges {
+                    let edge = &current_problem.edges[e_id];
+                    if edge.to_job_id == job_id {
+                        if let Some(pred_start) = db.job_start_time(edge.from_job_id) {
+                            let pred_job = db.job_data(edge.from_job_id);
+                            let pred_end = pred_start + pred_job.duration;
+                            let required_start = match edge.edge_type.as_str() {
+                                "finish_to_start" => pred_end + edge.lag,
+                                "start_to_start" => pred_start + edge.lag,
+                                "finish_to_finish" => pred_end + edge.lag - current_problem.jobs[job_idx].duration,
+                                "start_to_finish" => pred_start + edge.lag - current_problem.jobs[job_idx].duration,
+                                _ => pred_end,
+                            };
+                            topological_est = topological_est.max(required_start);
+                        }
                     }
                 }
             }
@@ -311,12 +347,13 @@ mod tests {
                 start_time: None,
             }],
             edges: vec![],
+            setup_transitions: vec![],
             score_components: vec![],
             explanation: None,
         };
 
-        let optimized = optimize(problem, 0, 100, None);
-        
+        let optimized = optimize(problem, 0, 100, None, &crate::domain::SolverConfig::default());
+
         assert!(optimized.jobs[0].start_time.is_some());
     }
 }

@@ -16,7 +16,7 @@ defmodule HexaRail.SolverIntegrationTest do
     }
 
     # Should have medium penalty of -1 because 1 job is unassigned
-    assert Nif.evaluate_problem_core(problem).medium == -1
+    assert Nif.evaluate_problem_core(problem).hard == -1_000_000
   end
 
   test "rust nif optimizes the problem and returns mutated state" do
@@ -28,7 +28,7 @@ defmodule HexaRail.SolverIntegrationTest do
       ]
     }
 
-    assert Nif.evaluate_problem_core(problem).medium == -1
+    assert Nif.evaluate_problem_core(problem).hard == -1_000_000
 
     optimized_problem = Nif.optimize_problem_core(problem, "metaheuristic", 10)
 
