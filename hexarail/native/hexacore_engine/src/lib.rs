@@ -35,7 +35,11 @@ pub fn optimize_problem_core(
             // The GNN evaluates the initial factory state to rank jobs by criticality.
             // This frees up 100% of the CPU for the Salsa LAHC solver's raw speed.
             let guidance = if let Ok(tensor_data) = encoder.encode(&problem, 0.0) {
-                Some(brain.forward_pass(&tensor_data))
+                // SOTA: Catch the error and propagate to Elixir
+                match brain.forward_pass(&tensor_data) {
+                    Ok(probs) => Some(probs),
+                    Err(e) => return Err(rustler::Error::RaiseTerm(Box::new(e.to_string()))),
+                }
             } else {
                 None
             };
