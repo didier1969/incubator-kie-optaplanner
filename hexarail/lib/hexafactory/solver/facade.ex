@@ -16,6 +16,12 @@ defmodule HexaFactory.Solver.Facade do
       |> ProblemProjection.build()
       |> Nif.optimize_problem_core("metaheuristic", iterations)
 
+    Phoenix.PubSub.broadcast(
+      HexaRail.PubSub,
+      "simulation:hexafactory",
+      {:hexafactory_update, %{problem: solved_problem, explanation: solved_problem.explanation}}
+    )
+
     ResultDecoder.decode(dataset, solved_problem)
   end
 end
