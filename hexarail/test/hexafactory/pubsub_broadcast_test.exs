@@ -1,5 +1,5 @@
 defmodule HexaFactory.PubSubBroadcastTest do
-  use ExUnit.Case
+  use HexaRail.DataCase
 
   test "solver broadcasts results to simulation:hexafactory" do
     Phoenix.PubSub.subscribe(HexaRail.PubSub, "simulation:hexafactory")

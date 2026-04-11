@@ -188,6 +188,25 @@ Hooks.DeckGLMap = {
   }
 }
 
+Hooks.VizKitHook = {
+  mounted() {
+    console.log("VizKitHook mounted")
+    // In a real app, initialize @viz-kit/core Sigma/Timeline instance here
+    // this.chart = createChart(this.el, { type: 'timeline', data: [] })
+    
+    this.handleEvent("update_viz", (payload) => {
+      console.log("Received VizKit Update:", payload)
+      // this.chart.update({ data: payload })
+      
+      // Temporary debug rendering
+      this.el.innerHTML = `<pre>Received ${payload.events.length} jobs and ${payload.nodes.length} machines.</pre>`
+    })
+  },
+  destroyed() {
+    // this.chart.destroy()
+  }
+}
+
 // Global LiveView Ignition
 window.onload = () => {
   console.log("[NEXUS] Ignition...");
