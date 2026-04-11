@@ -15,4 +15,9 @@ defmodule HexaRailWeb.Router do
     pipe_through(:browser)
     live("/", TwinLive)
   end
+
+  scope "/factory", HexaFactoryWeb do
+    pipe_through(:browser)
+    live("/twin", TwinLive)
+  end
 end
