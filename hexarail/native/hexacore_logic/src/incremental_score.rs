@@ -18,6 +18,9 @@ pub trait ScoreEngine: salsa::Database {
     fn resource_jobs(&self, id: i64) -> Vec<i64>; // SOTA: O(1) job lookup per resource
 
     #[salsa::input]
+    fn setup_transition_duration(&self, key: String) -> Option<i64>;
+
+    #[salsa::input]
     fn edge_ids(&self) -> Vec<usize>;
     #[salsa::input]
     fn edge_data(&self, id: usize) -> Edge;
@@ -40,7 +43,7 @@ pub trait ScoreEngine: salsa::Database {
     fn availability_penalty(&self, id: i64) -> HardMediumSoftScore;
 }
 
-const UNASSIGNED_JOB_PENALTY: HardMediumSoftScore = HardMediumSoftScore { hard: 0, medium: -1, soft: 0 };
+const UNASSIGNED_JOB_PENALTY: HardMediumSoftScore = HardMediumSoftScore { hard: -1_000_000, medium: 0, soft: 0 };
 const RELEASE_VIOLATION_PENALTY: HardMediumSoftScore = HardMediumSoftScore { hard: 0, medium: 0, soft: -1 };
 const DUE_DATE_VIOLATION_PENALTY: HardMediumSoftScore = HardMediumSoftScore { hard: 0, medium: 0, soft: -1 };
 const PRECEDENCE_VIOLATION_PENALTY: HardMediumSoftScore = HardMediumSoftScore { hard: -1, medium: 0, soft: 0 };
@@ -224,7 +227,13 @@ fn resource_score(db: &dyn ScoreEngine, id: i64) -> HardMediumSoftScore {
             let current_group = &assigned_intervals[i].2;
             if let (Some(pg), Some(cg)) = (prev_group, current_group) {
                 if pg != cg {
-                    score += SETUP_VIOLATION_PENALTY;
+                    // SOTA: Dynamic Sequence-Dependent Setup Time Matrix
+                    let key = format!("{pg}|{cg}");
+                    if let Some(duration) = db.setup_transition_duration(key) {
+                        score.soft -= duration;
+                    } else {
+                        score += SETUP_VIOLATION_PENALTY; // Fallback
+                    }
                 }
             }
         }
@@ -280,10 +289,16 @@ fn resource_violations(db: &dyn ScoreEngine, id: i64) -> Vec<ConstraintViolation
             let current_group = &assigned_intervals[i].3;
             if let (Some(pg), Some(cg)) = (prev_group, current_group) {
                 if pg != cg {
+                    let key = format!("{pg}|{cg}");
+                    let message = if let Some(duration) = db.setup_transition_duration(key) {
+                        format!("Setup transition on resource {id} from group {pg} to {cg} ({duration}m)")
+                    } else {
+                        format!("Setup transition on resource {id} from group {pg} to {cg}")
+                    };
                     violations.push(ConstraintViolation {
                         name: "setup_transition".to_string(),
                         severity: "soft".to_string(),
-                        message: format!("Setup transition on resource {id} from group {pg} to {cg}"),
+                        message,
                         job_id: Some(assigned_intervals[i].2),
                         resource_id: Some(id),
                     });

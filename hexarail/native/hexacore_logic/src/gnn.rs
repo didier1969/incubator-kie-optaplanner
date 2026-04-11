@@ -85,26 +85,29 @@ impl NcoInferenceEngine {
     ///
     /// # Panics
     /// Panics if tensor creation fails.
+    ///
+    /// # Errors
+    /// Returns a `candle_core::Error` if tensor operations fail.
     #[allow(clippy::cast_possible_truncation)]
-    pub fn forward_pass(&self, tensor_data: &TensorData) -> Vec<f32> {
+    pub fn forward_pass(&self, tensor_data: &TensorData) -> candle_core::Result<Vec<f32>> {
         let num_jobs = tensor_data.job_features.len();
         let num_resources = tensor_data.resource_features.len();
         
         if num_jobs == 0 {
-            return vec![];
+            return Ok(vec![]);
         }
 
         // --- SOTA: True Differentiable Message Passing with Candle ---
         
         // 1. Convert raw features to Tensors first
         let job_features_flat: Vec<f32> = tensor_data.job_features.iter().flat_map(std::clone::Clone::clone).collect();
-        let x_jobs = Tensor::from_vec(job_features_flat, (num_jobs, 9), &self.device).unwrap_or_else(|_| Tensor::zeros((num_jobs, 9), DType::F32, &self.device).unwrap());
+        let x_jobs = Tensor::from_vec(job_features_flat, (num_jobs, 9), &self.device)?;
 
         let res_features_flat: Vec<f32> = tensor_data.resource_features.iter().flat_map(std::clone::Clone::clone).collect();
         let x_res = if num_resources > 0 {
-            Tensor::from_vec(res_features_flat, (num_resources, 29), &self.device).unwrap_or_else(|_| Tensor::zeros((num_resources, 29), DType::F32, &self.device).unwrap())
+            Tensor::from_vec(res_features_flat, (num_resources, 29), &self.device)?
         } else {
-            Tensor::zeros((0, 29), DType::F32, &self.device).unwrap()
+            Tensor::zeros((0, 29), DType::F32, &self.device)?
         };
 
         // 2. Differentiable Job-to-Job Message Passing (Scatter Add with Mean Aggregation)
@@ -112,27 +115,27 @@ impl NcoInferenceEngine {
         let jj_dst_indices: Vec<u32> = tensor_data.job_to_job_edge_dst.iter().map(|&x| x as u32).collect();
         
         let jj_agg = if jj_src_indices.is_empty() {
-            Tensor::zeros((num_jobs, 9), DType::F32, &self.device).unwrap()
+            Tensor::zeros((num_jobs, 9), DType::F32, &self.device)?
         } else {
-            let src_idx_tensor = Tensor::from_vec(jj_src_indices, (tensor_data.job_to_job_edge_src.len(),), &self.device).unwrap();
-            let dst_idx_tensor = Tensor::from_vec(jj_dst_indices, (tensor_data.job_to_job_edge_dst.len(),), &self.device).unwrap();
+            let src_idx_tensor = Tensor::from_vec(jj_src_indices, (tensor_data.job_to_job_edge_src.len(),), &self.device)?;
+            let dst_idx_tensor = Tensor::from_vec(jj_dst_indices, (tensor_data.job_to_job_edge_dst.len(),), &self.device)?;
             
             // Gather features from source nodes
-            let messages = x_jobs.index_select(&src_idx_tensor, 0).unwrap_or_else(|_| Tensor::zeros((src_idx_tensor.dims()[0], 9), DType::F32, &self.device).unwrap());
+            let messages = x_jobs.index_select(&src_idx_tensor, 0)?;
             
             // Scatter Add to destination nodes
-            let mut zeros = Tensor::zeros((num_jobs, 9), DType::F32, &self.device).unwrap();
-            zeros = zeros.index_add(&dst_idx_tensor, &messages, 0).unwrap_or(zeros);
+            let mut zeros = Tensor::zeros((num_jobs, 9), DType::F32, &self.device)?;
+            zeros = zeros.index_add(&dst_idx_tensor, &messages, 0)?;
             
             // SOTA: Degree Normalization (Mean Aggregation) to prevent Exploding Gradients
-            let ones_messages = Tensor::ones((src_idx_tensor.dims()[0], 1), DType::F32, &self.device).unwrap();
-            let mut degrees = Tensor::zeros((num_jobs, 1), DType::F32, &self.device).unwrap();
-            degrees = degrees.index_add(&dst_idx_tensor, &ones_messages, 0).unwrap_or(degrees);
+            let ones_messages = Tensor::ones((src_idx_tensor.dims()[0], 1), DType::F32, &self.device)?;
+            let mut degrees = Tensor::zeros((num_jobs, 1), DType::F32, &self.device)?;
+            degrees = degrees.index_add(&dst_idx_tensor, &ones_messages, 0)?;
             
-            let ones_limit = Tensor::ones((num_jobs, 1), DType::F32, &self.device).unwrap();
-            let degrees_clamped = degrees.maximum(&ones_limit).unwrap(); // Prevent division by zero
+            let ones_limit = Tensor::ones((num_jobs, 1), DType::F32, &self.device)?;
+            let degrees_clamped = degrees.maximum(&ones_limit)?; // Prevent division by zero
             
-            zeros.broadcast_div(&degrees_clamped).unwrap_or(zeros)
+            zeros.broadcast_div(&degrees_clamped)?
         };
 
         // 3. Differentiable Resource-to-Job Message Passing (Scatter Add with Mean Aggregation)
@@ -141,27 +144,27 @@ impl NcoInferenceEngine {
         let rj_feature_dst: Vec<u32> = tensor_data.job_to_resource_edge_src.iter().map(|&x| x as u32).collect();
 
         let rj_agg = if num_resources > 0 && !rj_feature_src.is_empty() {
-            let src_idx_tensor = Tensor::from_vec(rj_feature_src, (tensor_data.job_to_resource_edge_dst.len(),), &self.device).unwrap();
-            let dst_idx_tensor = Tensor::from_vec(rj_feature_dst, (tensor_data.job_to_resource_edge_src.len(),), &self.device).unwrap();
+            let src_idx_tensor = Tensor::from_vec(rj_feature_src, (tensor_data.job_to_resource_edge_dst.len(),), &self.device)?;
+            let dst_idx_tensor = Tensor::from_vec(rj_feature_dst, (tensor_data.job_to_resource_edge_src.len(),), &self.device)?;
             
             // Gather features from source nodes (Resources)
-            let messages = x_res.index_select(&src_idx_tensor, 0).unwrap_or_else(|_| Tensor::zeros((src_idx_tensor.dims()[0], 29), DType::F32, &self.device).unwrap());
+            let messages = x_res.index_select(&src_idx_tensor, 0)?;
             
             // Scatter Add to destination nodes (Jobs)
-            let mut zeros = Tensor::zeros((num_jobs, 29), DType::F32, &self.device).unwrap();
-            zeros = zeros.index_add(&dst_idx_tensor, &messages, 0).unwrap_or(zeros);
+            let mut zeros = Tensor::zeros((num_jobs, 29), DType::F32, &self.device)?;
+            zeros = zeros.index_add(&dst_idx_tensor, &messages, 0)?;
             
             // SOTA: Degree Normalization (Mean Aggregation)
-            let ones_messages = Tensor::ones((src_idx_tensor.dims()[0], 1), DType::F32, &self.device).unwrap();
-            let mut degrees = Tensor::zeros((num_jobs, 1), DType::F32, &self.device).unwrap();
-            degrees = degrees.index_add(&dst_idx_tensor, &ones_messages, 0).unwrap_or(degrees);
+            let ones_messages = Tensor::ones((src_idx_tensor.dims()[0], 1), DType::F32, &self.device)?;
+            let mut degrees = Tensor::zeros((num_jobs, 1), DType::F32, &self.device)?;
+            degrees = degrees.index_add(&dst_idx_tensor, &ones_messages, 0)?;
             
-            let ones_limit = Tensor::ones((num_jobs, 1), DType::F32, &self.device).unwrap();
-            let degrees_clamped = degrees.maximum(&ones_limit).unwrap(); // Prevent division by zero
+            let ones_limit = Tensor::ones((num_jobs, 1), DType::F32, &self.device)?;
+            let degrees_clamped = degrees.maximum(&ones_limit)?; // Prevent division by zero
             
-            zeros.broadcast_div(&degrees_clamped).unwrap_or(zeros)
+            zeros.broadcast_div(&degrees_clamped)?
         } else {
-            Tensor::zeros((num_jobs, 29), DType::F32, &self.device).unwrap()
+            Tensor::zeros((num_jobs, 29), DType::F32, &self.device)?
         };
 
         // 4. Global Features Broadcast
@@ -170,16 +173,16 @@ impl NcoInferenceEngine {
             global_flat.extend_from_slice(&tensor_data.global_features);
             while global_flat.len() % 17 != 0 { global_flat.push(0.0); }
         }
-        let x_global = Tensor::from_vec(global_flat, (num_jobs, 17), &self.device).unwrap_or_else(|_| Tensor::zeros((num_jobs, 17), DType::F32, &self.device).unwrap());
+        let x_global = Tensor::from_vec(global_flat, (num_jobs, 17), &self.device)?;
 
         // 5. Concatenate all features: [x_jobs (9), jj_agg (9), rj_agg (29), x_global (17)] -> 64
-        let input_tensor = Tensor::cat(&[&x_jobs, &jj_agg, &rj_agg, &x_global], 1).unwrap_or_else(|_| Tensor::zeros((num_jobs, 64), DType::F32, &self.device).unwrap());
+        let input_tensor = Tensor::cat(&[&x_jobs, &jj_agg, &rj_agg, &x_global], 1)?;
 
         // 6. Execute the Differentiable Forward Pass
         // The output is an exact computation over the trainable weights. The entire path from x_jobs and x_res to here is tracked by Autograd.
-        let output_tensor = self.model.forward(&input_tensor).unwrap_or_else(|_| Tensor::ones((num_jobs, 1), DType::F32, &self.device).unwrap());
+        let output_tensor = self.model.forward(&input_tensor)?;
 
         // 7. Extract probabilities back into standard Rust Vec for the Heuristic Solver
-        output_tensor.flatten_all().unwrap_or(output_tensor).to_vec1::<f32>().unwrap_or_else(|_| vec![0.5; num_jobs])
+        output_tensor.flatten_all()?.to_vec1::<f32>()
     }
 }
